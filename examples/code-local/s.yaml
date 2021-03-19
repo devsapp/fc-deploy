@@ -1,0 +1,27 @@
+demo:
+  # Component: /Users/zqf/Documents/git_proj/fc-deploy-alibaba-component/dist
+  Component: fc-deploy
+  Provider: alibaba
+  Access: default
+  Properties:
+    region: cn-hangzhou
+    service:
+      name: qianfeng-fc-deploy-service
+      description: 'demo for fc-deploy component'
+      internetAccess: true
+    function:
+      name: test-function
+      description: this is a test
+      runtime: nodejs10
+      codeUri: ./code
+      # ossBucket: 
+      # ossKey:  # conflict with codeUri
+      handler: index.handler
+      memorySize: 128
+      timeout: 60
+      initializationTimeout: 60
+      initializer: index.initializer
+      instanceConcurrency: 1
+      instanceType: e1
+      environmentVariables:
+        testEnv: true

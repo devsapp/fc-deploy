@@ -1,0 +1,18 @@
+demo:
+  # Component: /Users/zqf/Documents/git_proj/fc-deploy-alibaba-component/dist
+  Component: fc-deploy
+  Provider: alibaba
+  Access: default
+  Properties:
+    region: cn-hangzhou
+    service:
+      name: qianfeng-fc-deploy-service
+      description: 'demo for fc-deploy component'
+      internetAccess: true
+    function:
+      name: test-function
+      runtime: custom-container
+      customContainerConfig:
+        image: xxx
+      environmentVariables:
+        testEnv: true

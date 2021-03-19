@@ -1,0 +1,14 @@
+demo:
+  # Component: /Users/zqf/Documents/git_proj/fc-deploy-alibaba-component/dist
+  Component: fc-deploy
+  Provider: alibaba
+  Access: default
+  Properties:
+    region: cn-qingdao
+    service:
+      name: qianfeng-fc-deploy-service
+      description: demo for fc-deploy component
+      internetAccess: true
+      nasConfig: auto
+      vpcConfig: auto
+      logConfig: auto
