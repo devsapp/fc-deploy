@@ -56,7 +56,7 @@ export class AlicloudClient {
     const accountId = this.serverlessProfile.credentials?.AccountID ? this.serverlessProfile.credentials?.AccountID : 'accountId';
     const accessKeyID = this.serverlessProfile.credentials?.AccessKeyID ? this.serverlessProfile.credentials?.AccessKeyID : 'accessKeyID';
     const accessKeySecret = this.serverlessProfile.credentials?.AccessKeySecret ? this.serverlessProfile.credentials?.AccessKeySecret : 'accessKeySecret';
-    const securityToken = this.serverlessProfile.credentials?.securityToken;
+    const securityToken = this.serverlessProfile.credentials?.SecurityToken;
 
     // TODO: get user profile
     // const enable = profile.enableCustomEndpoint === true || profile.enableCustomEndpoint === 'true';

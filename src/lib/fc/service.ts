@@ -1,4 +1,3 @@
-import * as core from '@serverless-devs/core';
 import { FunctionConfig } from './function';
 import { LogConfig, AlicloudSls } from '../resource/sls';
 import { RoleConfig, normalizeRoleOrPoliceName, CustomPolicyConfig, PolicyStatementConfig, extractRoleNameFromArn, AlicloudRam } from '../resource/ram';
@@ -7,6 +6,7 @@ import { NasConfig, AlicloudNas } from '../resource/nas';
 import * as definition from '../definition';
 import * as _ from 'lodash';
 import { FC_NAS_SERVICE_PREFIX } from '../static';
+import FcDeploy from './fc-deploy';
 import { ServerlessProfile } from '../profile';
 
 export interface ServiceConfig {
@@ -19,23 +19,28 @@ export interface ServiceConfig {
   nasConfig?: NasConfig | 'atuo' | 'Auto';
 }
 
-export class FcService {
-  @core.HLogger('FC-DEPLOY') logger: core.ILogger;
 
+export class FcService extends FcDeploy {
   serviceConf: ServiceConfig;
   readonly hasFunctionAsyncConfig: boolean;
   readonly hasCustomContainerConfig: boolean;
-  readonly isNasAuto: boolean;
-  readonly serverlessProfile: ServerlessProfile;
+  hasAutoConfig: boolean;
 
   constructor(serviceConf: ServiceConfig, functionConf: FunctionConfig, serverlessProfile: ServerlessProfile) {
+    super(serverlessProfile);
     this.serviceConf = serviceConf;
     this.hasCustomContainerConfig = _.has(functionConf, 'customContainerConfig');
     this.hasFunctionAsyncConfig = _.has(functionConf, 'asyncConfiguration');
-    this.serverlessProfile = serverlessProfile;
+    this.hasAutoConfig = false;
   }
 
-  extractFcRole(role) {
+  validateConfig(): void {
+    if (_.isEmpty(this.serviceConf)) {
+      throw new Error('Please add serviceConfig in your s.yml/yaml');
+    }
+  }
+
+  static extractFcRole(role) {
     const [, , , , path] = role.split(':');
     const [, roleName] = path.split('/');
     return roleName;
@@ -117,8 +122,9 @@ export class FcService {
       throw new Error('LogStore and Project must both exist');
     }
 
-    if (_.isEmpty(attachedPolicies) && _.isNil(serviceRole)) { return undefined; }
+    if (_.isEmpty(attachedPolicies) && _.isEmpty(serviceRole)) { return undefined; }
     this.logger.info(`wating for role: ${roleName} to be deployed`);
+    this.hasAutoConfig = true;
     const alicloudRam = new AlicloudRam(this.serverlessProfile);
     const roleArn = await alicloudRam.makeRole(roleName, undefined, undefined, undefined, assumeRolePolicy, attachedPolicies);
     return roleArn;
@@ -139,8 +145,11 @@ export class FcService {
     let resolvedLogConfig: LogConfig;
     if (_.isString(logConfig)) {
       if (definition.isAutoConfig(logConfig)) {
+        this.hasAutoConfig = true;
         const aliyunSls = new AlicloudSls(this.serverlessProfile);
-        resolvedLogConfig = await aliyunSls.createDefaultSls();
+        this.logger.info('using \'logConfig: auto\', FC-DEPLOY will try to generate default sls project.');
+        resolvedLogConfig = await aliyunSls.createDefaultSls(this.serviceConf.name);
+        this.logger.info(`generated auto LogConfig done: ${JSON.stringify(resolvedLogConfig)}`);
       } else {
         throw new Error('logConfig only support auto/Auto when set to string.');
       }
@@ -161,6 +170,7 @@ export class FcService {
           throw new Error('vpcConfig only support auto/Auto when set to string.');
         }
       }
+      this.hasAutoConfig = true;
       // vpc auto
       this.logger.info('using \'vpcConfig: auto\', FC-DEPLOY will try to generate related vpc resources automatically');
       const alicloudVpc = new AlicloudVpc(this.serverlessProfile);
@@ -179,6 +189,7 @@ export class FcService {
     const { nasConfig } = this.serviceConf;
     if (_.isString(nasConfig)) {
       if (definition.isAutoConfig(nasConfig)) {
+        this.hasAutoConfig = true;
         const alicloudNas = new AlicloudNas(this.serverlessProfile);
         this.logger.info('using \'nasConfig: auto\', FC-DEPLOY will try to generate related nas file system automatically');
         const nasDefaultConfig = await alicloudNas.createDefaultNas(`${FC_NAS_SERVICE_PREFIX}${this.serviceConf.name}`, vpcConfig, `/${this.serviceConf.name}`, roleArn, assumeYes);
@@ -214,6 +225,7 @@ export class FcService {
     }
     const { nasConfig } = this.serviceConf;
     const isNasAuto = definition.isAutoConfig(nasConfig);
+
     if (!_.isEmpty(this.serviceConf.vpcConfig) || isNasAuto) {
       // vpc
       const resolvedVpcConfig = await this.generateServiceVpc(isNasAuto);

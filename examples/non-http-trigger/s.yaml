@@ -25,52 +25,52 @@ demo:
       instanceType: e1
       environmentVariables:
         testEnv: true
-      triggers:
-        - name: timerTrigger
-          type: timer
-          config:
-            cronExpression: '0 0 8 * * *'
-            enable: true
-            payload: 'awesome-fc'
-        - name: ossTrigger
-          type: oss
-          config:
-            bucketName: fassdemo
-            events:
-              - oss:ObjectCreated:*
-              - oss:ObjectRemoved:DeleteObject
-            filter:
-              Key:
-                Prefix: source/
-                Suffix: .png
-        - name: logTrigger
-          type: log
-          config:
-            logConfig:
-              project: fass-demo
-              logstore: fc-log
-            jobConfig:
-              maxRetryTime: 1
-              triggerInterval: 30
-            sourceConfig:
-              logstore: function-log
-            functionParameter:
-              key: val
-            enable: true
-        - name: mnsTrigger
-          type: mns_topic
-          config:
-            topicName: test-topic
-            region: cn-hangzhou
-            notifyContentFormat: 'JSON'
-            notifyStrategy: 'BACKOFF_RETRY'
-        - name: cdnTrigger
-          type: cdn_events
-          config:
-            eventName: LogFileCreated
-            eventVersion: '1.0.0'
-            notes: cdn events trigger test
-            filter:
-              domain: 
-                - 'www.taobao.com'
-                - 'www.tmall.com'
+    triggers:
+      - name: timerTrigger
+        type: timer
+        config:
+          cronExpression: '0 0 8 * * *'
+          enable: true
+          payload: 'awesome-fc'
+      - name: ossTrigger
+        type: oss
+        config:
+          bucketName: fassdemo
+          events:
+            - oss:ObjectCreated:*
+            - oss:ObjectRemoved:DeleteObject
+          filter:
+            Key:
+              Prefix: source/
+              Suffix: .png
+      - name: logTrigger
+        type: log
+        config:
+          logConfig:
+            project: fass-demo
+            logstore: fc-log
+          jobConfig:
+            maxRetryTime: 1
+            triggerInterval: 30
+          sourceConfig:
+            logstore: function-log
+          functionParameter:
+            key: val
+          enable: true
+      - name: mnsTrigger
+        type: mns_topic
+        config:
+          topicName: test-topic
+          region: cn-hangzhou
+          notifyContentFormat: 'JSON'
+          notifyStrategy: 'BACKOFF_RETRY'
+      - name: cdnTrigger
+        type: cdn_events
+        config:
+          eventName: LogFileCreated
+          eventVersion: '1.0.0'
+          notes: cdn events trigger test
+          filter:
+            domain: 
+              - 'www.taobao.com'
+              - 'www.tmall.com'

@@ -1,9 +1,9 @@
 import { LogConfig } from '../resource/sls';
-import * as core from '@serverless-devs/core';
 import * as _ from 'lodash';
 import { normalizeRoleOrPoliceName, CustomPolicyConfig, AlicloudRam } from '../resource/ram';
 import { DESCRIPTION } from '../static';
 import { ServerlessProfile } from '../profile';
+import FcDeploy from './fc-deploy';
 
 export interface TriggerConfig {
   name: string;
@@ -103,20 +103,25 @@ export interface ossObjectConfig {
   ossKey?: string;
 }
 
-export class FcTrigger {
-  @core.HLogger('FC-DEPLOY') logger: core.ILogger;
-
+export class FcTrigger extends FcDeploy {
   readonly triggerConf: TriggerConfig;
-  readonly serverlessProfile: ServerlessProfile;
   // readonly region: string;
   readonly serviceName: string;
   readonly functionName: string;
+  isRoleAuto: boolean;
 
   constructor(triggerConf: TriggerConfig, serviceName: string, functionName: string, serverlessProfile: ServerlessProfile) {
+    super(serverlessProfile);
     this.triggerConf = triggerConf;
     this.serviceName = serviceName;
     this.functionName = functionName;
-    this.serverlessProfile = serverlessProfile;
+    this.isRoleAuto = false;
+  }
+
+  validateConfig() {
+    if (_.isNil(this.functionName)) {
+      throw new Error('you can not add trigger config without function config');
+    }
   }
 
   isHttpTrigger(): boolean {
@@ -127,7 +132,7 @@ export class FcTrigger {
     return this.triggerConf.type === 'timer';
   }
 
-  async makeInvocationRole(qualifier?: string): Promise<string> {
+  async makeInvocationRole(): Promise<string> {
     this.logger.info(`waiting for making invocation role for trigger: ${this.triggerConf.name}`);
     const roleName: string = normalizeRoleOrPoliceName(`FcDeployCreateRole-${this.functionName}`);
     let assumeRolePolicy: {[key: string]: any};
@@ -148,7 +153,10 @@ export class FcTrigger {
               'fc:InvokeFunction',
             ],
             Effect: 'Allow',
-            Resource: `acs:fc:*:*:services/${this.serviceName}/functions/*`,
+            Resource: [
+              `acs:fc:*:*:services/${this.serviceName}.*/functions/*`,
+              `acs:fc:*:*:services/${this.serviceName}/functions/*`,
+            ],
           },
           {
             Action: [
@@ -180,7 +188,10 @@ export class FcTrigger {
             Action: [
               'fc:InvokeFunction',
             ],
-            Resource: `acs:fc:*:*:services/${this.serviceName}/functions/*`,
+            Resource: [
+              `acs:fc:*:*:services/${this.serviceName}.*/functions/*`,
+              `acs:fc:*:*:services/${this.serviceName}/functions/*`,
+            ],
             Effect: 'Allow',
           },
         ],
@@ -197,7 +208,10 @@ export class FcTrigger {
             Action: [
               'fc:InvokeFunction',
             ],
-            Resource: qualifier ? `acs:fc:*:*:services/${this.serviceName}.*/functions/*` : `acs:fc:*:*:services/${this.serviceName}/functions/*`,
+            Resource: [
+              `acs:fc:*:*:services/${this.serviceName}.*/functions/*`,
+              `acs:fc:*:*:services/${this.serviceName}/functions/*`,
+            ],
             Effect: 'Allow',
           },
         ],
@@ -214,7 +228,10 @@ export class FcTrigger {
             Action: [
               'fc:InvokeFunction',
             ],
-            Resource: `acs:fc:*:*:services/${this.serviceName}/functions/*`,
+            Resource: [
+              `acs:fc:*:*:services/${this.serviceName}.*/functions/*`,
+              `acs:fc:*:*:services/${this.serviceName}/functions/*`,
+            ],
             Effect: 'Allow',
           },
         ],
@@ -238,6 +255,8 @@ export class FcTrigger {
     Object.assign(resolvedTriggerConf, {
       role,
     });
+    this.logger.debug(`after making invocation role for trigger ${this.triggerConf.name}.`);
+    this.isRoleAuto = true;
     return resolvedTriggerConf;
   }
 }

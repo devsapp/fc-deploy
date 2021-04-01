@@ -21,7 +21,7 @@ demo:
         vpcId: xxx
         securityGroupId: xxx
         vswitchIds:
-          - vsw-m5e8nyhem1j04u2es8b3v
+          - vsw-xxx
       logConfig:
         project: xxx
         logstore: xxx

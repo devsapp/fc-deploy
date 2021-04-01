@@ -1,13 +1,11 @@
-import * as core from '@serverless-devs/core';
 import { FUNCTION_CONF_DEFAULT, FC_CODE_CACHE_DIR } from '../static';
 import _ from 'lodash';
 import { AlicloudAcr } from '../resource/acr';
 import path from 'path';
 import { isIgnored } from '../ignore';
 import { pack } from '../zip';
-import { TriggerConfig, FcTrigger } from './trigger';
 import * as fse from 'fs-extra';
-
+import FcDeploy from './fc-deploy';
 import { ServerlessProfile } from '../profile';
 
 export interface FunctionConfig {
@@ -27,7 +25,6 @@ export interface FunctionConfig {
   };
   initializationTimeout?: number;
   initializer?: string;
-  triggers?: TriggerConfig[];
   instanceConcurrency?: number;
   instanceType?: string;
 }
@@ -43,21 +40,24 @@ export function isCustomContainerRuntime(runtime: string): boolean {
   return runtime === 'custom-container';
 }
 
-export class FcFunction {
-  @core.HLogger('FC-DEPLOY') logger: core.ILogger;
-
+export class FcFunction extends FcDeploy {
   readonly functionConf: FunctionConfig;
   readonly serviceName: string;
-  readonly serverlessProfile: ServerlessProfile;
 
   constructor(functionConf: FunctionConfig, serviceName: string, serverlessProfile: ServerlessProfile) {
+    super(serverlessProfile);
     this.functionConf = functionConf;
     this.serviceName = serviceName;
-    this.serverlessProfile = serverlessProfile;
+  }
+
+  validateConfig() {
+    if (!_.isNil(this.functionConf.codeUri) && !_.isNil(this.functionConf.ossKey)) {
+      throw new Error('\'codeUri\' and \'ossKey\' can not both exist in function config.');
+    }
   }
 
   makeFunctionConfig(): FunctionConfig {
-    this.logger.info('waiting for making function config.');
+    this.logger.debug('waiting for making function config.');
     const { functionConf } = this;
     const resolvedFunctionConf: FunctionConfig = {
       name: functionConf?.name,
@@ -98,11 +98,6 @@ export class FcFunction {
       });
     }
 
-    if (functionConf?.triggers) {
-      Object.assign(resolvedFunctionConf, {
-        triggers: functionConf?.triggers,
-      });
-    }
     this.logger.debug('make function done');
     return resolvedFunctionConf;
   }
@@ -156,7 +151,7 @@ export class FcFunction {
   }
 
   async makeFunctionCode(baseDir: string, pushRegistry?: string): Promise<{ codeZipPath?: string; codeOssObject?: string }> {
-    this.logger.info('waiting for making function code.');
+    this.logger.debug('waiting for making function code.');
     const { functionConf } = this;
     // return { codeZipPath, codeOssObject }
     if (isCustomContainerRuntime(functionConf?.runtime) && !_.isNil(pushRegistry)) {
@@ -166,9 +161,9 @@ export class FcFunction {
       return {};
     }
 
-    if (functionConf?.codeUri) {
+    if (!isCustomContainerRuntime(functionConf?.runtime) && functionConf?.codeUri) {
       // zip
-      this.logger.info(`waiting for packaging function: ${this.functionConf.name} code...`);
+      this.logger.debug(`waiting for packaging function: ${this.functionConf.name} code...`);
       const codeZipPath = await this.zipCode(baseDir);
       this.logger.debug(`zipped code path: ${codeZipPath}`);
       if (functionConf?.ossBucket) {
@@ -185,18 +180,18 @@ export class FcFunction {
     if (_.isEmpty(this.functionConf)) { return undefined; }
     const resolvedFunctionConf = this.makeFunctionConfig();
     const { codeZipPath, codeOssObject } = await this.makeFunctionCode(baseDir, pushRegistry);
-    if (!_.isEmpty(this.functionConf.triggers)) {
-      this.logger.info('waiting for making trigger.');
-      const resolvedTriggersConf: TriggerConfig[] = [];
-      for (const trigger of this.functionConf.triggers) {
-        const triggerIns = new FcTrigger(trigger, this.serviceName, this.functionConf.name, this.serverlessProfile);
-        const resolvedTrigger = await triggerIns.makeTrigger();
-        resolvedTriggersConf.push(resolvedTrigger);
-      }
-      Object.assign(resolvedFunctionConf, {
-        triggers: resolvedTriggersConf,
-      });
-    }
+    // if (!_.isEmpty(this.functionConf.triggers)) {
+    //   this.logger.info('waiting for making trigger.');
+    //   const resolvedTriggersConf: TriggerConfig[] = [];
+    //   for (const trigger of this.functionConf.triggers) {
+    //     const triggerIns = new FcTrigger(trigger, this.serviceName, this.functionConf.name, this.serverlessProfile);
+    //     const resolvedTrigger = await triggerIns.makeTrigger();
+    //     resolvedTriggersConf.push(resolvedTrigger);
+    //   }
+    //   Object.assign(resolvedFunctionConf, {
+    //     triggers: resolvedTriggersConf,
+    //   });
+    // }
 
 
     if (!_.isNil(codeZipPath)) {

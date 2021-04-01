@@ -1,6 +1,7 @@
-import { genComponentInputs } from '../component';
+import { RamComponent } from '../component/ram';
 import * as core from '@serverless-devs/core';
 import { AlicloudClient } from './client';
+import { replaceProjectName } from '../profile';
 
 export interface RoleConfig {
   name: string;
@@ -44,8 +45,15 @@ export class AlicloudRam extends AlicloudClient {
   }
 
   async makeRole(roleName: string, args?: string, description?: string, resourceName?: string, assumeRolePolicy?: any, attachedPolicies?: Array<string | CustomPolicyConfig>): Promise<string> {
-    const ramComponentProp = this.genRamComponentProp(roleName, resourceName, assumeRolePolicy, attachedPolicies, description);
-    const ramComponentInputs = genComponentInputs(this.serverlessProfile.credentials, `${this.serverlessProfile.projectName}-ram-project`, this.serverlessProfile.accessAlias, 'ram', ramComponentProp, args);
+    const profileOfRam = replaceProjectName(this.serverlessProfile, `${this.serverlessProfile.projectName}-ram-project`);
+    const ramComponent = new RamComponent(profileOfRam, {
+      roleName,
+      resourceName,
+      assumeRolePolicy,
+      attachedPolicies,
+      description,
+    }, args);
+    const ramComponentInputs = ramComponent.genComponentInputs();
     const ramComponentIns = await core.load('alibaba/ram');
     const roleArn = await ramComponentIns.deploy(ramComponentInputs);
     return roleArn;
