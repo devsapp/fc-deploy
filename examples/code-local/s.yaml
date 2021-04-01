@@ -1,21 +1,19 @@
 demo:
-  # Component: /Users/zqf/Documents/git_proj/fc-deploy-alibaba-component/dist
-  Component: fc-deploy
+  Component: /Users/zqf/Documents/git_proj/fc-deploy-alibaba-component/dist
+  # Component: fc-deploy
   Provider: alibaba
   Access: default
   Properties:
-    region: cn-hangzhou
+    region: cn-shanghai
     service:
       name: qianfeng-fc-deploy-service
-      description: 'demo for fc-deploy component'
+      description: demo for fc-deploy component
       internetAccess: true
     function:
       name: test-function
       description: this is a test
       runtime: nodejs10
       codeUri: ./code
-      # ossBucket: 
-      # ossKey:  # conflict with codeUri
       handler: index.handler
       memorySize: 128
       timeout: 60
@@ -25,3 +23,23 @@ demo:
       instanceType: e1
       environmentVariables:
         testEnv: true
+    triggers:
+      - name: httpTrigger
+        type: http
+        config:
+          authType: anonymous
+          methods:
+            - GET
+    customDomains:
+      - domainName: auto
+        protocol: HTTP  # HTTP 或 HTTP,HTTPS
+        routeConfigs:
+          - path: /*
+            serviceName: qianfeng-fc-deploy-service
+            functionName: test-function
+            methods:
+              - GET
+        # certConfig:
+        #   certName: xxx
+        #   certificate: xxx
+        #   privateKey: xxx

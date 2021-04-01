@@ -1,18 +1,34 @@
 demo:
-  # Component: /Users/zqf/Documents/git_proj/fc-deploy-alibaba-component/dist
-  Component: fc-deploy
+  Component: /Users/zqf/Documents/git_proj/fc-deploy-alibaba-component/dist
+  # Component: fc-deploy
   Provider: alibaba
   Access: default
   Properties:
-    region: cn-hangzhou
+    region: cn-shanghai
     service:
       name: qianfeng-fc-deploy-service
       description: 'demo for fc-deploy component'
       internetAccess: true
     function:
-      name: test-function
+      name: custom-container-function
       runtime: custom-container
       customContainerConfig:
         image: xxx
       environmentVariables:
         testEnv: true
+    triggers:
+      - name: httpTrigger
+        type: http
+        config:
+          authType: anonymous
+          methods:
+            - GET
+    customDomains:
+      - domainName: auto
+        protocol: HTTP
+        routeConfigs:
+          - path: /a
+            serviceName: qianfeng-fc-deploy-service
+            functionName: custom-container-function
+            methods:
+              - GET

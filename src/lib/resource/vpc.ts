@@ -1,8 +1,9 @@
 import { AlicloudClient } from './client';
 import * as core from '@serverless-devs/core';
 import * as _ from 'lodash';
-import { genComponentInputs } from '../component';
+import { VpcComponent } from '../component/vpc';
 import { promptForConfirmContinue } from '../utils/prompt';
+import { replaceProjectName } from '../profile';
 
 export interface VpcConfig {
   securityGroupId: string;
@@ -87,30 +88,22 @@ export class AlicloudVpc extends AlicloudClient {
   }
 
   async createDefaultVpc() {
-    const defaultVpcComponentProp = await this.genDefaultVpcComponentProp();
-    const vpcComponentInputs = genComponentInputs(this.serverlessProfile.credentials, `${this.serverlessProfile.projectName}-vpc-project`, this.serverlessProfile.accessAlias, 'vpc', defaultVpcComponentProp);
+    const zoneId = await this.selectAllowedVSwitchZone();
+    const profileOfVpc = replaceProjectName(this.serverlessProfile, `${this.serverlessProfile.projectName}-vpc-project`);
+    const vpcComponent = new VpcComponent(profileOfVpc, {
+      cidrBlock: '10.0.0.0/8',
+      vpcName: `fc-deploy-component-generated-vpc-${this.serverlessProfile.region}`,
+      vpcDescription: 'default vpc created by fc-deploy component.',
+      vSwitchName: `fc-deploy-component-generated-vswitch-${this.serverlessProfile.region}`,
+      vSwitchDescription: 'default vswitch created by fc-deploy component.',
+      securityGroupName: `fc-deploy-component-generated-securityGroup-${this.serverlessProfile.region}`,
+      securityGroupDescription: 'default securityGroup created by fc-deploy component.',
+      zoneId,
+    });
+    const vpcComponentInputs = vpcComponent.genComponentInputs();
     // load vpc component
     const vpcComponentIns = await core.load('alibaba/vpc');
     return await vpcComponentIns.create(vpcComponentInputs);
-  }
-
-  async genDefaultVpcComponentProp() {
-    const defaultConfig = {
-      regionId: this.serverlessProfile.region,
-      cidrBlock: '10.0.0.0/8',
-      vpcName: `aliyun-fc-deploy-component-generated-vpc-${this.serverlessProfile.region}`,
-      vpcDescription: 'default vpc created by fc-deploy component.',
-      vSwitchName: `aliyun-fc-deploy-component-generated-vswitch-${this.serverlessProfile.region}`,
-      vSwitchDescription: 'default vswitch created by fc-deploy component.',
-      securityGroupName: `aliyun-fc-deploy-component-generated-securityGroup-${this.serverlessProfile.region}`,
-      securityGroupDescription: 'default securityGroup created by fc-deploy component.',
-    };
-
-    const zoneId = await this.selectAllowedVSwitchZone();
-    Object.assign(defaultConfig, {
-      zoneId,
-    });
-    return defaultConfig;
   }
 
   async describeVSwitchAttributes(vswitchId) {

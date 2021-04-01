@@ -1,7 +1,8 @@
 import { AlicloudClient } from './client';
 import * as core from '@serverless-devs/core';
 import { AlicloudVpc, VpcConfig } from './vpc';
-import { genComponentInputs } from '../component';
+import { NasComponent } from '../component/nas';
+import { replaceProjectName } from '../profile';
 
 export interface NasConfig {
   userId?: number;
@@ -41,26 +42,26 @@ export class AlicloudNas extends AlicloudClient {
     return zones.Zones.Zone;
   }
 
-  genNasComponentProp(serviceName: string, vpcId: string, vSwitchId: string, securityGroupId: string, zoneId: string, storageType: string, nasDir: string, nasUid: number, nasGid: number, nasName: string, role: string): any {
-    const prop = {
-      regionId: this.serverlessProfile.region,
-      serviceName,
-      vpcId,
-      vSwitchId,
-      securityGroupId,
-      groupId: nasGid,
-      userId: nasUid,
-      nasName,
-      zoneId,
-      nasDir,
-      storageType,
-      role,
-    };
+  // genNasComponentProp(serviceName: string, vpcId: string, vSwitchId: string, securityGroupId: string, zoneId: string, storageType: string, nasDir: string, nasUid: number, nasGid: number, nasName: string, role: string): any {
+  //   const prop = {
+  //     regionId: this.serverlessProfile.region,
+  //     serviceName,
+  //     vpcId,
+  //     vSwitchId,
+  //     securityGroupId,
+  //     groupId: nasGid,
+  //     userId: nasUid,
+  //     nasName,
+  //     zoneId,
+  //     nasDir,
+  //     storageType,
+  //     role,
+  //   };
 
-    // handler role
+  //   // handler role
 
-    return prop;
-  }
+  //   return prop;
+  // }
 
   async createDefaultNas(nasServiceName: string, vpcConfig: VpcConfig, nasDir: string, roleArn: string, assumeYes?: boolean): Promise<NasConfig> {
     const nasZones = await this.describeNasZones();
@@ -70,9 +71,25 @@ export class AlicloudNas extends AlicloudClient {
     const defaultNasUid = 10003;
     const defaultNasGid = 10003;
     const defaultNasName = `Alibaba-FcDeployComponent-DefaultNas-${this.serverlessProfile.region}`;
-    const defaultNasComponentProp = this.genNasComponentProp(nasServiceName, vpcConfig.vpcId, vswitchId, vpcConfig.securityGroupId, zoneId, storageType, nasDir, defaultNasUid, defaultNasGid, defaultNasName, roleArn);
-    const nasArgs = assumeYes ? '-y' : undefined;
-    const nasComponentInputs = genComponentInputs(this.serverlessProfile.credentials, `${this.serverlessProfile.projectName}-nas-project`, this.serverlessProfile.accessAlias, 'fc-nas', defaultNasComponentProp, nasArgs);
+    const profileOfNas = replaceProjectName(this.serverlessProfile, `${this.serverlessProfile.projectName}-nas-project`);
+    const defaultVpcConf: VpcConfig = {
+      vpcId: vpcConfig.vpcId,
+      vswitchIds: [vswitchId],
+      securityGroupId: vpcConfig.securityGroupId,
+    };
+    const nasComponent = new NasComponent(profileOfNas, {
+      nasName: defaultNasName,
+      nasDir,
+      nasGid: defaultNasGid,
+      nasUid: defaultNasUid,
+      vpcConfig: defaultVpcConf,
+      role: roleArn,
+      storageType,
+      zoneId,
+      assistServiceName: nasServiceName,
+    },
+    assumeYes ? '-y' : undefined);
+    const nasComponentInputs = nasComponent.genComponentInputs();
     this.logger.debug(`loading alibaba/fc-nas component, inputs: ${JSON.stringify(nasComponentInputs)}`);
     const nasComponentIns = await core.load('alibaba/fc-nas');
     const nasDeployRes = await nasComponentIns.deploy(nasComponentInputs);

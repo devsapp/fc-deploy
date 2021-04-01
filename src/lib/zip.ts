@@ -29,7 +29,7 @@ async function packTo(file: string, codeignore: any, targetPath: string, prefix 
     throw new Error(`zip file ${file} is not exist.`);
   }
 
-  core.Logger.debug('FC-DEPLOY', `pack file file is %s, absFilePath is ${file}`);
+  core.Logger.debug('FC-DEPLOY', `pack file is ${targetPath}, absFilePath is ${file}`);
 
   const stats = await fse.lstat(file);
 

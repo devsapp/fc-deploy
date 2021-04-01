@@ -13,7 +13,7 @@ export const FUNCTION_CONF_DEFAULT = {
   codeUri: './',
 };
 
-export const SUPPORTED_REMOVE_ARGS = ['service', 'function', 'trigger'];
+export const SUPPORTED_REMOVE_ARGS = ['service', 'function', 'trigger', 'domain'];
 export const FC_BASE_CACHE_DIR = path.join(os.homedir(), '.s/cache/fc-base');
 export const FC_CODE_CACHE_DIR = path.join(FC_BASE_CACHE_DIR, 'code');
 export const FC_NAS_SERVICE_PREFIX = '_FC_NAS_';
