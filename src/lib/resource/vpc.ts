@@ -30,7 +30,7 @@ export class AlicloudVpc extends AlicloudClient {
     this.logger.debug('fc allowed zones: %j', fcAllowedZones);
 
     if (_.isEqual(fcAllowedZones, [''])) {
-      throw new Error(`No fc vswitch zones allowed, you may need login to fc console to apply for VPC feature: https://fc.console.aliyun.com/overview/${this.serverlessProfile.region}`);
+      throw new Error(`No fc vswitch zones allowed, you may need login to fc console to apply for VPC feature: https://fc.console.aliyun.com/overview/${this.region}`);
     }
 
     return fcAllowedZones;
@@ -39,7 +39,7 @@ export class AlicloudVpc extends AlicloudClient {
   async describeVpcZones() {
     if (_.isNil(this.vpcClient)) { this.vpcClient = await this.getVpcPopClient(); }
     const params = {
-      RegionId: this.serverlessProfile.region,
+      RegionId: this.region,
     };
 
     const zones = await this.vpcClient.request('DescribeZones', params, requestOption);
@@ -89,27 +89,27 @@ export class AlicloudVpc extends AlicloudClient {
 
   async createDefaultVpc() {
     const zoneId = await this.selectAllowedVSwitchZone();
-    const profileOfVpc = replaceProjectName(this.serverlessProfile, `${this.serverlessProfile.projectName}-vpc-project`);
+    const profileOfVpc = replaceProjectName(this.serverlessProfile, `${this.serverlessProfile?.project.projectName}-vpc-project`);
     const vpcComponent = new VpcComponent(profileOfVpc, {
       cidrBlock: '10.0.0.0/8',
-      vpcName: `fc-deploy-component-generated-vpc-${this.serverlessProfile.region}`,
+      vpcName: `fc-deploy-component-generated-vpc-${this.region}`,
       vpcDescription: 'default vpc created by fc-deploy component.',
-      vSwitchName: `fc-deploy-component-generated-vswitch-${this.serverlessProfile.region}`,
+      vSwitchName: `fc-deploy-component-generated-vswitch-${this.region}`,
       vSwitchDescription: 'default vswitch created by fc-deploy component.',
-      securityGroupName: `fc-deploy-component-generated-securityGroup-${this.serverlessProfile.region}`,
+      securityGroupName: `fc-deploy-component-generated-securityGroup-${this.region}`,
       securityGroupDescription: 'default securityGroup created by fc-deploy component.',
       zoneId,
-    });
-    const vpcComponentInputs = vpcComponent.genComponentInputs();
+    }, this.region, this.credentials, this.curPath);
+    const vpcComponentInputs = vpcComponent.genComponentInputs('vpc');
     // load vpc component
-    const vpcComponentIns = await core.load('alibaba/vpc');
+    const vpcComponentIns = await core.load('vpc');
     return await vpcComponentIns.create(vpcComponentInputs);
   }
 
   async describeVSwitchAttributes(vswitchId) {
     if (_.isNil(this.vpcClient)) { this.vpcClient = await this.getVpcPopClient(); }
     const params = {
-      RegionId: this.serverlessProfile.region,
+      RegionId: this.region,
       VSwitchId: vswitchId,
     };
     return await this.vpcClient.request('DescribeVSwitchAttributes', params, requestOption);
@@ -192,10 +192,10 @@ export class AlicloudVpc extends AlicloudClient {
     }
 
     if (!_.isEmpty(capacities)) {
-      const msg = `Region ${this.serverlessProfile.region} only supports capacity NAS. Do you want to create it automatically?`;
+      const msg = `Region ${this.region} only supports capacity NAS. Do you want to create it automatically?`;
       const yes = await promptForConfirmContinue(msg);
       if (yes) { return this.convertZones(_.head(capacities), availableZones, 'Capacity'); }
-      throw new Error(`No NAS service available under region ${this.serverlessProfile.region}.`);
+      throw new Error(`No NAS service available under region ${this.region}.`);
     }
 
     return this.processDifferentZones(nasZones, _.head(fcZones).vswitchId);

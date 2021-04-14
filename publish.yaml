@@ -1,5 +1,5 @@
 Type: Component
-Name: fc-base
+Name: fc-deploy
 Provider:
   - 阿里云
 Version: 0.0.1

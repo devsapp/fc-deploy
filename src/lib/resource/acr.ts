@@ -1,22 +1,22 @@
 import { AlicloudClient } from './client';
 import { execSync } from 'child_process';
-import { ServerlessProfile } from '../profile';
+import { ServerlessProfile, ICredentials } from '../profile';
 
 export class AlicloudAcr extends AlicloudClient {
   readonly registry: string;
-  constructor(pushRegistry: string, serverlessProfile: ServerlessProfile) {
-    super(serverlessProfile);
+  constructor(pushRegistry: string, serverlessProfile: ServerlessProfile, credentials: ICredentials, region: string, curPath?: string, args?: string, timeout?: number) {
+    super(serverlessProfile, credentials, region, curPath, args, timeout);
     if (pushRegistry === 'acr-internet') {
-      this.registry = `registry.${this.serverlessProfile.region}.aliyuncs.com`;
+      this.registry = `registry.${this.region}.aliyuncs.com`;
     } else if (pushRegistry === 'acr-vpc') {
-      this.registry = `registry-vpc.${this.serverlessProfile.region}.aliyuncs.com`;
+      this.registry = `registry-vpc.${this.region}.aliyuncs.com`;
     } else if (pushRegistry) {
       this.registry = pushRegistry;
     }
   }
 
   async getAcrPopClient(): Promise<any> {
-    return await this.getPopClient(`https://cr.${this.serverlessProfile.region}.aliyuncs.com`, '2016-06-07');
+    return await this.getPopClient(`https://cr.${this.region}.aliyuncs.com`, '2016-06-07');
   }
 
   async loginToRegistry(): Promise<void> {

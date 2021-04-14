@@ -1,12 +1,12 @@
-import { ServerlessProfile } from '../profile';
+import { ServerlessProfile, ICredentials } from '../profile';
 import { Component } from './component';
 
 export class DomainComponent extends Component {
   readonly serviceName: string;
   readonly functionName: string;
 
-  constructor(serverlessProfile: ServerlessProfile, serviceName: string, functionName: string, args?: string) {
-    super(serverlessProfile, args);
+  constructor(serverlessProfile: ServerlessProfile, serviceName: string, functionName: string, region: string, credentials: ICredentials, curPath?: string, args?: string) {
+    super(serverlessProfile, region, credentials, curPath, args);
     this.serviceName = serviceName;
     this.functionName = functionName;
   }
@@ -14,8 +14,8 @@ export class DomainComponent extends Component {
   genComponentProp(): { [key: string]: any } {
     return {
       type: 'fc',
-      user: this.serverlessProfile.credentials.AccountID,
-      region: this.serverlessProfile.region,
+      user: this.credentials.AccountID,
+      region: this.region,
       service: this.serviceName,
       function: this.functionName,
     };

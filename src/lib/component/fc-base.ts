@@ -2,7 +2,7 @@ import { ServiceConfig } from '../fc/service';
 import { FunctionConfig, isCustomContainerRuntime } from '../fc/function';
 import { TriggerConfig } from '../fc/trigger';
 import * as _ from 'lodash';
-import { ServerlessProfile } from '../profile';
+import { ServerlessProfile, ICredentials } from '../profile';
 import { Component } from './component';
 
 export class FcBaseComponent extends Component {
@@ -10,8 +10,8 @@ export class FcBaseComponent extends Component {
   readonly functionConf?: FunctionConfig;
   readonly triggers?: TriggerConfig[];
 
-  constructor(serverlessProfile: ServerlessProfile, serviceConf: ServiceConfig, functionConf?: FunctionConfig, triggers?: TriggerConfig[], args?: string) {
-    super(serverlessProfile, args);
+  constructor(serverlessProfile: ServerlessProfile, serviceConf: ServiceConfig, region: string, credentials: ICredentials, curPath?: string, args?: string, functionConf?: FunctionConfig, triggers?: TriggerConfig[]) {
+    super(serverlessProfile, region, credentials, curPath, args);
     this.serviceConf = serviceConf;
     this.functionConf = functionConf;
     this.triggers = triggers;
@@ -93,7 +93,7 @@ export class FcBaseComponent extends Component {
     if (!_.isEmpty(this.triggers)) {
       Object.assign(prop, { triggers: this.genTriggerProp() });
     }
-    Object.assign(prop, { region: this.serverlessProfile.region });
+    Object.assign(prop, { region: this.region });
     return prop;
   }
 }

@@ -1,5 +1,5 @@
 import * as _ from 'lodash';
-import { ServerlessProfile } from '../profile';
+import { ServerlessProfile, ICredentials } from '../profile';
 import { Component } from './component';
 
 export class RamComponent extends Component {
@@ -9,8 +9,8 @@ export class RamComponent extends Component {
   readonly attachedPolicies?: any[];
   readonly description?: string;
 
-  constructor(serverlessProfile: ServerlessProfile, { roleName, resourceName, assumeRolePolicy, attachedPolicies, description }, args?: string) {
-    super(serverlessProfile, args);
+  constructor(serverlessProfile: ServerlessProfile, { roleName, resourceName, assumeRolePolicy, attachedPolicies, description }, region: string, credentials: ICredentials, curPath?: string, args?: string) {
+    super(serverlessProfile, region, credentials, curPath, args);
     this.roleName = roleName;
     if (!_.isNil(resourceName)) { this.resourceName = resourceName; }
     if (!_.isNil(assumeRolePolicy)) { this.assumeRolePolicy = assumeRolePolicy; }
