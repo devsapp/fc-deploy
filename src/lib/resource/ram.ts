@@ -45,16 +45,16 @@ export class AlicloudRam extends AlicloudClient {
   }
 
   async makeRole(roleName: string, args?: string, description?: string, resourceName?: string, assumeRolePolicy?: any, attachedPolicies?: Array<string | CustomPolicyConfig>): Promise<string> {
-    const profileOfRam = replaceProjectName(this.serverlessProfile, `${this.serverlessProfile.projectName}-ram-project`);
+    const profileOfRam = replaceProjectName(this.serverlessProfile, `${this.serverlessProfile?.project?.projectName}-ram-project`);
     const ramComponent = new RamComponent(profileOfRam, {
       roleName,
       resourceName,
       assumeRolePolicy,
       attachedPolicies,
       description,
-    }, args);
-    const ramComponentInputs = ramComponent.genComponentInputs();
-    const ramComponentIns = await core.load('alibaba/ram');
+    }, this.region, this.credentials, this.curPath, args);
+    const ramComponentInputs = ramComponent.genComponentInputs('ram');
+    const ramComponentIns = await core.load('ram');
     const roleArn = await ramComponentIns.deploy(ramComponentInputs);
     return roleArn;
   }

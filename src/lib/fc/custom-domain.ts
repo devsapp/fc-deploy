@@ -1,10 +1,10 @@
-import FcDeploy from './fc-deploy';
-import { ServerlessProfile } from '../profile';
+import { IInputsBase, ICredentials, ServerlessProfile, replaceProjectName } from '../profile';
 import * as _ from 'lodash';
 import { TriggerConfig } from './trigger';
 import { isAutoConfig } from '../definition';
 import * as core from '@serverless-devs/core';
 import { DomainComponent } from '../component/domain';
+import * as fse from 'fs-extra';
 
 export interface CustomDomainConfig {
   domainName: string;
@@ -31,7 +31,7 @@ interface CertConfig {
   privateKey: string;
 }
 
-export class FcCustomDomain extends FcDeploy {
+export class FcCustomDomain extends IInputsBase {
   readonly customDomainConf: CustomDomainConfig;
   readonly serviceName: string;
   readonly functionName: string;
@@ -39,8 +39,8 @@ export class FcCustomDomain extends FcDeploy {
   readonly httpMethods?: string[];
   hasDefaultOrAutoConf: boolean;
 
-  constructor(customDomainConf: CustomDomainConfig, serviceName: string, functionName: string, triggerConfs: TriggerConfig[], serverlessProfile: ServerlessProfile) {
-    super(serverlessProfile);
+  constructor(customDomainConf: CustomDomainConfig, serviceName: string, functionName: string, triggerConfs: TriggerConfig[], serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string, args?: string) {
+    super(serverlessProfile, region, credentials, curPath, args);
     this.customDomainConf = customDomainConf;
     this.serviceName = serviceName;
     this.functionName = functionName;
@@ -82,9 +82,20 @@ export class FcCustomDomain extends FcDeploy {
   }
 
   async makeCustomDomain(): Promise<CustomDomainConfig> {
-    const resolvedCustomDomainConf: CustomDomainConfig = { ...this.customDomainConf };
+    const resolvedCustomDomainConf: CustomDomainConfig = _.cloneDeep(this.customDomainConf);
+    if (!_.isEmpty(this.customDomainConf.certConfig)) {
+      const { privateKey } = this.customDomainConf.certConfig;
+      const { certificate } = this.customDomainConf.certConfig;
 
+      if (privateKey && privateKey.endsWith('.pem')) {
+        resolvedCustomDomainConf.certConfig.privateKey = await fse.readFile(privateKey, 'utf-8');
+      }
+      if (certificate && certificate.endsWith('.pem')) {
+        resolvedCustomDomainConf.certConfig.certificate = await fse.readFile(certificate, 'utf-8');
+      }
+    }
     delete resolvedCustomDomainConf.routeConfigs;
+
     const resolvedRouteConfigs: RouteConfig[] = [];
     for (const routeConfig of this.customDomainConf.routeConfigs) {
       if (!Object.prototype.hasOwnProperty.call(routeConfig, 'serviceName')) {
@@ -115,13 +126,10 @@ export class FcCustomDomain extends FcDeploy {
       this.logger.debug('auto domain name');
       this.hasDefaultOrAutoConf = true;
       this.logger.info('using \'customDomain: auto\', FC-DEPLOY will try to generate related custom domain resources automatically');
-      const profileOfDomain: ServerlessProfile = { ...this.serverlessProfile };
-      Object.assign(profileOfDomain, {
-        projectName: `${this.serverlessProfile.projectName}-domain-project`,
-      });
-      const domainComponent = new DomainComponent(profileOfDomain, this.serviceName, this.functionName);
-      const domainComponentInputs = domainComponent.genComponentInputs();
-      const domainComponentIns = await core.load('alibaba/domain');
+      const profileOfDomain: ServerlessProfile = replaceProjectName(this.serverlessProfile, `${this.serverlessProfile?.project.projectName}-domain-project`);
+      const domainComponent = new DomainComponent(profileOfDomain, this.serviceName, this.functionName, this.region, this.credentials, this.curPath, this.args);
+      const domainComponentInputs = domainComponent.genComponentInputs('domain');
+      const domainComponentIns = await core.load('domain');
       const generatedDomain = await domainComponentIns.get(domainComponentInputs);
       this.logger.info(`generated auto custom domain done: ${generatedDomain}`);
       Object.assign(resolvedCustomDomainConf, {

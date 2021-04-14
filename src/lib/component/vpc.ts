@@ -1,5 +1,5 @@
 import * as _ from 'lodash';
-import { ServerlessProfile } from '../profile';
+import { ServerlessProfile, ICredentials } from '../profile';
 import { Component } from './component';
 
 export class VpcComponent extends Component {
@@ -12,8 +12,8 @@ export class VpcComponent extends Component {
   readonly securityGroupDescription?: string;
   readonly zoneId: string;
 
-  constructor(serverlessProfile: ServerlessProfile, { cidrBlock, vpcName, vpcDescription, vSwitchName, vSwitchDescription, securityGroupName, securityGroupDescription, zoneId }, args?: string) {
-    super(serverlessProfile, args);
+  constructor(serverlessProfile: ServerlessProfile, { cidrBlock, vpcName, vpcDescription, vSwitchName, vSwitchDescription, securityGroupName, securityGroupDescription, zoneId }, region: string, credentials: ICredentials, curPath?: string, args?: string) {
+    super(serverlessProfile, region, credentials, curPath, args);
     this.vpcName = vpcName;
     this.vSwitchName = vSwitchName;
     this.securityGroupName = securityGroupName;
@@ -26,7 +26,7 @@ export class VpcComponent extends Component {
 
   genComponentProp(): { [key: string]: any } {
     return {
-      regionId: this.serverlessProfile.region,
+      regionId: this.region,
       cidrBlock: this.cidrBlock,
       vpcName: this.vpcName,
       vpcDescription: this.vpcDescription,

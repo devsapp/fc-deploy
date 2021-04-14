@@ -5,38 +5,39 @@ import { FcTrigger, TriggerConfig } from './lib/fc/trigger';
 import { FcCustomDomain, CustomDomainConfig } from './lib/fc/custom-domain';
 import { FcBaseComponent } from './lib/component/fc-base';
 import { FcDomainComponent } from './lib/component/fc-domain';
-import { SUPPORTED_REMOVE_ARGS } from './lib/static';
+import { SUPPORTED_REMOVE_ARGS, COMPONENT_HELP_INFO, DEPLOY_HELP_INFO, REMOVE_HELP_INFO } from './lib/static';
 import * as _ from 'lodash';
-import { mark, ServerlessProfile, replaceProjectName } from './lib/profile';
+import { mark, ServerlessProfile, replaceProjectName, ICredentials } from './lib/profile';
+import { IProperties, IInputs } from './interface';
 
 export default class FcDeployComponent {
   @core.HLogger('FC-DEPLOY') logger: core.ILogger;
 
   // 解析入参
-  async handlerInputs(inputs: {[key: string]: any}): Promise<{[key: string]: any}> {
+  async handlerInputs(inputs: IInputs): Promise<{[key: string]: any}> {
     process.setMaxListeners(0);
-    const project = inputs?.project || inputs?.Project;
-    const properties = inputs?.properties || inputs?.Properties;
-    const provider = project?.Provider || project?.provider;
-    let accessAlias = project?.AccessAlias || project?.accessAlias;
+    const project = inputs?.project;
+    const properties: IProperties = inputs?.props;
+    const access: string = project?.access;
 
-    const credentials = await core.getCredential(provider, accessAlias || '');
-    accessAlias = accessAlias || credentials?.Alias;
-    delete credentials.Alias;
-    const args = inputs?.Args || inputs?.args;
-    const projectName: string = project?.projectName || project?.ProjectName;
+    const appName: string = inputs?.appName;
+    const credentials: ICredentials = await core.getCredential(access);
+    const args: string = inputs?.args;
+    const curPath: string = inputs?.path;
+    const projectName: string = project?.projectName;
     const { region } = properties;
 
     this.logger.info(`using region: ${region}`);
-    this.logger.info(`using access alias: ${accessAlias}`);
+    this.logger.info(`using access alias: ${access}`);
     this.logger.info(`using accountId: ${mark(String(credentials.AccountID))}`);
     this.logger.info(`using accessKeyId: ${mark(credentials.AccessKeyID)}`);
 
     const serverlessProfile: ServerlessProfile = {
-      region,
-      accessAlias,
-      projectName,
-      credentials,
+      project: {
+        access,
+        projectName,
+      },
+      appName,
     };
 
     const serviceConf: ServiceConfig = properties?.service;
@@ -49,19 +50,19 @@ export default class FcDeployComponent {
     const fcCustomDomains: FcCustomDomain[] = [];
 
     this.logger.debug(`instantiate serviceConfig with : ${JSON.stringify(serviceConf)}`);
-    const fcService = new FcService(serviceConf, functionConf, serverlessProfile);
+    const fcService = new FcService(serviceConf, functionConf, serverlessProfile, region, credentials, curPath, args);
     fcService.validateConfig();
 
     if (!_.isEmpty(functionConf)) {
       this.logger.debug(`functionConfig not empty: ${JSON.stringify(functionConf)}, instantiate it.`);
-      fcFunction = new FcFunction(functionConf, serviceConf?.name, serverlessProfile);
+      fcFunction = new FcFunction(functionConf, serviceConf?.name, serverlessProfile, region, credentials, curPath, args);
       fcFunction.validateConfig();
     }
 
     if (!_.isEmpty(triggerConfs)) {
       this.logger.debug(`triggersConfig not empty: ${JSON.stringify(triggerConfs)}, instantiate them.`);
       for (const triggerConf of triggerConfs) {
-        const fcTrigger = new FcTrigger(triggerConf, serviceConf?.name, functionConf?.name, serverlessProfile);
+        const fcTrigger = new FcTrigger(triggerConf, serviceConf?.name, functionConf?.name, serverlessProfile, region, credentials, curPath, args);
         fcTrigger.validateConfig();
         fcTriggers.push(fcTrigger);
       }
@@ -70,7 +71,7 @@ export default class FcDeployComponent {
     if (!_.isEmpty(customDomainConfs)) {
       this.logger.debug(`customDomains not empty: ${JSON.stringify(customDomainConfs)}, instantiate them.`);
       for (const customDomainConf of customDomainConfs) {
-        const fcCustomDomain = new FcCustomDomain(customDomainConf, serviceConf?.name, functionConf?.name, triggerConfs, serverlessProfile);
+        const fcCustomDomain = new FcCustomDomain(customDomainConf, serviceConf?.name, functionConf?.name, triggerConfs, serverlessProfile, region, credentials, curPath, args);
         fcCustomDomain.validateConfig();
         fcCustomDomains.push(fcCustomDomain);
       }
@@ -82,24 +83,35 @@ export default class FcDeployComponent {
       fcFunction,
       fcTriggers,
       fcCustomDomains,
+      region,
+      credentials,
+      curPath,
       args,
     };
   }
 
-  async deploy(inputs: {[key: string]: any}): Promise<any> {
+  async deploy(inputs: IInputs): Promise<any> {
     const {
       serverlessProfile,
       fcService,
       fcFunction,
       fcTriggers,
       fcCustomDomains,
+      region,
+      credentials,
+      curPath,
       args,
     } = await this.handlerInputs(inputs);
 
     // TODO: 记录部署信息（服务/函数/触发器/自定义域名配置）
 
     const parsedArgs: {[key: string]: any} = core.commandParse({ args }, { boolean: ['y', 'assumeYes'] });
+    if (parsedArgs.data?.h || parsedArgs.data?.help) {
+      core.help(DEPLOY_HELP_INFO);
+      return;
+    }
     const assumeYes = parsedArgs.data?.y || parsedArgs.data?.assumeYes;
+
     // TODO: 获取线上 服务、函数 配置（是否能够包含代码？），让用户选择以线上/线下配置为主。sync 组件
 
     // service
@@ -127,10 +139,10 @@ export default class FcDeployComponent {
     }
 
     // deploy service/function/triggers
-    const profileOfFcBase = replaceProjectName(serverlessProfile, `${serverlessProfile.projectName}-fc-base-project`);
-    const fcBaseComponent = new FcBaseComponent(profileOfFcBase, resolvedServiceConf, resolvedFunctionConf, resolvedTriggerConfs);
+    const profileOfFcBase = replaceProjectName(serverlessProfile, `${serverlessProfile?.project.projectName}-fc-base-project`);
+    const fcBaseComponent = new FcBaseComponent(profileOfFcBase, resolvedServiceConf, region, credentials, curPath, args, resolvedFunctionConf, resolvedTriggerConfs);
 
-    const fcBaseComponentInputs = fcBaseComponent.genComponentInputs();
+    const fcBaseComponentInputs = fcBaseComponent.genComponentInputs('fc-base');
     this.logger.info(`waiting for service ${resolvedServiceConf.name} to be deployed`);
     if (!_.isEmpty(resolvedFunctionConf)) {
       this.logger.info(`waiting for function ${resolvedFunctionConf.name} to be deployed`);
@@ -139,7 +151,7 @@ export default class FcDeployComponent {
       this.logger.info(`waiting for triggers ${resolvedTriggerConfs.map((t) => t.name)} to be deployed`);
     }
 
-    const fcBaseComponentIns = await core.load('alibaba/fc-base');
+    const fcBaseComponentIns = await core.load('fc-base');
     const fcBaseDeployRes = await fcBaseComponentIns.deploy(fcBaseComponentInputs);
 
     // deploy custom domain
@@ -155,12 +167,12 @@ export default class FcDeployComponent {
     }
     if (!_.isEmpty(resolvedCustomDomainConfs)) {
       this.logger.info(`waiting for custom domains ${resolvedCustomDomainConfs.map((d) => d.domainName)} to be deployed`);
-      const profileOfFcDomain = replaceProjectName(serverlessProfile, `${serverlessProfile.projectName}-fc-domain-project`);
+      const profileOfFcDomain = replaceProjectName(serverlessProfile, `${serverlessProfile?.project.projectName}-fc-domain-project`);
       for (const resolvedCustomDomainConf of resolvedCustomDomainConfs) {
         this.logger.debug(`waiting for custom domain ${resolvedCustomDomainConf.domainName} to be deployed`);
-        const fcDomainComponent = new FcDomainComponent(profileOfFcDomain, resolvedCustomDomainConf);
+        const fcDomainComponent = new FcDomainComponent(profileOfFcDomain, resolvedCustomDomainConf, region, credentials, curPath, args);
         const fcDomainComponentInputs = fcDomainComponent.genComponentInputs();
-        const fcDoaminComponentIns = await core.load('alibaba/fc-domain');
+        const fcDoaminComponentIns = await core.load('fc-domain');
         await fcDoaminComponentIns.deploy(fcDomainComponentInputs);
       }
     }
@@ -189,23 +201,34 @@ export default class FcDeployComponent {
         });
       }
       this.logger.debug(`updating s.yml/yaml with content: ${JSON.stringify(resolvedProp) }`);
-      await core.modifyProps(serverlessProfile.projectName, resolvedProp);
+      await core.modifyProps(serverlessProfile?.project?.projectName, resolvedProp);
     }
 
     return fcBaseDeployRes;
   }
 
-  async remove(inputs: {[key: string]: any}): Promise<any> {
+  help(): void {
+    core.help(COMPONENT_HELP_INFO);
+  }
+
+  async remove(inputs: IInputs): Promise<any> {
     const {
       serverlessProfile,
       fcService,
       fcFunction,
       fcTriggers,
       fcCustomDomains,
+      region,
+      credentials,
+      curPath,
       args,
     } = await this.handlerInputs(inputs);
 
-    const parsedArgs: { [key: string]: any } = core.commandParse({ args }, { boolean: ['y', 'assumeYes'] });
+    const parsedArgs: { [key: string]: any } = core.commandParse({ args }, { boolean: ['y', 'assumeYes', 'h', 'help'] });
+    if (parsedArgs.data?.h || parsedArgs.data?.help) {
+      core.help(REMOVE_HELP_INFO);
+      return;
+    }
     // TODO: 获取线上 服务、函数 配置（是否能够包含代码？），让用户选择以线上/线下配置为主。sync 组件
 
     // 处理命令行参数
@@ -214,17 +237,20 @@ export default class FcDeployComponent {
     if (!nonOptionsArgs || nonOptionsArgs.length === 0) {
       this.logger.error(' error: expects argument.');
       // help info
+      core.help(REMOVE_HELP_INFO);
       return;
     }
     if (nonOptionsArgs.length > 1) {
       this.logger.error(` error: unexpected argument: ${nonOptionsArgs[1]}`);
       // help info
+      core.help(REMOVE_HELP_INFO);
       return;
     }
     const nonOptionsArg = nonOptionsArgs[0];
     if (!SUPPORTED_REMOVE_ARGS.includes(nonOptionsArg)) {
       this.logger.error(` remove ${nonOptionsArg} is not supported now.`);
       // help info
+      core.help(REMOVE_HELP_INFO);
       return;
     }
 
@@ -233,20 +259,20 @@ export default class FcDeployComponent {
 
     // remove non-domain
     if (nonOptionsArg !== 'domain') {
-      const profileOfFcBase = replaceProjectName(serverlessProfile, `${serverlessProfile.projectName}-fc-base-project`);
-      const fcBaseComponent = new FcBaseComponent(profileOfFcBase, fcService.serviceConf, fcFunction.functionConf, fcTriggers.map((t) => t.triggerConf), args);
+      const profileOfFcBase = replaceProjectName(serverlessProfile, `${serverlessProfile?.project.projectName}-fc-base-project`);
+      const fcBaseComponent = new FcBaseComponent(profileOfFcBase, fcService.serviceConf, region, credentials, curPath, args, fcFunction.functionConf, fcTriggers.map((t) => t.triggerConf));
       const fcBaseComponentInputs = fcBaseComponent.genComponentInputs();
-      const fcBaseComponentIns = await core.load('alibaba/fc-base');
+      const fcBaseComponentIns = await core.load('fc-base');
       return await fcBaseComponentIns.remove(fcBaseComponentInputs);
     }
     // remove domain
     if (_.isEmpty(fcCustomDomains)) { throw new Error('please add custom domain config in s.yml/yaml'); }
-    const profileOfFcDomain = replaceProjectName(serverlessProfile, `${serverlessProfile.projectName}-fc-domain-project`);
+    const profileOfFcDomain = replaceProjectName(serverlessProfile, `${serverlessProfile?.project.projectName}-fc-domain-project`);
     for (const fcDomain of fcCustomDomains) {
       this.logger.debug(`waiting for custom domain: ${fcDomain.customDomainConf.domainName} to be removed.`);
-      const fcDomainComponent = new FcDomainComponent(profileOfFcDomain, fcDomain.customDomainConf);
+      const fcDomainComponent = new FcDomainComponent(profileOfFcDomain, fcDomain.customDomainConf, region, credentials, curPath, args);
       const fcDomainComponentInputs = fcDomainComponent.genComponentInputs();
-      const fcDoaminComponentIns = await core.load('alibaba/fc-domain');
+      const fcDoaminComponentIns = await core.load('fc-domain');
       await fcDoaminComponentIns.remove(fcDomainComponentInputs);
     }
   }

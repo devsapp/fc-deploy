@@ -2,8 +2,7 @@ import { LogConfig } from '../resource/sls';
 import * as _ from 'lodash';
 import { normalizeRoleOrPoliceName, CustomPolicyConfig, AlicloudRam } from '../resource/ram';
 import { DESCRIPTION } from '../static';
-import { ServerlessProfile } from '../profile';
-import FcDeploy from './fc-deploy';
+import { ServerlessProfile, ICredentials, IInputsBase } from '../profile';
 
 export interface TriggerConfig {
   name: string;
@@ -103,15 +102,15 @@ export interface ossObjectConfig {
   ossKey?: string;
 }
 
-export class FcTrigger extends FcDeploy {
+export class FcTrigger extends IInputsBase {
   readonly triggerConf: TriggerConfig;
   // readonly region: string;
   readonly serviceName: string;
   readonly functionName: string;
   isRoleAuto: boolean;
 
-  constructor(triggerConf: TriggerConfig, serviceName: string, functionName: string, serverlessProfile: ServerlessProfile) {
-    super(serverlessProfile);
+  constructor(triggerConf: TriggerConfig, serviceName: string, functionName: string, serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string, args?: string) {
+    super(serverlessProfile, region, credentials, curPath, args);
     this.triggerConf = triggerConf;
     this.serviceName = serviceName;
     this.functionName = functionName;
@@ -242,7 +241,7 @@ export class FcTrigger extends FcDeploy {
 
     // make role
     this.logger.debug(`invocation role name: ${roleName}, service of principle: ${serviceOfAssumeRolePolicy}, assume role policy: ${JSON.stringify(assumeRolePolicy)}, policy: ${policyConf}`);
-    const alicloudRam = new AlicloudRam(this.serverlessProfile);
+    const alicloudRam = new AlicloudRam(this.serverlessProfile, this.credentials, this.region);
     const roleArn = await alicloudRam.makeRole(roleName, undefined, DESCRIPTION, serviceOfAssumeRolePolicy || undefined, assumeRolePolicy || undefined, [policyConf]);
     return roleArn;
   }

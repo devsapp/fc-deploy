@@ -3,7 +3,7 @@
   "main": "./dist/index.js",
   "version": "0.0.1",
   "dependencies": {
-    "@serverless-devs/core": "^0.0.41",
+    "@serverless-devs/core": "^0.0.55",
     "@types/lodash": "^4.14.168",
     "@alicloud/pop-core": "^1.7.10",
     "os-locale": "^5.0.0",
@@ -36,7 +36,6 @@
     "dev": "npx tsc -w -p tsconfig.json",
     "prebuild": "rimraf dist",
     "build": "npx tsc -p tsconfig.json",
-    "postbuild": "cp package.json dist/ && cp package-lock.json dist/",
     "build:component": "npx webpack --mode=production",
     "publish": "npm run build:component && s platform publish",
     "test": "jest",

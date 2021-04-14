@@ -1,5 +1,5 @@
 import * as _ from 'lodash';
-import { ServerlessProfile } from '../profile';
+import { ServerlessProfile, ICredentials } from '../profile';
 import { Component } from './component';
 
 export class SlsComponent extends Component {
@@ -7,8 +7,8 @@ export class SlsComponent extends Component {
   readonly logstore: string;
   readonly description?: string;
 
-  constructor(serverlessProfile: ServerlessProfile, logproject: string, logstore: string, description?: string, args?: string) {
-    super(serverlessProfile, args);
+  constructor(serverlessProfile: ServerlessProfile, logproject: string, logstore: string, region: string, credentials: ICredentials, curPath?: string, args?: string, description?: string) {
+    super(serverlessProfile, region, credentials, curPath, args);
     this.logproject = logproject;
     this.logstore = logstore;
     if (!_.isNil(description)) { this.description = description; }
@@ -18,7 +18,7 @@ export class SlsComponent extends Component {
     const prop = Object.assign({}, {
       project: this.logproject,
       logstore: this.logstore,
-      regionId: this.serverlessProfile.region,
+      regionId: this.region,
     });
     if (!_.isNil(this.description)) {
       Object.assign(prop, {

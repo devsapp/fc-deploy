@@ -6,8 +6,7 @@ import { NasConfig, AlicloudNas } from '../resource/nas';
 import * as definition from '../definition';
 import * as _ from 'lodash';
 import { FC_NAS_SERVICE_PREFIX } from '../static';
-import FcDeploy from './fc-deploy';
-import { ServerlessProfile } from '../profile';
+import { ServerlessProfile, ICredentials, IInputsBase } from '../profile';
 
 export interface ServiceConfig {
   name: string;
@@ -20,14 +19,14 @@ export interface ServiceConfig {
 }
 
 
-export class FcService extends FcDeploy {
+export class FcService extends IInputsBase {
   serviceConf: ServiceConfig;
   readonly hasFunctionAsyncConfig: boolean;
   readonly hasCustomContainerConfig: boolean;
   hasAutoConfig: boolean;
 
-  constructor(serviceConf: ServiceConfig, functionConf: FunctionConfig, serverlessProfile: ServerlessProfile) {
-    super(serverlessProfile);
+  constructor(serviceConf: ServiceConfig, functionConf: FunctionConfig, serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string, args?: string) {
+    super(serverlessProfile, region, credentials, curPath, args);
     this.serviceConf = serviceConf;
     this.hasCustomContainerConfig = _.has(functionConf, 'customContainerConfig');
     this.hasFunctionAsyncConfig = _.has(functionConf, 'asyncConfiguration');
@@ -73,7 +72,7 @@ export class FcService extends FcDeploy {
     if (this.hasFunctionAsyncConfig) {
       attachedPolicies.push('AliyunFCInvocationAccess');
 
-      const mnsPolicyName = normalizeRoleOrPoliceName(`AliyunFcGeneratedMNSPolicy-${this.serverlessProfile.region}-${this.serviceConf.name}`);
+      const mnsPolicyName = normalizeRoleOrPoliceName(`AliyunFcGeneratedMNSPolicy-${this.region}-${this.serviceConf.name}`);
       const mnsPolicyStatement: PolicyStatementConfig = {
         Action: [
           'mns:SendMessage',
@@ -105,7 +104,7 @@ export class FcService extends FcDeploy {
         throw new Error('logConfig only support auto/Auto when set to string.');
       }
     } else if (logConfig?.project && logConfig?.logstore) {
-      const logPolicyName = normalizeRoleOrPoliceName(`AliyunFcGeneratedLogPolicy-${this.serverlessProfile.region}-${this.serviceConf.name}`);
+      const logPolicyName = normalizeRoleOrPoliceName(`AliyunFcGeneratedLogPolicy-${this.region}-${this.serviceConf.name}`);
       const logPolicyStatement: PolicyStatementConfig = {
         Action: [
           'log:PostLogStoreLogs',
@@ -125,14 +124,14 @@ export class FcService extends FcDeploy {
     if (_.isEmpty(attachedPolicies) && _.isEmpty(serviceRole)) { return undefined; }
     this.logger.info(`wating for role: ${roleName} to be deployed`);
     this.hasAutoConfig = true;
-    const alicloudRam = new AlicloudRam(this.serverlessProfile);
+    const alicloudRam = new AlicloudRam(this.serverlessProfile, this.credentials, this.region);
     const roleArn = await alicloudRam.makeRole(roleName, undefined, undefined, undefined, assumeRolePolicy, attachedPolicies);
     return roleArn;
   }
 
   generateDefaultLogConfig(): LogConfig {
     return {
-      project: `aliyun-fc-deploy-component-generated-project-${this.serverlessProfile.region}`,
+      project: `aliyun-fc-deploy-component-generated-project-${this.region}`,
       logstore: 'function-log',
     };
   }
@@ -146,7 +145,7 @@ export class FcService extends FcDeploy {
     if (_.isString(logConfig)) {
       if (definition.isAutoConfig(logConfig)) {
         this.hasAutoConfig = true;
-        const aliyunSls = new AlicloudSls(this.serverlessProfile);
+        const aliyunSls = new AlicloudSls(this.serverlessProfile, this.credentials, this.region);
         this.logger.info('using \'logConfig: auto\', FC-DEPLOY will try to generate default sls project.');
         resolvedLogConfig = await aliyunSls.createDefaultSls(this.serviceConf.name);
         this.logger.info(`generated auto LogConfig done: ${JSON.stringify(resolvedLogConfig)}`);
@@ -173,7 +172,7 @@ export class FcService extends FcDeploy {
       this.hasAutoConfig = true;
       // vpc auto
       this.logger.info('using \'vpcConfig: auto\', FC-DEPLOY will try to generate related vpc resources automatically');
-      const alicloudVpc = new AlicloudVpc(this.serverlessProfile);
+      const alicloudVpc = new AlicloudVpc(this.serverlessProfile, this.credentials, this.region);
       const vpcDeployRes = await alicloudVpc.createDefaultVpc();
       this.logger.info(`generated auto VpcConfig done: ${JSON.stringify(vpcDeployRes)}`);
       return {
@@ -190,7 +189,7 @@ export class FcService extends FcDeploy {
     if (_.isString(nasConfig)) {
       if (definition.isAutoConfig(nasConfig)) {
         this.hasAutoConfig = true;
-        const alicloudNas = new AlicloudNas(this.serverlessProfile);
+        const alicloudNas = new AlicloudNas(this.serverlessProfile, this.credentials, this.region);
         this.logger.info('using \'nasConfig: auto\', FC-DEPLOY will try to generate related nas file system automatically');
         const nasDefaultConfig = await alicloudNas.createDefaultNas(`${FC_NAS_SERVICE_PREFIX}${this.serviceConf.name}`, vpcConfig, `/${this.serviceConf.name}`, roleArn, assumeYes);
         this.logger.info(`generated auto NasConfig done: ${JSON.stringify(nasDefaultConfig)}`);

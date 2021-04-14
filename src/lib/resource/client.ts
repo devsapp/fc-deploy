@@ -1,33 +1,33 @@
 import Pop from '@alicloud/pop-core';
 import osLocale from 'os-locale';
 import { throwProcessedFCPermissionError, throwProcessedPopPermissionError } from '../error';
-import * as core from '@serverless-devs/core';
 import * as p from 'path';
-import { ServerlessProfile } from '../profile';
+import { ServerlessProfile, ICredentials, IInputsBase } from '../profile';
+import * as _ from 'lodash';
 
 const hashedMachineId = require('node-machine-id').machineId;
 const FC = require('@alicloud/fc2');
 
-const pkg = require(p.join(p.resolve(__dirname, '../..'), 'package.json'));
+const pkg = require(p.join(p.resolve(__dirname, '../../..'), 'package.json'));
 
 const defaultTimeout = 300;
 
-export class AlicloudClient {
-  @core.HLogger('FC-DEPLOY') logger: core.ILogger;
-  readonly serverlessProfile: ServerlessProfile;
+export class AlicloudClient extends IInputsBase {
+  readonly timeout?: number;
 
-  constructor(serverlessProfile: ServerlessProfile) {
-    this.serverlessProfile = serverlessProfile;
+  constructor(serverlessProfile: ServerlessProfile, credentials: ICredentials, region: string, curPath?: string, args?: string, timeout?: number) {
+    super(serverlessProfile, region, credentials, curPath, args);
+    if (!_.isNil(timeout)) { this.timeout = timeout; }
   }
 
   async getPopClient(endpoint: string, apiVersion: string): Promise<Pop> {
     const pop = new Pop({
       endpoint,
       apiVersion,
-      accessKeyId: this.serverlessProfile.credentials?.AccessKeyID,
-      accessKeySecret: this.serverlessProfile.credentials?.AccessKeySecret,
+      accessKeyId: this.credentials?.AccessKeyID,
+      accessKeySecret: this.credentials?.AccessKeySecret,
       opts: {
-        timeout: this.serverlessProfile.timeout || defaultTimeout * 1000,
+        timeout: this.timeout || defaultTimeout * 1000,
       },
     });
 
@@ -53,10 +53,10 @@ export class AlicloudClient {
       return this.get('/account-settings', options, headers);
     };
 
-    const accountId = this.serverlessProfile.credentials?.AccountID ? this.serverlessProfile.credentials?.AccountID : 'accountId';
-    const accessKeyID = this.serverlessProfile.credentials?.AccessKeyID ? this.serverlessProfile.credentials?.AccessKeyID : 'accessKeyID';
-    const accessKeySecret = this.serverlessProfile.credentials?.AccessKeySecret ? this.serverlessProfile.credentials?.AccessKeySecret : 'accessKeySecret';
-    const securityToken = this.serverlessProfile.credentials?.SecurityToken;
+    const accountId = this.credentials?.AccountID ? this.credentials?.AccountID : 'accountId';
+    const accessKeyID = this.credentials?.AccessKeyID ? this.credentials?.AccessKeyID : 'accessKeyID';
+    const accessKeySecret = this.credentials?.AccessKeySecret ? this.credentials?.AccessKeySecret : 'accessKeySecret';
+    const securityToken = this.credentials?.SecurityToken;
 
     // TODO: get user profile
     // const enable = profile.enableCustomEndpoint === true || profile.enableCustomEndpoint === 'true';
@@ -65,8 +65,8 @@ export class AlicloudClient {
       accessKeyID,
       accessKeySecret,
       securityToken,
-      region: this.serverlessProfile.region,
-      timeout: this.serverlessProfile.timeout || defaultTimeout * 1000,
+      region: this.region,
+      timeout: this.timeout || defaultTimeout * 1000,
       // secure: profile.protocol !== 'http',
       headers: {
         'user-agent': `${pkg.name}/v${pkg.version} ( Node.js ${process.version}; OS ${process.platform} ${process.arch}; language ${locale}; mid ${mid})`,
@@ -77,7 +77,7 @@ export class AlicloudClient {
       try {
         return await realRequest(method, path, query, body, headers || {}, opts || {});
       } catch (ex) {
-        throwProcessedFCPermissionError(ex, this.serverlessProfile.region, ...path.split('/').filter((singlep) => !!singlep));
+        throwProcessedFCPermissionError(ex, this.region, ...path.split('/').filter((singlep) => !!singlep));
         throw ex;
       }
     };

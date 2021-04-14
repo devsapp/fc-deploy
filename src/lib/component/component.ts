@@ -1,35 +1,25 @@
 import * as _ from 'lodash';
-import * as core from '@serverless-devs/core';
-import { ServerlessProfile } from '../profile';
 
-export abstract class Component {
-  @core.HLogger('FC-DEPLOY') logger: core.ILogger;
-  readonly serverlessProfile: ServerlessProfile;
-  readonly args?: string;
+import { IInputsBase } from '../profile';
 
-  constructor(serverlessProfile: ServerlessProfile, args?: string) {
-    this.serverlessProfile = serverlessProfile;
-    if (!_.isNil(args)) { this.args = args; }
-  }
-
+export abstract class Component extends IInputsBase {
   abstract genComponentProp();
 
-  genComponentInputs() {
-    const prop: any = this.genComponentProp();
-    const inputs: {[key: string]: any} = {
-      Credentials: this.serverlessProfile.credentials,
-      Project: {
-        ProjectName: this.serverlessProfile.projectName,
-        AccessAlias: this.serverlessProfile.accessAlias,
-        Provider: 'alibaba',
-      },
-      Properties: prop,
-    };
+  genComponentInputs(componentName?: string) {
+    const props: any = this.genComponentProp();
+    this.serverlessProfile.project.component = componentName;
+    const inputs: any = Object.assign({}, {
+      ...this.serverlessProfile,
+      props,
+    });
 
-    if (!_.isNil(this.args)) {
-      Object.assign(inputs, { Args: this.args });
+    if (!_.isNil(this.curPath)) {
+      Object.assign(inputs, { path: this.curPath });
     }
-    this.logger.debug(`inputs of component: ${this.serverlessProfile.projectName} generated: ${JSON.stringify(inputs)}`);
+    if (!_.isNil(this.args)) {
+      Object.assign(inputs, { args: this.args });
+    }
+    this.logger.debug(`inputs of component: ${this.serverlessProfile?.project?.component} generated: ${JSON.stringify(inputs)}`);
     return inputs;
   }
 }
