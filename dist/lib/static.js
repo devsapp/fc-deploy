@@ -77,7 +77,7 @@ exports.COMPONENT_HELP_INFO = [
 ];
 exports.DEPLOY_HELP_INFO = [
     {
-        header: 'Remove resources',
+        header: 'Deploy resources',
         content: 'Deploy resources',
     },
     {
