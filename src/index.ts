@@ -13,6 +13,18 @@ import { IProperties, IInputs } from './interface';
 export default class FcDeployComponent {
   @core.HLogger('FC-DEPLOY') logger: core.ILogger;
 
+  async report(componentName: string, command: string, accountID?: string, access?: string): Promise<void> {
+    let uid: string = accountID;
+    if (_.isEmpty(accountID)) {
+      const credentials: ICredentials = await core.getCredential(access);
+      uid = credentials.AccountID;
+    }
+
+    core.reportComponent(command, {
+      command: componentName,
+      uid,
+    });
+  }
   // 解析入参
   async handlerInputs(inputs: IInputs): Promise<{[key: string]: any}> {
     process.setMaxListeners(0);
@@ -102,7 +114,7 @@ export default class FcDeployComponent {
       curPath,
       args,
     } = await this.handlerInputs(inputs);
-
+    await this.report('fc-deploy', 'deploy', fcService.credentials.AccountID);
     // TODO: 记录部署信息（服务/函数/触发器/自定义域名配置）
 
     const parsedArgs: {[key: string]: any} = core.commandParse({ args }, { boolean: ['y', 'assumeYes'] });
@@ -223,7 +235,7 @@ export default class FcDeployComponent {
       curPath,
       args,
     } = await this.handlerInputs(inputs);
-
+    await this.report('fc-deploy', 'remove', fcService.credentials.AccountID);
     const parsedArgs: { [key: string]: any } = core.commandParse({ args }, { boolean: ['y', 'assumeYes', 'h', 'help'] });
     if (parsedArgs.data?.h || parsedArgs.data?.help) {
       core.help(REMOVE_HELP_INFO);
