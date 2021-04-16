@@ -213,7 +213,7 @@ export default class FcDeployComponent {
         });
       }
       this.logger.debug(`updating s.yml/yaml with content: ${JSON.stringify(resolvedProp) }`);
-      await core.modifyProps(serverlessProfile?.project?.projectName, resolvedProp);
+      await core.modifyProps(serverlessProfile?.project?.projectName, resolvedProp, curPath.configPath);
     }
 
     return fcBaseDeployRes;
