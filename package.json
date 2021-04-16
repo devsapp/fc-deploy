@@ -1,9 +1,9 @@
 {
   "name": "fc-delpoy",
   "main": "./dist/index.js",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "dependencies": {
-    "@serverless-devs/core": "^0.0.60",
+    "@serverless-devs/core": "^0.0.62",
     "@types/lodash": "^4.14.168",
     "@alicloud/pop-core": "^1.7.10",
     "os-locale": "^5.0.0",
