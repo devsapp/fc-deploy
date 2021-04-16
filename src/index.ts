@@ -20,8 +20,8 @@ export default class FcDeployComponent {
       uid = credentials.AccountID;
     }
 
-    core.reportComponent(command, {
-      command: componentName,
+    core.reportComponent(componentName, {
+      command,
       uid,
     });
   }

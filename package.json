@@ -1,7 +1,7 @@
 {
   "name": "fc-delpoy",
   "main": "./dist/index.js",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "dependencies": {
     "@serverless-devs/core": "^0.0.62",
     "@types/lodash": "^4.14.168",
