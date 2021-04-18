@@ -164,8 +164,8 @@ export default class FcDeployComponent {
     }
 
     const fcBaseComponentIns = await core.load('fc-base');
-    const fcBaseDeployRes = await fcBaseComponentIns.deploy(fcBaseComponentInputs);
-
+    await fcBaseComponentIns.deploy(fcBaseComponentInputs);
+    this.logger.info(`Deployed:\nservice: ${resolvedServiceConf.name}\nfunction: ${resolvedFunctionConf.name}\ntriggers ${resolvedTriggerConfs.map((t) => t.name)}`);
     // deploy custom domain
     let hasAutoOrDefaultConfInDomains = false;
     const resolvedCustomDomainConfs: CustomDomainConfig[] = [];
@@ -187,6 +187,7 @@ export default class FcDeployComponent {
         const fcDoaminComponentIns = await core.load('fc-domain');
         await fcDoaminComponentIns.deploy(fcDomainComponentInputs);
       }
+      this.logger.info(`Deployed:\ncustom domains ${resolvedCustomDomainConfs.map((d) => d.domainName)}`);
     }
     // remove zipped code
     if (!_.isEmpty(resolvedFunctionConf)) { await fcFunction.removeZipCode(resolvedFunctionConf?.codeUri); }
@@ -216,7 +217,9 @@ export default class FcDeployComponent {
       await core.modifyProps(serverlessProfile?.project?.projectName, resolvedProp, curPath.configPath);
     }
 
-    return fcBaseDeployRes;
+    return {
+      output: 'success',
+    };
   }
 
   help(): void {
@@ -287,5 +290,8 @@ export default class FcDeployComponent {
       const fcDoaminComponentIns = await core.load('fc-domain');
       await fcDoaminComponentIns.remove(fcDomainComponentInputs);
     }
+    return {
+      output: 'success',
+    };
   }
 }
