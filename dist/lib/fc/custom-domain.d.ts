@@ -19,14 +19,17 @@ interface CertConfig {
     privateKey: string;
 }
 export declare class FcCustomDomain extends IInputsBase {
-    readonly customDomainConf: CustomDomainConfig;
+    customDomainConf: CustomDomainConfig;
     readonly serviceName: string;
     readonly functionName: string;
     readonly hasHttpTrigger: boolean;
     readonly httpMethods?: string[];
-    hasDefaultOrAutoConf: boolean;
+    isDomainNameAuto: boolean;
     constructor(customDomainConf: CustomDomainConfig, serviceName: string, functionName: string, triggerConfs: TriggerConfig[], serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string, args?: string);
     validateConfig(): void;
+    getStatedCustomDomainConf(): Promise<void>;
+    setStatedCustomDomainConf(resolvedCustomDomainConf: CustomDomainConfig): Promise<void>;
+    delStatedCustomDomainConf(): Promise<void>;
     makeCustomDomain(): Promise<CustomDomainConfig>;
 }
 export {};

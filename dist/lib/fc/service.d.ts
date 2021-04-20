@@ -20,6 +20,9 @@ export declare class FcService extends IInputsBase {
     hasAutoConfig: boolean;
     constructor(serviceConf: ServiceConfig, functionConf: FunctionConfig, serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string, args?: string);
     validateConfig(): void;
+    getStatedServiceConf(): Promise<void>;
+    setStatedServiceConf(resolvedServiceConf: ServiceConfig): Promise<void>;
+    delStatedServiceConf(): Promise<void>;
     static extractFcRole(role: any): any;
     generateServiceRole(): Promise<string>;
     generateDefaultLogConfig(): LogConfig;
