@@ -71,12 +71,15 @@ export interface ossObjectConfig {
     ossKey?: string;
 }
 export declare class FcTrigger extends IInputsBase {
-    readonly triggerConf: TriggerConfig;
+    triggerConf: TriggerConfig;
     readonly serviceName: string;
     readonly functionName: string;
     isRoleAuto: boolean;
     constructor(triggerConf: TriggerConfig, serviceName: string, functionName: string, serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string, args?: string);
     validateConfig(): void;
+    getStatedTriggerConf(): Promise<void>;
+    setStatedTriggerConf(resolvedTriggerConf: TriggerConfig): Promise<void>;
+    delStatedTriggerConf(): Promise<void>;
     isHttpTrigger(): boolean;
     isTimerTrigger(): boolean;
     makeInvocationRole(): Promise<string>;

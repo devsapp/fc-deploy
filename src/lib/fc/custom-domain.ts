@@ -32,12 +32,12 @@ interface CertConfig {
 }
 
 export class FcCustomDomain extends IInputsBase {
-  readonly customDomainConf: CustomDomainConfig;
+  customDomainConf: CustomDomainConfig;
   readonly serviceName: string;
   readonly functionName: string;
   readonly hasHttpTrigger: boolean;
   readonly httpMethods?: string[];
-  hasDefaultOrAutoConf: boolean;
+  isDomainNameAuto: boolean;
 
   constructor(customDomainConf: CustomDomainConfig, serviceName: string, functionName: string, triggerConfs: TriggerConfig[], serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string, args?: string) {
     super(serverlessProfile, region, credentials, curPath, args);
@@ -45,7 +45,7 @@ export class FcCustomDomain extends IInputsBase {
     this.serviceName = serviceName;
     this.functionName = functionName;
     this.hasHttpTrigger = false;
-    this.hasDefaultOrAutoConf = false;
+    this.isDomainNameAuto = isAutoConfig(this.customDomainConf.domainName);
     if (!_.isEmpty(triggerConfs)) {
       for (const trigger of triggerConfs) {
         if (trigger.type === 'http') {
@@ -81,6 +81,37 @@ export class FcCustomDomain extends IInputsBase {
     }
   }
 
+  async getStatedCustomDomainConf(): Promise<void> {
+    if (_.isEmpty(this.customDomainConf)) { return; }
+    const stateKey = `${this.credentials.AccountID}-${this.region}-${this.serviceName}-${this.functionName}-customDomain-auto`;
+    let state;
+    try {
+      state = await core.getState(stateKey);
+    } catch (e) {
+      if (e.message !== 'The current file does not exist') {
+        throw e;
+      }
+    }
+    this.logger.debug(`state of key: ${stateKey}`);
+    if (_.isEmpty(state)) { return; }
+    if (this.isDomainNameAuto) { this.customDomainConf.domainName = state.domainName; }
+  }
+
+  async setStatedCustomDomainConf(resolvedCustomDomainConf: CustomDomainConfig): Promise<void> {
+    if (this.isDomainNameAuto) {
+      this.logger.debug('set resolved custom domain config into state.');
+      const stateKey = `${this.credentials.AccountID}-${this.region}-${this.serviceName}-${this.functionName}-customDomain-auto`;
+      await core.setState(stateKey, resolvedCustomDomainConf);
+    }
+  }
+
+  async delStatedCustomDomainConf(): Promise<void> {
+    const stateKey = `${this.credentials.AccountID}-${this.region}-${this.serviceName}-${this.functionName}-customDomain-auto`;
+    const state = await core.getState(stateKey);
+    if (_.isEmpty(state)) { return; }
+    await core.setState(stateKey, {});
+  }
+
   async makeCustomDomain(): Promise<CustomDomainConfig> {
     const resolvedCustomDomainConf: CustomDomainConfig = _.cloneDeep(this.customDomainConf);
     if (!_.isEmpty(this.customDomainConf.certConfig)) {
@@ -110,7 +141,6 @@ export class FcCustomDomain extends IInputsBase {
       }
       if (!Object.prototype.hasOwnProperty.call(routeConfig, 'methods')) {
         this.logger.debug(`set default methods: ${this.httpMethods} for domain: ${this.customDomainConf.domainName}`);
-        this.hasDefaultOrAutoConf = true;
         Object.assign(routeConfig, {
           methods: this.httpMethods,
         });
@@ -121,10 +151,9 @@ export class FcCustomDomain extends IInputsBase {
       routeConfigs: resolvedRouteConfigs,
     });
 
-    if (isAutoConfig(this.customDomainConf.domainName)) {
+    if (this.isDomainNameAuto) {
       // generate domain via domain component
       this.logger.debug('auto domain name');
-      this.hasDefaultOrAutoConf = true;
       this.logger.info('using \'customDomain: auto\', FC-DEPLOY will try to generate related custom domain resources automatically');
       const profileOfDomain: ServerlessProfile = replaceProjectName(this.serverlessProfile, `${this.serverlessProfile?.project.projectName}-domain-project`);
       const domainComponent = new DomainComponent(profileOfDomain, this.serviceName, this.functionName, this.region, this.credentials, this.curPath, this.args);

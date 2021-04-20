@@ -10,6 +10,7 @@ import * as _ from 'lodash';
 import { mark, ServerlessProfile, replaceProjectName, ICredentials } from './lib/profile';
 import { IProperties, IInputs } from './interface';
 
+
 export default class FcDeployComponent {
   @core.HLogger('FC-DEPLOY') logger: core.ILogger;
 
@@ -25,6 +26,7 @@ export default class FcDeployComponent {
       uid,
     });
   }
+
   // 解析入参
   async handlerInputs(inputs: IInputs): Promise<{[key: string]: any}> {
     process.setMaxListeners(0);
@@ -64,6 +66,7 @@ export default class FcDeployComponent {
     this.logger.debug(`instantiate serviceConfig with : ${JSON.stringify(serviceConf)}`);
     const fcService = new FcService(serviceConf, functionConf, serverlessProfile, region, credentials, curPath, args);
     fcService.validateConfig();
+    await fcService.getStatedServiceConf();
 
     if (!_.isEmpty(functionConf)) {
       this.logger.debug(`functionConfig not empty: ${JSON.stringify(functionConf)}, instantiate it.`);
@@ -76,6 +79,7 @@ export default class FcDeployComponent {
       for (const triggerConf of triggerConfs) {
         const fcTrigger = new FcTrigger(triggerConf, serviceConf?.name, functionConf?.name, serverlessProfile, region, credentials, curPath, args);
         fcTrigger.validateConfig();
+        await fcTrigger.getStatedTriggerConf();
         fcTriggers.push(fcTrigger);
       }
     }
@@ -85,6 +89,7 @@ export default class FcDeployComponent {
       for (const customDomainConf of customDomainConfs) {
         const fcCustomDomain = new FcCustomDomain(customDomainConf, serviceConf?.name, functionConf?.name, triggerConfs, serverlessProfile, region, credentials, curPath, args);
         fcCustomDomain.validateConfig();
+        await fcCustomDomain.getStatedCustomDomainConf();
         fcCustomDomains.push(fcCustomDomain);
       }
     }
@@ -127,7 +132,7 @@ export default class FcDeployComponent {
     // TODO: 获取线上 服务、函数 配置（是否能够包含代码？），让用户选择以线上/线下配置为主。sync 组件
 
     // service
-    const resolvedServiceConf = await fcService.makeService(assumeYes);
+    const resolvedServiceConf: ServiceConfig = await fcService.makeService(assumeYes);
     this.logger.debug(`Resolved serviceConf is:\n${JSON.stringify(resolvedServiceConf)}`);
     // function
     let resolvedFunctionConf: FunctionConfig;
@@ -142,9 +147,9 @@ export default class FcDeployComponent {
     const resolvedTriggerConfs: TriggerConfig[] = [];
     let hasAutoTriggerRole = false;
     if (!_.isEmpty(fcTriggers)) {
-      for (const fcTrigger of fcTriggers) {
-        const resolvedTriggerConf: TriggerConfig = await fcTrigger.makeTrigger();
-        hasAutoTriggerRole = hasAutoTriggerRole || fcTrigger.isRoleAuto;
+      for (let i = 0; i < fcTriggers.length; i++) {
+        const resolvedTriggerConf: TriggerConfig = await fcTriggers[i].makeTrigger();
+        hasAutoTriggerRole = hasAutoTriggerRole || fcTriggers[i].isRoleAuto;
         resolvedTriggerConfs.push(resolvedTriggerConf);
         this.logger.debug(`resolved trigger: ${JSON.stringify(resolvedTriggerConf)}`);
       }
@@ -165,14 +170,21 @@ export default class FcDeployComponent {
 
     const fcBaseComponentIns = await core.load('fc-base');
     await fcBaseComponentIns.deploy(fcBaseComponentInputs);
-    this.logger.info(`Deployed:\nservice: ${resolvedServiceConf.name}\nfunction: ${resolvedFunctionConf.name}\ntriggers ${resolvedTriggerConfs.map((t) => t.name)}`);
+    let deployedInfo = `\nservice: ${resolvedServiceConf.name}`;
+    if (!_.isEmpty(resolvedFunctionConf)) {
+      deployedInfo += `\nfunction: ${resolvedFunctionConf.name}`;
+    }
+    if (!_.isEmpty(resolvedTriggerConfs)) {
+      deployedInfo += `\ntriggers ${resolvedTriggerConfs.map((t) => t.name)}`;
+    }
+    this.logger.info(`Deployed:${deployedInfo}`);
     // deploy custom domain
-    let hasAutoOrDefaultConfInDomains = false;
+    let hasAutoCustomDomainNameInDomains = false;
     const resolvedCustomDomainConfs: CustomDomainConfig[] = [];
     if (!_.isEmpty(fcCustomDomains)) {
-      for (const fcCustomDomain of fcCustomDomains) {
-        const resolvedCustomDomainConf: CustomDomainConfig = await fcCustomDomain.makeCustomDomain();
-        hasAutoOrDefaultConfInDomains = hasAutoOrDefaultConfInDomains || fcCustomDomain.hasDefaultOrAutoConf;
+      for (let i = 0; i < fcCustomDomains.length; i++) {
+        const resolvedCustomDomainConf: CustomDomainConfig = await fcCustomDomains[i].makeCustomDomain();
+        hasAutoCustomDomainNameInDomains = hasAutoCustomDomainNameInDomains || fcCustomDomains[i].isDomainNameAuto;
         resolvedCustomDomainConfs.push(resolvedCustomDomainConf);
         this.logger.debug(`resolved custom domain: ${JSON.stringify(resolvedCustomDomainConf)}`);
       }
@@ -192,34 +204,25 @@ export default class FcDeployComponent {
     // remove zipped code
     if (!_.isEmpty(resolvedFunctionConf)) { await fcFunction.removeZipCode(resolvedFunctionConf?.codeUri); }
 
-    // 将解析过的配置写回至 s.yml
-    if (fcService?.hasAutoConfig || hasAutoTriggerRole || hasAutoOrDefaultConfInDomains) {
-      this.logger.info('resolving s.yaml|yml');
-      const resolvedProp = Object.assign({}, {
-        service: resolvedServiceConf,
-      });
-      if (!_.isEmpty(resolvedFunctionConf)) {
-        Object.assign(resolvedProp, {
-          function: fcFunction.functionConf,
-        });
+    await fcService.setStatedServiceConf(resolvedServiceConf);
+    if (hasAutoTriggerRole) {
+      for (let i = 0; i < fcTriggers.length; i++) {
+        fcTriggers[i].setStatedTriggerConf(resolvedTriggerConfs[i]);
       }
-      if (!_.isEmpty(resolvedTriggerConfs)) {
-        Object.assign(resolvedProp, {
-          triggers: resolvedTriggerConfs,
-        });
-      }
-      if (!_.isEmpty(resolvedCustomDomainConfs)) {
-        Object.assign(resolvedProp, {
-          customDomains: resolvedCustomDomainConfs,
-        });
-      }
-      this.logger.debug(`updating s.yml/yaml with content: ${JSON.stringify(resolvedProp) }`);
-      await core.modifyProps(serverlessProfile?.project?.projectName, resolvedProp, curPath.configPath);
     }
-
-    return {
-      output: 'success',
+    if (hasAutoCustomDomainNameInDomains) {
+      for (let i = 0; i < fcCustomDomains.length; i++) {
+        fcCustomDomains[i].setStatedCustomDomainConf(resolvedCustomDomainConfs[i]);
+      }
+    }
+    const res = {
+      region,
+      service: resolvedServiceConf,
     };
+    if (!_.isEmpty(resolvedFunctionConf)) { Object.assign(res, { function: resolvedFunctionConf }); }
+    if (!_.isEmpty(resolvedTriggerConfs)) { Object.assign(res, { triggers: resolvedTriggerConfs }); }
+    if (!_.isEmpty(resolvedCustomDomainConfs)) { Object.assign(res, { customDomains: resolvedCustomDomainConfs }); }
+    return res;
   }
 
   help(): void {
@@ -275,23 +278,30 @@ export default class FcDeployComponent {
     // remove non-domain
     if (nonOptionsArg !== 'domain') {
       const profileOfFcBase = replaceProjectName(serverlessProfile, `${serverlessProfile?.project.projectName}-fc-base-project`);
-      const fcBaseComponent = new FcBaseComponent(profileOfFcBase, fcService.serviceConf, region, credentials, curPath, args, fcFunction.functionConf, fcTriggers.map((t) => t.triggerConf));
+      const fcBaseComponent = new FcBaseComponent(profileOfFcBase, fcService.serviceConf, region, credentials, curPath, args, fcFunction?.functionConf, fcTriggers.map((t) => t.triggerConf));
       const fcBaseComponentInputs = fcBaseComponent.genComponentInputs();
       const fcBaseComponentIns = await core.load('fc-base');
-      return await fcBaseComponentIns.remove(fcBaseComponentInputs);
+      const removeRes = await fcBaseComponentIns.remove(fcBaseComponentInputs);
+      await fcService.delStatedServiceConf();
+      if (!_.isEmpty(fcTriggers)) {
+        for (const fcTrigger of fcTriggers) { await fcTrigger.delStatedTriggerConf(); }
+      }
+      return removeRes;
     }
     // remove domain
     if (_.isEmpty(fcCustomDomains)) { throw new Error('please add custom domain config in s.yml/yaml'); }
     const profileOfFcDomain = replaceProjectName(serverlessProfile, `${serverlessProfile?.project.projectName}-fc-domain-project`);
-    for (const fcDomain of fcCustomDomains) {
-      this.logger.debug(`waiting for custom domain: ${fcDomain.customDomainConf.domainName} to be removed.`);
-      const fcDomainComponent = new FcDomainComponent(profileOfFcDomain, fcDomain.customDomainConf, region, credentials, curPath, args);
+    const removedCustomDomains: string[] = [];
+    for (const fcCustomDomain of fcCustomDomains) {
+      const resolvedCustomDomainConf: CustomDomainConfig = await fcCustomDomain.makeCustomDomain();
+      this.logger.debug(`waiting for custom domain: ${resolvedCustomDomainConf.domainName} to be removed.`);
+      const fcDomainComponent = new FcDomainComponent(profileOfFcDomain, resolvedCustomDomainConf, region, credentials, curPath, args);
       const fcDomainComponentInputs = fcDomainComponent.genComponentInputs();
       const fcDoaminComponentIns = await core.load('fc-domain');
       await fcDoaminComponentIns.remove(fcDomainComponentInputs);
+      removedCustomDomains.push(resolvedCustomDomainConf.domainName);
+      await fcCustomDomain.delStatedCustomDomainConf();
     }
-    return {
-      output: 'success',
-    };
+    return `Remove custom domain: ${removedCustomDomains.map((t) => t)}`;
   }
 }

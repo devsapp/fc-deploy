@@ -3,6 +3,7 @@ import * as _ from 'lodash';
 import { normalizeRoleOrPoliceName, CustomPolicyConfig, AlicloudRam } from '../resource/ram';
 import { DESCRIPTION } from '../static';
 import { ServerlessProfile, ICredentials, IInputsBase } from '../profile';
+import * as core from '@serverless-devs/core';
 
 export interface TriggerConfig {
   name: string;
@@ -103,8 +104,7 @@ export interface ossObjectConfig {
 }
 
 export class FcTrigger extends IInputsBase {
-  readonly triggerConf: TriggerConfig;
-  // readonly region: string;
+  triggerConf: TriggerConfig;
   readonly serviceName: string;
   readonly functionName: string;
   isRoleAuto: boolean;
@@ -122,6 +122,38 @@ export class FcTrigger extends IInputsBase {
       throw new Error('you can not add trigger config without function config');
     }
   }
+  async getStatedTriggerConf(): Promise<void> {
+    if (_.isEmpty(this.triggerConf)) { return; }
+    const stateKey = `${this.credentials.AccountID}-${this.region}-${this.serviceName}-${this.functionName}-${this.triggerConf.name}`;
+    let state;
+    try {
+      state = await core.getState(stateKey);
+    } catch (e) {
+      if (e.message !== 'The current file does not exist') {
+        throw e;
+      }
+    }
+    this.logger.debug(`state of key: ${stateKey}`);
+    if (_.isEmpty(state)) { return; }
+    if (_.isEmpty(this.triggerConf.role) && !this.isHttpTrigger() && !this.isTimerTrigger()) {
+      this.triggerConf.role = state.role;
+    }
+  }
+
+  async setStatedTriggerConf(resolvedTriggerConf: TriggerConfig): Promise<void> {
+    if (this.isRoleAuto) {
+      this.logger.debug('set resolved trigger config into state.');
+      const stateKey = `${this.credentials.AccountID}-${this.region}-${this.serviceName}-${this.functionName}-${this.triggerConf.name}`;
+      await core.setState(stateKey, resolvedTriggerConf);
+    }
+  }
+
+  async delStatedTriggerConf(): Promise<void> {
+    const stateKey = `${this.credentials.AccountID}-${this.region}-${this.serviceName}-${this.functionName}-${this.triggerConf.name}`;
+    const state = await core.getState(stateKey);
+    if (_.isEmpty(state)) { return; }
+    await core.setState(stateKey, {});
+  }
 
   isHttpTrigger(): boolean {
     return this.triggerConf.type === 'http';
@@ -133,7 +165,7 @@ export class FcTrigger extends IInputsBase {
 
   async makeInvocationRole(): Promise<string> {
     this.logger.info(`waiting for making invocation role for trigger: ${this.triggerConf.name}`);
-    const roleName: string = normalizeRoleOrPoliceName(`FcDeployCreateRole-${this.functionName}`);
+    const roleName: string = normalizeRoleOrPoliceName(`FcDeployCreateRole-${this.serviceName}-${this.functionName}`);
     let assumeRolePolicy: {[key: string]: any};
     let serviceOfAssumeRolePolicy: string;
     let policyConf: CustomPolicyConfig;
@@ -254,7 +286,7 @@ export class FcTrigger extends IInputsBase {
     Object.assign(resolvedTriggerConf, {
       role,
     });
-    this.logger.debug(`after making invocation role for trigger ${this.triggerConf.name}.`);
+    this.logger.debug(`after making invocation role: ${role} for trigger ${this.triggerConf.name}.`);
     this.isRoleAuto = true;
     return resolvedTriggerConf;
   }

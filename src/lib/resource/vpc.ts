@@ -70,7 +70,7 @@ export class AlicloudVpc extends AlicloudClient {
 
   async selectAllowedVSwitchZone() {
     const { AlicloudNas } = require('./nas');
-    const alicloudNas = new AlicloudNas(this.serverlessProfile);
+    const alicloudNas = new AlicloudNas(this.serverlessProfile, this.credentials, this.region);
 
     const fcAllowedZones = await this.getFcAllowedZones();
     const vpcZones = await this.describeVpcZones();

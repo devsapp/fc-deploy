@@ -7,6 +7,8 @@ import * as definition from '../definition';
 import * as _ from 'lodash';
 import { FC_NAS_SERVICE_PREFIX } from '../static';
 import { ServerlessProfile, ICredentials, IInputsBase } from '../profile';
+import { isAutoConfig } from '../definition';
+import * as core from '@serverless-devs/core';
 
 export interface ServiceConfig {
   name: string;
@@ -33,10 +35,50 @@ export class FcService extends IInputsBase {
     this.hasAutoConfig = false;
   }
 
+
   validateConfig(): void {
     if (_.isEmpty(this.serviceConf)) {
       throw new Error('Please add serviceConfig in your s.yml/yaml');
     }
+  }
+
+  async getStatedServiceConf(): Promise<void> {
+    const stateKey = `${this.credentials.AccountID}-${this.region}-${this.serviceConf.name}`;
+    let state;
+    try {
+      state = await core.getState(stateKey);
+    } catch (e) {
+      if (e.message !== 'The current file does not exist') {
+        throw e;
+      }
+    }
+
+    this.logger.debug(`state of key: ${stateKey}`);
+    if (_.isEmpty(state)) { return; }
+    if (isAutoConfig(this.serviceConf.logConfig) ||
+      isAutoConfig(this.serviceConf.nasConfig) ||
+      isAutoConfig(this.serviceConf.vpcConfig) ||
+      (_.isEmpty(this.serviceConf.role) && !_.isEmpty(state.role))) {
+      this.serviceConf.logConfig = isAutoConfig(this.serviceConf.logConfig) ? state.logConfig : this.serviceConf.logConfig;
+      this.serviceConf.nasConfig = isAutoConfig(this.serviceConf.nasConfig) ? state.nasConfig : this.serviceConf.nasConfig;
+      this.serviceConf.vpcConfig = isAutoConfig(this.serviceConf.vpcConfig) ? state.vpcConfig : this.serviceConf.vpcConfig;
+      this.serviceConf.role = (_.isEmpty(this.serviceConf.role) && !_.isEmpty(state.role)) ? state.role : this.serviceConf.role;
+    }
+  }
+
+  async setStatedServiceConf(resolvedServiceConf: ServiceConfig): Promise<void> {
+    if (this.hasAutoConfig) {
+      this.logger.debug('set resolved service config into state.');
+      const stateKey = `${this.credentials.AccountID}-${this.region}-${this.serviceConf.name}`;
+      await core.setState(stateKey, resolvedServiceConf);
+    }
+  }
+
+  async delStatedServiceConf(): Promise<void> {
+    const stateKey = `${this.credentials.AccountID}-${this.region}-${this.serviceConf.name}`;
+    const state = await core.getState(stateKey);
+    if (_.isEmpty(state)) { return; }
+    await core.setState(stateKey, {});
   }
 
   static extractFcRole(role) {
