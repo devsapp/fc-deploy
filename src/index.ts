@@ -219,7 +219,12 @@ export default class FcDeployComponent {
       region,
       service: resolvedServiceConf,
     };
-    if (!_.isEmpty(resolvedFunctionConf)) { Object.assign(res, { function: resolvedFunctionConf }); }
+    const returnedFunctionConf: FunctionConfig = _.cloneDeep(resolvedFunctionConf);
+    if (!_.isEmpty(resolvedFunctionConf.codeUri)) {
+      returnedFunctionConf.codeUri = fcFunction.functionConf.codeUri;
+    }
+    // const returnedFunctionConf = Object.assign({}, resolvedFunctionConf, {  });
+    if (!_.isEmpty(resolvedFunctionConf)) { Object.assign(res, { function: returnedFunctionConf }); }
     if (!_.isEmpty(resolvedTriggerConfs)) { Object.assign(res, { triggers: resolvedTriggerConfs }); }
     if (!_.isEmpty(resolvedCustomDomainConfs)) { Object.assign(res, { customDomains: resolvedCustomDomainConfs }); }
     return res;
