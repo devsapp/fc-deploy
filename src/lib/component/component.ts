@@ -19,6 +19,10 @@ export abstract class Component extends IInputsBase {
     if (!_.isNil(this.args)) {
       Object.assign(inputs, { args: this.args });
     }
+    // @ts-ignore
+    delete inputs.Credentials;
+    // @ts-ignore
+    delete inputs.credentials;
     this.logger.debug(`inputs of component: ${this.serverlessProfile?.project?.component} generated: ${JSON.stringify(inputs)}`);
     return inputs;
   }
