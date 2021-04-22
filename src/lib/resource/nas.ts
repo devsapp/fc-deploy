@@ -69,7 +69,6 @@ export class AlicloudNas extends AlicloudClient {
       assistServiceName: nasServiceName,
     }, this.region, this.credentials, this.curPath, assumeYes ? '-y' : undefined);
     const nasComponentInputs = nasComponent.genComponentInputs('nas');
-    this.logger.debug(`loading nas component, inputs: ${JSON.stringify(nasComponentInputs)}`);
     const nasComponentIns = await core.load('nas');
     const nasDeployRes = await nasComponentIns.deploy(nasComponentInputs);
 
