@@ -9,7 +9,7 @@ import { SUPPORTED_REMOVE_ARGS, COMPONENT_HELP_INFO, DEPLOY_HELP_INFO, REMOVE_HE
 import * as _ from 'lodash';
 import { mark, ServerlessProfile, replaceProjectName, ICredentials } from './lib/profile';
 import { IProperties, IInputs } from './interface';
-
+import * as path from 'path';
 
 export default class FcDeployComponent {
   @core.HLogger('FC-DEPLOY') logger: core.ILogger;
@@ -29,7 +29,6 @@ export default class FcDeployComponent {
 
   // 解析入参
   async handlerInputs(inputs: IInputs): Promise<{[key: string]: any}> {
-    process.setMaxListeners(0);
     const project = inputs?.project;
     const properties: IProperties = inputs?.props;
     const access: string = project?.access;
@@ -137,7 +136,7 @@ export default class FcDeployComponent {
     // function
     let resolvedFunctionConf: FunctionConfig;
     if (!_.isNil(fcFunction)) {
-      const baseDir = process.cwd();
+      const baseDir = path.dirname(curPath.configPath);
 
       const pushRegistry = parsedArgs.data?.pushRegistry;
       resolvedFunctionConf = await fcFunction.makeFunction(baseDir, pushRegistry);
@@ -278,7 +277,6 @@ export default class FcDeployComponent {
     }
 
     // TODO: 判断是否部署过
-
 
     // remove non-domain
     if (nonOptionsArg !== 'domain') {

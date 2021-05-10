@@ -5,7 +5,7 @@ import * as fse from 'fs-extra';
 import path from 'path';
 import * as _ from 'lodash';
 
-const ignoredFile = ['.git', '.svn', '.env', '.DS_Store', 'template.packaged.yml', '.nas.yml', '.fun/nas', '.fun/tmp', '.fun/package'];
+const ignoredFile = ['.git', '.svn', '.env', '.DS_Store', 'template.packaged.yml', '.nas.yml', '.s/nas', '.s/tmp', '.s/package'];
 
 function selectIgnored(runtime) {
   switch (runtime) {
@@ -14,14 +14,14 @@ function selectIgnored(runtime) {
     case 'nodejs10':
     case 'nodejs12':
 
-      return ['.fun/python'];
+      return ['.s/python'];
     case 'python2.7':
     case 'python3':
 
       return ['node_modules'];
     case 'php7.2':
 
-      return ['node_modules', '.fun/python'];
+      return ['node_modules', '.s/python'];
     default:
       return [];
   }
@@ -37,7 +37,7 @@ async function getIgnoreContent(ignoreFilePath) {
 }
 
 export async function isIgnored(baseDir, runtime) {
-  const ignoreFilePath = `${baseDir}/.fcignore`;
+  const ignoreFilePath = path.join(baseDir, '.fcignore');
 
   const fileContent = await getIgnoreContent(ignoreFilePath);
 
@@ -57,7 +57,7 @@ export async function isIgnored(baseDir, runtime) {
 }
 
 export async function updateIgnore(baseDir, patterns) {
-  const ignoreFilePath = `${baseDir}/.funignore`;
+  const ignoreFilePath = `${baseDir}/.fcignore`;
 
   const fileContent = await getIgnoreContent(ignoreFilePath);
 

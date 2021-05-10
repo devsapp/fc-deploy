@@ -110,7 +110,7 @@ export class FcFunction extends IInputsBase {
     const relative = path.relative(absBaseDir, absCodeUri);
 
     if (codeUri.startsWith('..') || relative.startsWith('..')) {
-      this.logger.warn(`\twarning: funignore is not supported for your CodeUri: ${codeUri}`);
+      this.logger.warn(`\twarning: fcignore is not supported for your codeUri: ${codeUri}`);
       return null;
     }
 
