@@ -2,10 +2,11 @@
 
 ```shell
 # 部署资源
-$ s deploy -y
+$ s exec -- deploy -y --use-remote
+$ s exec -- deploy -y --use-local
 
 # 删除资源
-$ s remove service
-$ s remove function
-$ s remove trigger [-n name]
+$ s exec -- remove service
+$ s exec -- remove function
+$ s exec -- remove trigger [-n name]
 ```

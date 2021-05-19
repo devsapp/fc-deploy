@@ -1,5 +1,6 @@
 import { LogConfig } from '../resource/sls';
-import { ServerlessProfile, ICredentials, IInputsBase } from '../profile';
+import { ServerlessProfile, ICredentials } from '../profile';
+import FcDeploy from './fc-deploy';
 export interface TriggerConfig {
     name: string;
     type: 'oss' | 'log' | 'timer' | 'http' | 'mnsTopic' | 'cdnEvents';
@@ -70,16 +71,16 @@ export interface ossObjectConfig {
     ossBucket?: string;
     ossKey?: string;
 }
-export declare class FcTrigger extends IInputsBase {
-    triggerConf: TriggerConfig;
+export declare class FcTrigger extends FcDeploy<TriggerConfig> {
     readonly serviceName: string;
     readonly functionName: string;
     isRoleAuto: boolean;
+    readonly name: string;
     constructor(triggerConf: TriggerConfig, serviceName: string, functionName: string, serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string, args?: string);
+    genStateID(): string;
+    init(): Promise<void>;
     validateConfig(): void;
-    getStatedTriggerConf(): Promise<void>;
-    setStatedTriggerConf(resolvedTriggerConf: TriggerConfig): Promise<void>;
-    delStatedTriggerConf(): Promise<void>;
+    private initLocalConfig;
     isHttpTrigger(): boolean;
     isTimerTrigger(): boolean;
     makeInvocationRole(): Promise<string>;

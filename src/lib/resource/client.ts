@@ -44,8 +44,8 @@ export class AlicloudClient extends IInputsBase {
     return pop;
   }
 
-  async getFcClient() {
-    const locale = await osLocale();
+  async getFcClient(): Promise<any> {
+    const locale: string = await osLocale();
 
     const mid = await hashedMachineId();
 
@@ -53,15 +53,15 @@ export class AlicloudClient extends IInputsBase {
       return this.get('/account-settings', options, headers);
     };
 
-    const accountId = this.credentials?.AccountID ? this.credentials?.AccountID : 'accountId';
-    const accessKeyID = this.credentials?.AccessKeyID ? this.credentials?.AccessKeyID : 'accessKeyID';
-    const accessKeySecret = this.credentials?.AccessKeySecret ? this.credentials?.AccessKeySecret : 'accessKeySecret';
-    const securityToken = this.credentials?.SecurityToken;
+    const accountId: string = this.credentials?.AccountID ? this.credentials?.AccountID : 'accountId';
+    const accessKeyID: string = this.credentials?.AccessKeyID ? this.credentials?.AccessKeyID : 'accessKeyID';
+    const accessKeySecret: string = this.credentials?.AccessKeySecret ? this.credentials?.AccessKeySecret : 'accessKeySecret';
+    const securityToken: string = this.credentials?.SecurityToken;
 
     // TODO: get user profile
     // const enable = profile.enableCustomEndpoint === true || profile.enableCustomEndpoint === 'true';
     // const endpoint = profile.fcEndpoint ? profile.fcEndpoint : (enable ? profile.endpoint : undefined);
-    const fc = new FC(accountId, {
+    const fc: any = new FC(accountId, {
       accessKeyID,
       accessKeySecret,
       securityToken,
@@ -72,7 +72,7 @@ export class AlicloudClient extends IInputsBase {
         'user-agent': `${pkg.name}/v${pkg.version} ( Node.js ${process.version}; OS ${process.platform} ${process.arch}; language ${locale}; mid ${mid})`,
       },
     });
-    const realRequest = fc.request.bind(fc);
+    const realRequest: any = fc.request.bind(fc);
     fc.request = async (method, path, query, body, headers, opts = {}) => {
       try {
         return await realRequest(method, path, query, body, headers || {}, opts || {});

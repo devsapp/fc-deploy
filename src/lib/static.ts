@@ -50,9 +50,9 @@ export const COMPONENT_HELP_INFO = [
   {
     header: 'Examples',
     content: [
-      '$ fc-deploy {bold deploy} {bold --assumeYes}',
-      '$ fc-deploy {bold remove} {underline service}',
-      '$ fc-deploy {bold help}',
+      '$ s exec -- {bold deploy} {bold --assumeYes}',
+      '$ s exec -- {bold remove} {underline service}',
+      '$ s exec -- {bold help}',
     ],
   },
 ];
@@ -64,7 +64,28 @@ export const DEPLOY_HELP_INFO = [
   },
   {
     header: 'Usage',
-    content: '$ fc-deploy deploy',
+    content: '$ fc-deploy deploy <options>',
+  },
+  {
+    header: 'Options',
+    optionList: [
+      {
+        name: 'use-remote',
+        description: 'Deploy resource using remote config.',
+        type: Boolean,
+      },
+      {
+        name: 'use-local',
+        description: 'Deploy resource using local config.',
+        type: Boolean,
+      },
+      {
+        name: 'help',
+        description: 'Help for deploy.',
+        alias: 'h',
+        type: Boolean,
+      },
+    ],
   },
   {
     header: 'Global Options',
@@ -75,6 +96,13 @@ export const DEPLOY_HELP_INFO = [
         alias: 'y',
         type: Boolean,
       },
+    ],
+  },
+  {
+    header: 'Examples',
+    content: [
+      '$ s exec -- {bold deploy} {underline --use-remote}',
+      '$ s exec -- {bold deploy} {underline --use-local}',
     ],
   },
 ];
@@ -123,10 +151,10 @@ export const REMOVE_HELP_INFO = [
   {
     header: 'Examples',
     content: [
-      '$ remove {bold remove} {underline service}',
-      '$ remove {bold remove} {underline function}',
-      '$ remove {bold remove} {underline trigger} [{bold --name} {underline name}]',
-      '$ remove {bold remove} {underline domain} [{bold --name} {underline name}]',
+      '$ s exec -- {bold remove} {underline service}',
+      '$ s exec -- {bold remove} {underline function}',
+      '$ s exec -- {bold remove} {underline trigger} [{bold --name} {underline name}]',
+      '$ s exec -- {bold remove} {underline domain} [{bold --name} {underline name}]',
     ],
   },
 ];

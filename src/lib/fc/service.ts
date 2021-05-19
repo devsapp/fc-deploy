@@ -6,7 +6,8 @@ import { NasConfig, AlicloudNas } from '../resource/nas';
 import * as definition from '../definition';
 import * as _ from 'lodash';
 import { FC_NAS_SERVICE_PREFIX } from '../static';
-import { ServerlessProfile, ICredentials, IInputsBase } from '../profile';
+import { ServerlessProfile, ICredentials } from '../profile';
+import FcDeploy from './fc-deploy';
 import { isAutoConfig } from '../definition';
 import * as core from '@serverless-devs/core';
 
@@ -21,64 +22,65 @@ export interface ServiceConfig {
 }
 
 
-export class FcService extends IInputsBase {
-  serviceConf: ServiceConfig;
+export class FcService extends FcDeploy<ServiceConfig> {
   readonly hasFunctionAsyncConfig: boolean;
   readonly hasCustomContainerConfig: boolean;
   hasAutoConfig: boolean;
+  name: string;
 
   constructor(serviceConf: ServiceConfig, functionConf: FunctionConfig, serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string, args?: string) {
-    super(serverlessProfile, region, credentials, curPath, args);
-    this.serviceConf = serviceConf;
+    super(serviceConf, serverlessProfile, region, credentials, curPath, args);
     this.hasCustomContainerConfig = _.has(functionConf, 'customContainerConfig');
     this.hasFunctionAsyncConfig = _.has(functionConf, 'asyncConfiguration');
     this.hasAutoConfig = false;
+    this.name = serviceConf?.name;
+  }
+
+  async init(): Promise<void> {
+    this.validateConfig();
+    await this.initRemoteConfig('service', this.name);
+    await this.initLocalConfig();
+  }
+
+  genStateID(): string {
+    return `${this.credentials.AccountID}-${this.region}-${this.name}`;
   }
 
 
   validateConfig(): void {
-    if (_.isEmpty(this.serviceConf)) {
+    if (_.isEmpty(this.localConfig)) {
       throw new Error('Please add serviceConfig in your s.yml/yaml');
     }
   }
 
-  async getStatedServiceConf(): Promise<void> {
-    const stateKey = `${this.credentials.AccountID}-${this.region}-${this.serviceConf.name}`;
+  async initLocalConfig(): Promise<void> {
+    const stateID = this.genStateID();
     let state;
     try {
-      state = await core.getState(stateKey);
+      state = await core.getState(stateID);
     } catch (e) {
       if (e.message !== 'The current file does not exist') {
         throw e;
       }
     }
 
-    this.logger.debug(`state of key: ${stateKey}`);
+    this.logger.debug(`state of key: ${stateID} is:\n${JSON.stringify(state, null, '  ')}`);
     if (_.isEmpty(state)) { return; }
-    if (isAutoConfig(this.serviceConf.logConfig) ||
-      isAutoConfig(this.serviceConf.nasConfig) ||
-      isAutoConfig(this.serviceConf.vpcConfig) ||
-      (_.isEmpty(this.serviceConf.role) && !_.isEmpty(state.role))) {
-      this.serviceConf.logConfig = isAutoConfig(this.serviceConf.logConfig) ? state.logConfig : this.serviceConf.logConfig;
-      this.serviceConf.nasConfig = isAutoConfig(this.serviceConf.nasConfig) ? state.nasConfig : this.serviceConf.nasConfig;
-      this.serviceConf.vpcConfig = isAutoConfig(this.serviceConf.vpcConfig) ? state.vpcConfig : this.serviceConf.vpcConfig;
-      this.serviceConf.role = (_.isEmpty(this.serviceConf.role) && !_.isEmpty(state.role)) ? state.role : this.serviceConf.role;
+    if (isAutoConfig(this.localConfig.logConfig) ||
+      isAutoConfig(this.localConfig.nasConfig) ||
+      isAutoConfig(this.localConfig.vpcConfig) ||
+      (_.isEmpty(this.localConfig.role) && !_.isEmpty(state.role))) {
+      this.localConfig.logConfig = isAutoConfig(this.localConfig.logConfig) ? state.logConfig : this.localConfig.logConfig;
+      this.localConfig.nasConfig = isAutoConfig(this.localConfig.nasConfig) ? state.nasConfig : this.localConfig.nasConfig;
+      this.localConfig.vpcConfig = isAutoConfig(this.localConfig.vpcConfig) ? state.vpcConfig : this.localConfig.vpcConfig;
+      this.localConfig.role = (_.isEmpty(this.localConfig.role) && !_.isEmpty(state.role)) ? state.role : this.localConfig.role;
     }
-  }
-
-  async setStatedServiceConf(resolvedServiceConf: ServiceConfig): Promise<void> {
-    if (this.hasAutoConfig) {
-      this.logger.debug('set resolved service config into state.');
-      const stateKey = `${this.credentials.AccountID}-${this.region}-${this.serviceConf.name}`;
-      await core.setState(stateKey, resolvedServiceConf);
+    if (this.existOnline) {
+      Object.assign(this.localConfig, {
+        import: true,
+        protect: false,
+      });
     }
-  }
-
-  async delStatedServiceConf(): Promise<void> {
-    const stateKey = `${this.credentials.AccountID}-${this.region}-${this.serviceConf.name}`;
-    const state = await core.getState(stateKey);
-    if (_.isEmpty(state)) { return; }
-    await core.setState(stateKey, {});
   }
 
   static extractFcRole(role) {
@@ -90,7 +92,7 @@ export class FcService extends IInputsBase {
   async generateServiceRole(): Promise<string> {
     const attachedPolicies = [];
 
-    const serviceRole = this.serviceConf.role;
+    const serviceRole = this.localConfig.role;
     const assumeRolePolicy = [
       {
         Action: 'sts:AssumeRole',
@@ -102,7 +104,7 @@ export class FcService extends IInputsBase {
     ];
     let roleName;
     if (_.isNil(serviceRole)) {
-      roleName = `fcDeployDefaultRole-${this.serviceConf?.name}`;
+      roleName = `fcDeployDefaultRole-${this.localConfig?.name}`;
       roleName = normalizeRoleOrPoliceName(roleName);
     } else {
       roleName = _.isString(serviceRole) ? extractRoleNameFromArn(serviceRole) : serviceRole.name;
@@ -114,7 +116,7 @@ export class FcService extends IInputsBase {
     if (this.hasFunctionAsyncConfig) {
       attachedPolicies.push('AliyunFCInvocationAccess');
 
-      const mnsPolicyName = normalizeRoleOrPoliceName(`AliyunFcGeneratedMNSPolicy-${this.region}-${this.serviceConf.name}`);
+      const mnsPolicyName = normalizeRoleOrPoliceName(`AliyunFcGeneratedMNSPolicy-${this.region}-${this.name}`);
       const mnsPolicyStatement: PolicyStatementConfig = {
         Action: [
           'mns:SendMessage',
@@ -130,7 +132,7 @@ export class FcService extends IInputsBase {
       attachedPolicies.push(mnsPolicy);
     }
 
-    if ((!_.isEmpty(this.serviceConf.vpcConfig) || !_.isEmpty(this.serviceConf.nasConfig))) {
+    if ((!_.isEmpty(this.localConfig.vpcConfig) || !_.isEmpty(this.localConfig.nasConfig))) {
       attachedPolicies.push('AliyunECSNetworkInterfaceManagementAccess');
     }
 
@@ -138,7 +140,7 @@ export class FcService extends IInputsBase {
       attachedPolicies.push('AliyunContainerRegistryReadOnlyAccess');
     }
 
-    const logConfig = this.serviceConf?.logConfig;
+    const logConfig = this.localConfig?.logConfig;
     if (_.isString(logConfig)) {
       if (definition.isAutoConfig(logConfig)) {
         attachedPolicies.push('AliyunLogFullAccess');
@@ -146,7 +148,7 @@ export class FcService extends IInputsBase {
         throw new Error('logConfig only support auto/Auto when set to string.');
       }
     } else if (logConfig?.project && logConfig?.logstore) {
-      const logPolicyName = normalizeRoleOrPoliceName(`AliyunFcGeneratedLogPolicy-${this.region}-${this.serviceConf.name}`);
+      const logPolicyName = normalizeRoleOrPoliceName(`AliyunFcGeneratedLogPolicy-${this.region}-${this.name}`);
       const logPolicyStatement: PolicyStatementConfig = {
         Action: [
           'log:PostLogStoreLogs',
@@ -179,7 +181,7 @@ export class FcService extends IInputsBase {
   }
 
   async generateServiceLog(): Promise<LogConfig> {
-    const { logConfig } = this.serviceConf;
+    const { logConfig } = this.localConfig;
     if (_.isEmpty(logConfig)) {
       return undefined;
     }
@@ -189,8 +191,8 @@ export class FcService extends IInputsBase {
         this.hasAutoConfig = true;
         const aliyunSls = new AlicloudSls(this.serverlessProfile, this.credentials, this.region);
         this.logger.info('using \'logConfig: auto\', FC-DEPLOY will try to generate default sls project.');
-        resolvedLogConfig = await aliyunSls.createDefaultSls(this.serviceConf.name);
-        this.logger.info(`generated auto LogConfig done: ${JSON.stringify(resolvedLogConfig)}`);
+        resolvedLogConfig = await aliyunSls.createDefaultSls(this.name);
+        this.logger.info(`generated auto LogConfig done: \n${JSON.stringify(resolvedLogConfig, null, '  ')}`);
       } else {
         throw new Error('logConfig only support auto/Auto when set to string.');
       }
@@ -204,7 +206,7 @@ export class FcService extends IInputsBase {
   }
 
   async generateServiceVpc(isNasAuto: boolean): Promise<VpcConfig> {
-    const { vpcConfig } = this.serviceConf;
+    const { vpcConfig } = this.localConfig;
     if ((_.isNil(vpcConfig) && isNasAuto) || _.isString(vpcConfig)) {
       if (_.isString(vpcConfig)) {
         if (!definition.isAutoConfig(vpcConfig)) {
@@ -216,7 +218,7 @@ export class FcService extends IInputsBase {
       this.logger.info('using \'vpcConfig: auto\', FC-DEPLOY will try to generate related vpc resources automatically');
       const alicloudVpc = new AlicloudVpc(this.serverlessProfile, this.credentials, this.region);
       const vpcDeployRes = await alicloudVpc.createDefaultVpc();
-      this.logger.info(`generated auto VpcConfig done: ${JSON.stringify(vpcDeployRes)}`);
+      this.logger.info(`generated auto VpcConfig done: \n${JSON.stringify(vpcDeployRes, null, '  ')}`);
       return {
         vpcId: vpcDeployRes.vpcId,
         securityGroupId: vpcDeployRes.securityGroupId,
@@ -227,14 +229,14 @@ export class FcService extends IInputsBase {
   }
 
   async generateServiceNas(vpcConfig: VpcConfig, roleArn: string, assumeYes?: boolean): Promise<NasConfig> {
-    const { nasConfig } = this.serviceConf;
+    const { nasConfig } = this.localConfig;
     if (_.isString(nasConfig)) {
       if (definition.isAutoConfig(nasConfig)) {
         this.hasAutoConfig = true;
         const alicloudNas = new AlicloudNas(this.serverlessProfile, this.credentials, this.region);
         this.logger.info('using \'nasConfig: auto\', FC-DEPLOY will try to generate related nas file system automatically');
-        const nasDefaultConfig = await alicloudNas.createDefaultNas(`${FC_NAS_SERVICE_PREFIX}${this.serviceConf.name}`, vpcConfig, `/${this.serviceConf.name}`, roleArn, assumeYes);
-        this.logger.info(`generated auto NasConfig done: ${JSON.stringify(nasDefaultConfig)}`);
+        const nasDefaultConfig = await alicloudNas.createDefaultNas(`${FC_NAS_SERVICE_PREFIX}${this.name}`, vpcConfig, `/${this.name}`, roleArn, assumeYes);
+        this.logger.info(`generated auto NasConfig done: \n${JSON.stringify(nasDefaultConfig, null, '  ')}`);
         return nasDefaultConfig;
       } else {
         throw new Error('nasConfig only support auto/Auto when set to string.');
@@ -245,39 +247,47 @@ export class FcService extends IInputsBase {
   }
 
   async makeService(assumeYes?: boolean): Promise<ServiceConfig> {
-    if (_.isEmpty(this.serviceConf)) { return undefined; }
+    if (this.useRemote) { return this.remoteConfig; }
+    if (_.isEmpty(this.localConfig)) { return undefined; }
     const resolvedServiceConf: ServiceConfig = {
-      name: this.serviceConf.name,
+      name: this.name,
     };
 
-    if (!_.isNil(this.serviceConf.description)) {
-      Object.assign(resolvedServiceConf, { description: this.serviceConf.description });
+    if (!_.isNil(this.localConfig.description)) {
+      Object.assign(resolvedServiceConf, { description: this.localConfig.description });
     }
 
-    if (!_.isNil(this.serviceConf.internetAccess)) {
-      Object.assign(resolvedServiceConf, { internetAccess: this.serviceConf.internetAccess });
+    if (!_.isNil(this.localConfig.internetAccess)) {
+      Object.assign(resolvedServiceConf, { internetAccess: this.localConfig.internetAccess });
     }
 
     const role = await this.generateServiceRole();
     if (!_.isEmpty(role)) { Object.assign(resolvedServiceConf, { role }); }
-    if (!_.isEmpty(this.serviceConf.logConfig)) {
+    if (!_.isEmpty(this.localConfig.logConfig)) {
       const resolvedLogConfig = await this.generateServiceLog();
       Object.assign(resolvedServiceConf, { logConfig: resolvedLogConfig });
     }
-    const { nasConfig } = this.serviceConf;
+    const { nasConfig } = this.localConfig;
     const isNasAuto = definition.isAutoConfig(nasConfig);
 
-    if (!_.isEmpty(this.serviceConf.vpcConfig) || isNasAuto) {
+    if (!_.isEmpty(this.localConfig.vpcConfig) || isNasAuto) {
       // vpc
       const resolvedVpcConfig = await this.generateServiceVpc(isNasAuto);
       Object.assign(resolvedServiceConf, { vpcConfig: resolvedVpcConfig });
     }
-    if (!_.isEmpty(this.serviceConf.nasConfig)) {
+    if (!_.isEmpty(this.localConfig.nasConfig)) {
       // nas
       // @ts-ignore
       const resolvedNasConfig = await this.generateServiceNas(resolvedServiceConf?.vpcConfig, resolvedServiceConf?.role, assumeYes);
       Object.assign(resolvedServiceConf, { nasConfig: resolvedNasConfig });
     }
+    if (this.existOnline) {
+      Object.assign(resolvedServiceConf, {
+        import: true,
+        protect: false,
+      });
+    }
+    await this.setResolvedConfig(this.name, resolvedServiceConf, this.hasAutoConfig);
     return resolvedServiceConf;
   }
 }
