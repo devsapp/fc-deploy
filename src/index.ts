@@ -310,7 +310,7 @@ export default class FcDeployComponent {
       if (nonOptionsArg === 'trigger' && _.isEmpty(fcTriggers)) { throw new Error('please add triggers config in s.yml/yaml'); }
       const { fcBaseComponentIns, baseComponent } = await this.handlerBase();
       const profileOfFcBase = replaceProjectName(serverlessProfile, `${serverlessProfile?.project.projectName}-fc-base-project`);
-      const fcBaseComponent = new baseComponent(profileOfFcBase, fcService.serviceConf, region, credentials, curPath, args, fcFunction?.functionConf, fcTriggers.map((t) => t.triggerConf));
+      const fcBaseComponent = new baseComponent(profileOfFcBase, fcService.useRemote ? fcService.remoteConfig : fcService.localConfig, region, credentials, curPath, args, fcFunction?.useRemote ? fcFunction?.remoteConfig : fcFunction?.localConfig, fcTriggers.map((t) => (t?.useRemote ? t?.remoteConfig : t?.localConfig)));
       const fcBaseComponentInputs = fcBaseComponent.genComponentInputs();
       
       const removeRes = await fcBaseComponentIns.remove(fcBaseComponentInputs);
