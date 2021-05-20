@@ -5,7 +5,7 @@ import * as _ from 'lodash';
 import { ServerlessProfile, ICredentials } from '../profile';
 import { Component } from './component';
 
-export class FcBaseComponent extends Component {
+export class FcBaseSdkComponent extends Component {
   readonly serviceConf: ServiceConfig;
   readonly functionConf?: FunctionConfig;
   readonly triggers?: TriggerConfig[];
@@ -64,9 +64,6 @@ export class FcBaseComponent extends Component {
         filename: this.functionConf.codeUri,
       });
     }
-    if (resolvedFunctionConf.layers) {
-      throw new Error('Does not support layers.');
-    }
     this.logger.debug('Function input to fc base component generated.');
     return resolvedFunctionConf;
   }
@@ -74,9 +71,6 @@ export class FcBaseComponent extends Component {
   genTriggerProp(): Array<{ [key: string]: any }> {
     const resolvedTriggers: Array<{ [key: string]: any }> = [];
     for (const trigger of this.triggers) {
-      if (trigger.type === 'tablestore') {
-        throw new Error('Trigger does not support tablestore.');
-      }
       const resolvedTrigger = _.cloneDeep(trigger);
       Object.assign(resolvedTrigger, {
         function: this.functionConf.name,
