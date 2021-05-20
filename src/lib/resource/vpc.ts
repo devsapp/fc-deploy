@@ -102,7 +102,7 @@ export class AlicloudVpc extends AlicloudClient {
     }, this.region, this.credentials, this.curPath);
     const vpcComponentInputs = vpcComponent.genComponentInputs('vpc');
     // load vpc component
-    const vpcComponentIns = await core.load('vpc');
+    const vpcComponentIns = await core.load('devsapp/vpc');
     return await vpcComponentIns.create(vpcComponentInputs);
   }
 
