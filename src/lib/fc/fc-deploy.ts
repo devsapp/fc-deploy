@@ -61,7 +61,6 @@ export default abstract class FcDeploy<T> extends IInputsBase {
       } else if (type === 'trigger') {
         resourceName = triggerName;
       }
-      this.logger.info(`${type}: ${resourceName} exists online`);
       this.logger.debug(`online config of ${type}: ${resourceName} is ${JSON.stringify(remoteConfig, null, '  ')}`);
       this.existOnline = true;
       this.remoteConfig = remoteConfig;
@@ -101,7 +100,8 @@ export default abstract class FcDeploy<T> extends IInputsBase {
       const state = await core.getState(stateID);
 
       if (_.isNil(state?.useRemote)) {
-        const msg = `${type}: ${name} exists on line, do you want to use online config?`;
+        this.logger.warn(`${type}: ${name} exists online. `)
+        const msg = `Do you want to use online config?`;
         const details: any = _.cloneDeep(this.remoteConfig);
         delete details.import;
         delete details.protect;

@@ -8,6 +8,7 @@ import * as _ from 'lodash';
 import { FC_NAS_SERVICE_PREFIX } from '../static';
 import { ServerlessProfile, ICredentials } from '../profile';
 import FcDeploy from './fc-deploy';
+import yaml from 'js-yaml';
 import { isAutoConfig } from '../definition';
 import * as core from '@serverless-devs/core';
 
@@ -221,7 +222,7 @@ export class FcService extends FcDeploy<ServiceConfig> {
       this.logger.info('using \'vpcConfig: auto\', FC-DEPLOY will try to generate related vpc resources automatically');
       const alicloudVpc = new AlicloudVpc(this.serverlessProfile, this.credentials, this.region);
       const vpcDeployRes = await alicloudVpc.createDefaultVpc();
-      this.logger.info(`generated auto VpcConfig done: \n${JSON.stringify(vpcDeployRes, null, '  ')}`);
+      this.logger.info(`generated auto VpcConfig done: \n${yaml.dump({'VPC Config': vpcDeployRes})}`);
       return {
         vpcId: vpcDeployRes.vpcId,
         securityGroupId: vpcDeployRes.securityGroupId,

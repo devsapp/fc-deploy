@@ -31,14 +31,16 @@ export default class FcDeployComponent {
   async handlerBase() {
     const fcDefault = await core.loadComponent('devsapp/fc-default');
     const res = await fcDefault.get();
+    this.logger.info(`using fc deploy type: ${res['deploy-type']}`);
     if (res['deploy-type'] === 'pulumi') {
+      this.logger.info(`📎 if you want to deploy with SDK, you can [s cli fc-default set deploy-type sdk] to switch.`)
       return {
         fcBaseComponentIns: await core.loadComponent('devsapp/fc-base'),
         BaseComponent: FcBaseComponent,
         componentName: 'fc-base',
       };
     }
-
+    this.logger.info(`📎 if you want to deploy with Pulumi, you can [s cli fc-default set deploy-type pulumi] to switch.`)
     return {
       fcBaseComponentIns: await core.loadComponent('devsapp/fc-base-sdk'),
       BaseComponent: FcBaseSdkComponent,
@@ -199,14 +201,14 @@ export default class FcDeployComponent {
       this.logger.info(`waiting for triggers ${resolvedTriggerConfs.map((t) => t.name)} to be deployed`);
     }
     await fcBaseComponentIns.deploy(fcBaseComponentInputs);
-    let deployedInfo = `\nservice: ${resolvedServiceConf.name}`;
+    let deployedInfo = `service: ${resolvedServiceConf.name}`;
     if (!_.isEmpty(resolvedFunctionConf)) {
-      deployedInfo += `\nfunction: ${resolvedFunctionConf.name}`;
+      deployedInfo += `function: ${resolvedFunctionConf.name}`;
     }
     if (!_.isEmpty(resolvedTriggerConfs)) {
-      deployedInfo += `\ntriggers ${resolvedTriggerConfs.map((t) => t.name)}`;
+      deployedInfo += `triggers ${resolvedTriggerConfs.map((t) => t.name)}`;
     }
-    this.logger.info(`Deployed:${deployedInfo}`);
+    this.logger.info(`deployed 👉 ${deployedInfo}`);
     // deploy custom domain
     let hasAutoCustomDomainNameInDomains = false;
     const resolvedCustomDomainConfs: CustomDomainConfig[] = [];
