@@ -75,11 +75,6 @@ export const DEPLOY_HELP_INFO = [
         type: Boolean,
       },
       {
-        name: 'use-local',
-        description: 'Deploy resource using local config.',
-        type: Boolean,
-      },
-      {
         name: 'help',
         description: 'Help for deploy.',
         alias: 'h',
@@ -102,7 +97,6 @@ export const DEPLOY_HELP_INFO = [
     header: 'Examples',
     content: [
       '$ s exec -- {bold deploy} {underline --use-remote}',
-      '$ s exec -- {bold deploy} {underline --use-local}',
     ],
   },
 ];

@@ -134,6 +134,7 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
     this.validateConfig();
     await this.initRemoteConfig('trigger', this.serviceName, this.functionName, this.name);
     await this.initLocalConfig();
+    this.logger.debug(`local trigger config is: ${JSON.stringify(this.localConfig, null, '  ')} after init.`);
   }
 
   validateConfig() {
@@ -162,8 +163,8 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
     }
     this.logger.debug(`state of key: ${stateID} is:\n${JSON.stringify(state, null, '  ')}`);
     if (_.isEmpty(state)) { return; }
-    if (_.isEmpty(this.localConfig.role) && !this.isHttpTrigger() && !this.isTimerTrigger()) {
-      this.localConfig.role = state.role;
+    if (_.isEmpty(this.localConfig?.role) && !this.isHttpTrigger() && !this.isTimerTrigger()) {
+      this.localConfig.role = state?.resolvedConfig?.role;
     }
   }
 

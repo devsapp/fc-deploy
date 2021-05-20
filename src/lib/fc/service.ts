@@ -40,6 +40,7 @@ export class FcService extends FcDeploy<ServiceConfig> {
     this.validateConfig();
     await this.initRemoteConfig('service', this.name);
     await this.initLocalConfig();
+    this.logger.debug(`local service config is: ${JSON.stringify(this.localConfig, null, '  ')} after init.`);
   }
 
   genStateID(): string {
@@ -66,15 +67,17 @@ export class FcService extends FcDeploy<ServiceConfig> {
 
     this.logger.debug(`state of key: ${stateID} is:\n${JSON.stringify(state, null, '  ')}`);
     if (_.isEmpty(state)) { return; }
+    const resolvedConfigInState: any = state?.resolvedConfig || {};
     if (isAutoConfig(this.localConfig.logConfig) ||
       isAutoConfig(this.localConfig.nasConfig) ||
       isAutoConfig(this.localConfig.vpcConfig) ||
-      (_.isEmpty(this.localConfig.role) && !_.isEmpty(state.role))) {
-      this.localConfig.logConfig = isAutoConfig(this.localConfig.logConfig) ? state.logConfig : this.localConfig.logConfig;
-      this.localConfig.nasConfig = isAutoConfig(this.localConfig.nasConfig) ? state.nasConfig : this.localConfig.nasConfig;
-      this.localConfig.vpcConfig = isAutoConfig(this.localConfig.vpcConfig) ? state.vpcConfig : this.localConfig.vpcConfig;
-      this.localConfig.role = (_.isEmpty(this.localConfig.role) && !_.isEmpty(state.role)) ? state.role : this.localConfig.role;
+      (_.isEmpty(this.localConfig.role) && !_.isEmpty(resolvedConfigInState.role))) {
+      this.localConfig.logConfig = isAutoConfig(this.localConfig.logConfig) ? resolvedConfigInState.logConfig : this.localConfig.logConfig;
+      this.localConfig.nasConfig = isAutoConfig(this.localConfig.nasConfig) ? resolvedConfigInState.nasConfig : this.localConfig.nasConfig;
+      this.localConfig.vpcConfig = isAutoConfig(this.localConfig.vpcConfig) ? resolvedConfigInState.vpcConfig : this.localConfig.vpcConfig;
+      this.localConfig.role = (_.isEmpty(this.localConfig.role) && !_.isEmpty(resolvedConfigInState.role)) ? resolvedConfigInState.role : this.localConfig.role;
     }
+
     if (this.existOnline) {
       Object.assign(this.localConfig, {
         import: true,
