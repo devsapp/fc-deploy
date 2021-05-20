@@ -19,6 +19,7 @@ export interface FunctionConfig {
   memorySize?: number;
   runtime: string;
   timeout?: number;
+  layers?: string[];
   environmentVariables?: {
     [key: string]: any;
   };
@@ -67,6 +68,7 @@ export class FcFunction extends IInputsBase {
       instanceConcurrency: functionConf?.instanceConcurrency || FUNCTION_CONF_DEFAULT.instanceConcurrency,
       instanceType: functionConf?.instanceType || FUNCTION_CONF_DEFAULT.instanceType,
       runtime: functionConf?.runtime || FUNCTION_CONF_DEFAULT.runtime,
+      layers: functionConf?.layers,
     };
     if (!_.isNil(functionConf?.initializer)) {
       Object.assign(resolvedFunctionConf, {

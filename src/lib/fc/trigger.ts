@@ -7,10 +7,18 @@ import * as core from '@serverless-devs/core';
 
 export interface TriggerConfig {
   name: string;
-  type: 'oss' | 'log' | 'timer' | 'http' | 'mnsTopic' | 'cdnEvents';
+  type: 'oss' | 'log' | 'timer' | 'http' | 'mnsTopic' | 'cdnEvents' | 'tablestore';
   role?: string;
   sourceArn?: string;
-  config: OssTriggerConfig | LogTriggerConfig | TimerTriggerConfig | HttpTriggerConfig | MnsTriggerConfig | CdnTriggerConfig;
+  config: OssTriggerConfig | LogTriggerConfig | TimerTriggerConfig | HttpTriggerConfig | MnsTriggerConfig | CdnTriggerConfig | TablestoreConfig;
+}
+
+export interface TablestoreConfig {
+  instanceName: string;
+  tableName: string;
+}
+export function instanceOfTablestoreTriggerConfig(data: any): data is CdnTriggerConfig {
+  return 'instanceName' in data && 'tableName' in data;
 }
 
 export interface CdnTriggerConfig {
@@ -263,6 +271,45 @@ export class FcTrigger extends IInputsBase {
               `acs:fc:*:*:services/${this.serviceName}.*/functions/*`,
               `acs:fc:*:*:services/${this.serviceName}/functions/*`,
             ],
+            Effect: 'Allow',
+          },
+        ],
+      };
+    } else if (instanceOfTablestoreTriggerConfig(config)) {
+      this.logger.debug('instance of tablestore trigger config');
+      assumeRolePolicy = [
+        {
+          Action: 'sts:AssumeRole',
+          Effect: 'Allow',
+          Principal: {
+            RAM: [
+              'acs:ram::1604337383174619:root',
+            ],
+          },
+        },
+      ];
+      policyConf = {
+        name: normalizeRoleOrPoliceName(`FcDeployDefaultCdnPolicy-${this.serviceName}-${this.functionName}`),
+        description: DESCRIPTION,
+        statement: [
+          {
+            Action: [
+              'fc:InvokeFunction',
+            ],
+            Resource: [
+              `acs:fc:*:*:services/${this.serviceName}.*/functions/*`,
+              `acs:fc:*:*:services/${this.serviceName}/functions/*`,
+            ],
+            Effect: 'Allow',
+          },
+          {
+            Action: [
+              'ots:BatchGet*',
+              'ots:Describe*',
+              'ots:Get*',
+              'ots:List*',
+            ],
+            Resource: '*',
             Effect: 'Allow',
           },
         ],
