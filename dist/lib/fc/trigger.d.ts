@@ -3,11 +3,16 @@ import { ServerlessProfile, ICredentials } from '../profile';
 import FcDeploy from './fc-deploy';
 export interface TriggerConfig {
     name: string;
-    type: 'oss' | 'log' | 'timer' | 'http' | 'mnsTopic' | 'cdnEvents';
+    type: 'oss' | 'log' | 'timer' | 'http' | 'mnsTopic' | 'cdnEvents' | 'tablestore';
     role?: string;
     sourceArn?: string;
-    config: OssTriggerConfig | LogTriggerConfig | TimerTriggerConfig | HttpTriggerConfig | MnsTriggerConfig | CdnTriggerConfig;
+    config: OssTriggerConfig | LogTriggerConfig | TimerTriggerConfig | HttpTriggerConfig | MnsTriggerConfig | CdnTriggerConfig | TablestoreConfig;
 }
+export interface TablestoreConfig {
+    instanceName: string;
+    tableName: string;
+}
+export declare function instanceOfTablestoreTriggerConfig(data: any): data is CdnTriggerConfig;
 export interface CdnTriggerConfig {
     eventName: string;
     eventVersion: string;

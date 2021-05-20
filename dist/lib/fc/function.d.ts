@@ -12,6 +12,7 @@ export interface FunctionConfig {
     memorySize?: number;
     runtime: string;
     timeout?: number;
+    layers?: string[];
     environmentVariables?: {
         [key: string]: any;
     };

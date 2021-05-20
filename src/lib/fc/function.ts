@@ -102,7 +102,7 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
       instanceConcurrency: this.localConfig?.instanceConcurrency || FUNCTION_CONF_DEFAULT.instanceConcurrency,
       instanceType: this.localConfig?.instanceType || FUNCTION_CONF_DEFAULT.instanceType,
       runtime: this.localConfig?.runtime || FUNCTION_CONF_DEFAULT.runtime,
-      layers: this.localConfig?.layers
+      layers: this.localConfig?.layers,
     };
     if (!_.isNil(this.localConfig?.initializer)) {
       Object.assign(resolvedFunctionConf, {

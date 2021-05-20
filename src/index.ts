@@ -34,14 +34,14 @@ export default class FcDeployComponent {
     if (res['deploy-type'] === 'pulumi') {
       return {
         fcBaseComponentIns: await core.loadComponent('devsapp/fc-base'),
-        baseComponent: FcBaseComponent,
+        BaseComponent: FcBaseComponent,
         componentName: 'fc-base',
       };
     }
 
     return {
       fcBaseComponentIns: await core.loadComponent('devsapp/fc-base-sdk'),
-      baseComponent: FcBaseSdkComponent,
+      BaseComponent: FcBaseSdkComponent,
       componentName: 'fc-base-sdk',
     };
   }
@@ -184,11 +184,11 @@ export default class FcDeployComponent {
       }
     }
 
-    const { fcBaseComponentIns, componentName, baseComponent } = await this.handlerBase();
+    const { fcBaseComponentIns, componentName, BaseComponent } = await this.handlerBase();
 
     // deploy service/function/triggers
     const profileOfFcBase = replaceProjectName(serverlessProfile, `${serverlessProfile?.project.projectName}-fc-base-project`);
-    const fcBaseComponent = new baseComponent(profileOfFcBase, resolvedServiceConf, region, credentials, curPath, args, resolvedFunctionConf, resolvedTriggerConfs);
+    const fcBaseComponent = new BaseComponent(profileOfFcBase, resolvedServiceConf, region, credentials, curPath, args, resolvedFunctionConf, resolvedTriggerConfs);
 
     const fcBaseComponentInputs = fcBaseComponent.genComponentInputs(componentName);
     this.logger.info(`waiting for service ${resolvedServiceConf.name} to be deployed`);
@@ -198,7 +198,6 @@ export default class FcDeployComponent {
     if (!_.isEmpty(resolvedTriggerConfs)) {
       this.logger.info(`waiting for triggers ${resolvedTriggerConfs.map((t) => t.name)} to be deployed`);
     }
-
     await fcBaseComponentIns.deploy(fcBaseComponentInputs);
     let deployedInfo = `\nservice: ${resolvedServiceConf.name}`;
     if (!_.isEmpty(resolvedFunctionConf)) {
@@ -308,11 +307,10 @@ export default class FcDeployComponent {
     if (nonOptionsArg !== 'domain') {
       if (nonOptionsArg === 'function' && _.isEmpty(fcFunction)) { throw new Error('please add function config in s.yml/yaml'); }
       if (nonOptionsArg === 'trigger' && _.isEmpty(fcTriggers)) { throw new Error('please add triggers config in s.yml/yaml'); }
-      const { fcBaseComponentIns, baseComponent } = await this.handlerBase();
+      const { fcBaseComponentIns, BaseComponent } = await this.handlerBase();
       const profileOfFcBase = replaceProjectName(serverlessProfile, `${serverlessProfile?.project.projectName}-fc-base-project`);
-      const fcBaseComponent = new baseComponent(profileOfFcBase, fcService.useRemote ? fcService.remoteConfig : fcService.localConfig, region, credentials, curPath, args, fcFunction?.useRemote ? fcFunction?.remoteConfig : fcFunction?.localConfig, fcTriggers.map((t) => (t?.useRemote ? t?.remoteConfig : t?.localConfig)));
+      const fcBaseComponent = new BaseComponent(profileOfFcBase, fcService.useRemote ? fcService.remoteConfig : fcService.localConfig, region, credentials, curPath, args, fcFunction?.useRemote ? fcFunction?.remoteConfig : fcFunction?.localConfig, fcTriggers.map((t) => (t?.useRemote ? t?.remoteConfig : t?.localConfig)));
       const fcBaseComponentInputs = fcBaseComponent.genComponentInputs();
-      
       const removeRes = await fcBaseComponentIns.remove(fcBaseComponentInputs);
       // unset state
       let targetTriggerName: string;
