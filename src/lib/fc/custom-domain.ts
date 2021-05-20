@@ -158,7 +158,7 @@ export class FcCustomDomain extends IInputsBase {
       const profileOfDomain: ServerlessProfile = replaceProjectName(this.serverlessProfile, `${this.serverlessProfile?.project.projectName}-domain-project`);
       const domainComponent = new DomainComponent(profileOfDomain, this.serviceName, this.functionName, this.region, this.credentials, this.curPath, this.args);
       const domainComponentInputs = domainComponent.genComponentInputs('domain');
-      const domainComponentIns = await core.load('domain');
+      const domainComponentIns = await core.load('devsapp/domain');
       const generatedDomain = await domainComponentIns.get(domainComponentInputs);
       this.logger.info(`generated auto custom domain done: ${generatedDomain}`);
       Object.assign(resolvedCustomDomainConf, {

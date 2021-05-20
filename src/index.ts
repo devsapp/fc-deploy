@@ -167,7 +167,7 @@ export default class FcDeployComponent {
       this.logger.info(`waiting for triggers ${resolvedTriggerConfs.map((t) => t.name)} to be deployed`);
     }
 
-    const fcBaseComponentIns = await core.load('fc-base');
+    const fcBaseComponentIns = await core.load('devsapp/fc-base');
     await fcBaseComponentIns.deploy(fcBaseComponentInputs);
     let deployedInfo = `\nservice: ${resolvedServiceConf.name}`;
     if (!_.isEmpty(resolvedFunctionConf)) {
@@ -195,7 +195,7 @@ export default class FcDeployComponent {
         this.logger.debug(`waiting for custom domain ${resolvedCustomDomainConf.domainName} to be deployed`);
         const fcDomainComponent = new FcDomainComponent(profileOfFcDomain, resolvedCustomDomainConf, region, credentials, curPath, args);
         const fcDomainComponentInputs = fcDomainComponent.genComponentInputs();
-        const fcDoaminComponentIns = await core.load('fc-domain');
+        const fcDoaminComponentIns = await core.load('devsapp/fc-domain');
         await fcDoaminComponentIns.deploy(fcDomainComponentInputs);
       }
       this.logger.info(`Deployed:\ncustom domains ${resolvedCustomDomainConfs.map((d) => d.domainName)}`);
@@ -283,7 +283,7 @@ export default class FcDeployComponent {
       const profileOfFcBase = replaceProjectName(serverlessProfile, `${serverlessProfile?.project.projectName}-fc-base-project`);
       const fcBaseComponent = new FcBaseComponent(profileOfFcBase, fcService.serviceConf, region, credentials, curPath, args, fcFunction?.functionConf, fcTriggers.map((t) => t.triggerConf));
       const fcBaseComponentInputs = fcBaseComponent.genComponentInputs();
-      const fcBaseComponentIns = await core.load('fc-base');
+      const fcBaseComponentIns = await core.load('devsapp/fc-base');
       const removeRes = await fcBaseComponentIns.remove(fcBaseComponentInputs);
       await fcService.delStatedServiceConf();
       if (!_.isEmpty(fcTriggers)) {
@@ -300,7 +300,7 @@ export default class FcDeployComponent {
       this.logger.debug(`waiting for custom domain: ${resolvedCustomDomainConf.domainName} to be removed.`);
       const fcDomainComponent = new FcDomainComponent(profileOfFcDomain, resolvedCustomDomainConf, region, credentials, curPath, args);
       const fcDomainComponentInputs = fcDomainComponent.genComponentInputs();
-      const fcDoaminComponentIns = await core.load('fc-domain');
+      const fcDoaminComponentIns = await core.load('devsapp/fc-domain');
       await fcDoaminComponentIns.remove(fcDomainComponentInputs);
       removedCustomDomains.push(resolvedCustomDomainConf.domainName);
       await fcCustomDomain.delStatedCustomDomainConf();

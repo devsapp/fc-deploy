@@ -54,7 +54,7 @@ export class AlicloudRam extends AlicloudClient {
       description,
     }, this.region, this.credentials, this.curPath, args);
     const ramComponentInputs = ramComponent.genComponentInputs('ram');
-    const ramComponentIns = await core.load('ram');
+    const ramComponentIns = await core.load('devsapp/ram');
     const roleArn = await ramComponentIns.deploy(ramComponentInputs);
     return roleArn;
   }
