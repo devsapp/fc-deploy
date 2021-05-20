@@ -1,9 +1,8 @@
 {
   "name": "fc-delpoy",
-  "main": "./dist/index.js",
-  "version": "0.0.12",
+  "version": "0.0.1",
   "dependencies": {
-    "@serverless-devs/core": "^0.0.x",
+    "@serverless-devs/core": "0.0.29",
     "@types/lodash": "^4.14.168",
     "@alicloud/pop-core": "^1.7.10",
     "os-locale": "^5.0.0",
@@ -13,14 +12,12 @@
     "@types/fs-extra": "^9.0.0",
     "git-ignore-parser": "0.0.2",
     "ignore": "^5.0.4",
+    "uuid": "^8.3.2",
+    "temp-dir": "^2.0.0",
     "archiver": "^2.0.0",
     "progress": "^2.0.3",
     "colors": "^1.4.0",
-    "md5-file": "^5.0.0",
-    "@types/graceful-fs": "^4.1.5",
-    "temp-dir": "^2.0.0",
-    "uuid-by-string": "^3.0.2",
-    "promise-retry": "^2.0.1"
+    "md5-file": "^5.0.0"
   },
   "devDependencies": {
     "@types/eslint": "^7.2.6",

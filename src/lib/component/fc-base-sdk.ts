@@ -23,7 +23,6 @@ export class FcBaseSdkComponent extends Component {
     }
     const resolvedServiceConf: { [key: string]: any } = _.cloneDeep(this.serviceConf);
 
-    delete resolvedServiceConf.vpcConfig.vpcId;
     if (!_.isEmpty(this.serviceConf.nasConfig)) {
       const resolvedNasConf = {
         // @ts-ignore

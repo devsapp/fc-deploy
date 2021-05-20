@@ -23,7 +23,7 @@ export abstract class Component extends IInputsBase {
     delete inputs.Credentials;
     // @ts-ignore
     delete inputs.credentials;
-    this.logger.debug(`inputs of component: ${this.serverlessProfile?.project?.component} generated: ${JSON.stringify(inputs)}`);
+    this.logger.debug(`inputs of component: ${this.serverlessProfile?.project?.component} generated: \n${JSON.stringify(inputs, null, '  ')}`);
     return inputs;
   }
 }

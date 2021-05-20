@@ -3,7 +3,8 @@ import { LogConfig } from '../resource/sls';
 import { RoleConfig } from '../resource/ram';
 import { VpcConfig } from '../resource/vpc';
 import { NasConfig } from '../resource/nas';
-import { ServerlessProfile, ICredentials, IInputsBase } from '../profile';
+import { ServerlessProfile, ICredentials } from '../profile';
+import FcDeploy from './fc-deploy';
 export interface ServiceConfig {
     name: string;
     description?: string;
@@ -13,16 +14,16 @@ export interface ServiceConfig {
     vpcConfig?: VpcConfig | 'auto' | 'Auto';
     nasConfig?: NasConfig | 'atuo' | 'Auto';
 }
-export declare class FcService extends IInputsBase {
-    serviceConf: ServiceConfig;
+export declare class FcService extends FcDeploy<ServiceConfig> {
     readonly hasFunctionAsyncConfig: boolean;
     readonly hasCustomContainerConfig: boolean;
     hasAutoConfig: boolean;
+    name: string;
     constructor(serviceConf: ServiceConfig, functionConf: FunctionConfig, serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string, args?: string);
+    init(): Promise<void>;
+    genStateID(): string;
     validateConfig(): void;
-    getStatedServiceConf(): Promise<void>;
-    setStatedServiceConf(resolvedServiceConf: ServiceConfig): Promise<void>;
-    delStatedServiceConf(): Promise<void>;
+    initLocalConfig(): Promise<void>;
     static extractFcRole(role: any): any;
     generateServiceRole(): Promise<string>;
     generateDefaultLogConfig(): LogConfig;

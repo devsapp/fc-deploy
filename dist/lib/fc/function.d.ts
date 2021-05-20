@@ -1,4 +1,5 @@
-import { ServerlessProfile, ICredentials, IInputsBase } from '../profile';
+import { ServerlessProfile, ICredentials } from '../profile';
+import FcDeploy from './fc-deploy';
 export interface FunctionConfig {
     name: string;
     description?: string;
@@ -11,6 +12,7 @@ export interface FunctionConfig {
     memorySize?: number;
     runtime: string;
     timeout?: number;
+    layers?: string[];
     environmentVariables?: {
         [key: string]: any;
     };
@@ -25,10 +27,14 @@ export interface CustomContainerConfig {
     args?: string;
 }
 export declare function isCustomContainerRuntime(runtime: string): boolean;
-export declare class FcFunction extends IInputsBase {
-    readonly functionConf: FunctionConfig;
+export declare class FcFunction extends FcDeploy<FunctionConfig> {
     readonly serviceName: string;
+    readonly name: string;
     constructor(functionConf: FunctionConfig, serviceName: string, serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string, args?: string);
+    init(): Promise<void>;
+    initLocalConfig(): Promise<void>;
+    syncRemoteCode(): Promise<string>;
+    genStateID(): string;
     validateConfig(): void;
     makeFunctionConfig(): FunctionConfig;
     generateCodeIngore(baseDir: string): Promise<(f: any) => boolean>;

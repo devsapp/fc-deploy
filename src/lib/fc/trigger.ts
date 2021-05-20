@@ -2,8 +2,9 @@ import { LogConfig } from '../resource/sls';
 import * as _ from 'lodash';
 import { normalizeRoleOrPoliceName, CustomPolicyConfig, AlicloudRam } from '../resource/ram';
 import { DESCRIPTION } from '../static';
-import { ServerlessProfile, ICredentials, IInputsBase } from '../profile';
+import { ServerlessProfile, ICredentials } from '../profile';
 import * as core from '@serverless-devs/core';
+import FcDeploy from './fc-deploy';
 
 export interface TriggerConfig {
   name: string;
@@ -111,73 +112,77 @@ export interface ossObjectConfig {
   ossKey?: string;
 }
 
-export class FcTrigger extends IInputsBase {
-  triggerConf: TriggerConfig;
+export class FcTrigger extends FcDeploy<TriggerConfig> {
   readonly serviceName: string;
   readonly functionName: string;
   isRoleAuto: boolean;
+  readonly name: string;
 
   constructor(triggerConf: TriggerConfig, serviceName: string, functionName: string, serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string, args?: string) {
-    super(serverlessProfile, region, credentials, curPath, args);
-    this.triggerConf = triggerConf;
+    super(triggerConf, serverlessProfile, region, credentials, curPath, args);
     this.serviceName = serviceName;
     this.functionName = functionName;
     this.isRoleAuto = false;
+    this.name = triggerConf.name;
+  }
+
+  genStateID(): string {
+    return `${this.credentials.AccountID}-${this.region}-${this.serviceName}-${this.functionName}-${this.name}`;
+  }
+
+  async init(): Promise<void> {
+    this.validateConfig();
+    await this.initRemoteConfig('trigger', this.serviceName, this.functionName, this.name);
+    await this.initLocalConfig();
+    this.logger.debug(`local trigger config is: ${JSON.stringify(this.localConfig, null, '  ')} after init.`);
   }
 
   validateConfig() {
     if (_.isNil(this.functionName)) {
       throw new Error('you can not add trigger config without function config');
     }
+    if (_.isEmpty(this.localConfig)) {
+      throw new Error('please add trigger config in triggers property');
+    }
   }
-  async getStatedTriggerConf(): Promise<void> {
-    if (_.isEmpty(this.triggerConf)) { return; }
-    const stateKey = `${this.credentials.AccountID}-${this.region}-${this.serviceName}-${this.functionName}-${this.triggerConf.name}`;
+  private async initLocalConfig(): Promise<void> {
+    if (this.existOnline) {
+      Object.assign(this.localConfig, {
+        import: true,
+        protect: false,
+      });
+    }
+    const stateID = this.genStateID();
     let state;
     try {
-      state = await core.getState(stateKey);
+      state = await core.getState(stateID);
     } catch (e) {
       if (e.message !== 'The current file does not exist') {
         throw e;
       }
     }
-    this.logger.debug(`state of key: ${stateKey}`);
+    this.logger.debug(`state of key: ${stateID} is:\n${JSON.stringify(state, null, '  ')}`);
     if (_.isEmpty(state)) { return; }
-    if (_.isEmpty(this.triggerConf.role) && !this.isHttpTrigger() && !this.isTimerTrigger()) {
-      this.triggerConf.role = state.role;
+    if (_.isEmpty(this.localConfig?.role) && !this.isHttpTrigger() && !this.isTimerTrigger()) {
+      this.localConfig.role = state?.resolvedConfig?.role;
     }
-  }
-
-  async setStatedTriggerConf(resolvedTriggerConf: TriggerConfig): Promise<void> {
-    if (this.isRoleAuto) {
-      this.logger.debug('set resolved trigger config into state.');
-      const stateKey = `${this.credentials.AccountID}-${this.region}-${this.serviceName}-${this.functionName}-${this.triggerConf.name}`;
-      await core.setState(stateKey, resolvedTriggerConf);
-    }
-  }
-
-  async delStatedTriggerConf(): Promise<void> {
-    const stateKey = `${this.credentials.AccountID}-${this.region}-${this.serviceName}-${this.functionName}-${this.triggerConf.name}`;
-    const state = await core.getState(stateKey);
-    if (_.isEmpty(state)) { return; }
-    await core.setState(stateKey, {});
   }
 
   isHttpTrigger(): boolean {
-    return this.triggerConf.type === 'http';
+    return this.localConfig.type === 'http';
   }
 
   isTimerTrigger(): boolean {
-    return this.triggerConf.type === 'timer';
+    return this.localConfig.type === 'timer';
   }
 
   async makeInvocationRole(): Promise<string> {
-    this.logger.info(`waiting for making invocation role for trigger: ${this.triggerConf.name}`);
+    this.logger.info(`waiting for making invocation role for trigger: ${this.name}`);
     const roleName: string = normalizeRoleOrPoliceName(`FcDeployCreateRole-${this.serviceName}-${this.functionName}`);
     let assumeRolePolicy: {[key: string]: any};
     let serviceOfAssumeRolePolicy: string;
     let policyConf: CustomPolicyConfig;
-    const { config } = this.triggerConf;
+    const { config } = this.localConfig;
     if (instanceOfLogTriggerConfig(config)) {
       // log trigger
       this.logger.debug('instance of log trigger config');
@@ -315,26 +320,35 @@ export class FcTrigger extends IInputsBase {
         ],
       };
     } else {
-      throw new Error(`unsupported trigger: ${JSON.stringify(this.triggerConf)}`);
+      throw new Error(`unsupported trigger: \n${JSON.stringify(this.localConfig, null, '  ')}`);
     }
 
     // make role
-    this.logger.debug(`invocation role name: ${roleName}, service of principle: ${serviceOfAssumeRolePolicy}, assume role policy: ${JSON.stringify(assumeRolePolicy)}, policy: ${policyConf}`);
+    this.logger.debug(`invocation role name: ${roleName}, service of principle: ${serviceOfAssumeRolePolicy}, assume role policy: \n${JSON.stringify(assumeRolePolicy, null, '  ')}, policy: ${policyConf}`);
     const alicloudRam = new AlicloudRam(this.serverlessProfile, this.credentials, this.region);
     const roleArn = await alicloudRam.makeRole(roleName, undefined, DESCRIPTION, serviceOfAssumeRolePolicy || undefined, assumeRolePolicy || undefined, [policyConf]);
     return roleArn;
   }
 
   async makeTrigger(): Promise<TriggerConfig> {
-    this.logger.debug(`making trigger: ${this.triggerConf.name}`);
-    const resolvedTriggerConf: TriggerConfig = { ...this.triggerConf };
-    if (!_.isNil(this.triggerConf.role) || this.isHttpTrigger() || this.isTimerTrigger()) { return resolvedTriggerConf; }
+    if (this.useRemote) { return this.remoteConfig; }
+    if (_.isEmpty(this.localConfig)) { return undefined; }
+    const resolvedTriggerConf: TriggerConfig = { ...this.localConfig };
+    if (this.existOnline) {
+      Object.assign(resolvedTriggerConf, {
+        import: true,
+        protect: false,
+      });
+    }
+    if (!_.isNil(this.localConfig.role) || this.isHttpTrigger() || this.isTimerTrigger()) { return resolvedTriggerConf; }
     const role = await this.makeInvocationRole();
     Object.assign(resolvedTriggerConf, {
       role,
     });
-    this.logger.debug(`after making invocation role: ${role} for trigger ${this.triggerConf.name}.`);
+    this.logger.debug(`after making invocation role: ${role} for trigger ${this.name}.`);
     this.isRoleAuto = true;
+
+    await this.setResolvedConfig(this.name, resolvedTriggerConf, this.isRoleAuto);
     return resolvedTriggerConf;
   }
 }

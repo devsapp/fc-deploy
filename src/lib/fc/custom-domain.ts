@@ -58,6 +58,11 @@ export class FcCustomDomain extends IInputsBase {
     }
   }
 
+  async init(): Promise<void> {
+    this.validateConfig();
+    await this.initLocalConfig();
+  }
+
   validateConfig(): void {
     if (_.isEmpty(this.customDomainConf)) { return; }
     if (!this.hasHttpTrigger) {
@@ -77,11 +82,11 @@ export class FcCustomDomain extends IInputsBase {
       } else if (!Object.prototype.hasOwnProperty.call(this.customDomainConf, 'routeConfigs')) {
         lackedAttr = 'routeConfigs';
       }
-      throw new Error(`lack of ${lackedAttr} in custom domain: ${JSON.stringify(this.customDomainConf)}`);
+      throw new Error(`lack of ${lackedAttr} in custom domain: \n${JSON.stringify(this.customDomainConf, null, '  ')}`);
     }
   }
 
-  async getStatedCustomDomainConf(): Promise<void> {
+  async initLocalConfig(): Promise<void> {
     if (_.isEmpty(this.customDomainConf)) { return; }
     const stateKey = `${this.credentials.AccountID}-${this.region}-${this.serviceName}-${this.functionName}-customDomain-auto`;
     let state;

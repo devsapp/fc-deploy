@@ -45,13 +45,22 @@ export declare const DEPLOY_HELP_INFO: ({
     optionList?: undefined;
 } | {
     header: string;
-    optionList: {
+    optionList: ({
+        name: string;
+        description: string;
+        type: BooleanConstructor;
+        alias?: undefined;
+    } | {
         name: string;
         description: string;
         alias: string;
         type: BooleanConstructor;
-    }[];
+    })[];
     content?: undefined;
+} | {
+    header: string;
+    content: string[];
+    optionList?: undefined;
 })[];
 export declare const REMOVE_HELP_INFO: ({
     header: string;
