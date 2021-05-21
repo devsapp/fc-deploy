@@ -66,7 +66,7 @@ export class FcCustomDomain extends IInputsBase {
   validateConfig(): void {
     if (_.isEmpty(this.customDomainConf)) { return; }
     if (!this.hasHttpTrigger) {
-      throw new Error('there should be http trigger when custom domain exists');
+      throw new Error('There should be http trigger when custom domain exists');
     }
     if (this.customDomainConf.protocol.toLocaleLowerCase().indexOf('https')) {
       if (Object.prototype.hasOwnProperty.call(this.customDomainConf, 'certConfig')) {
@@ -82,7 +82,7 @@ export class FcCustomDomain extends IInputsBase {
       } else if (!Object.prototype.hasOwnProperty.call(this.customDomainConf, 'routeConfigs')) {
         lackedAttr = 'routeConfigs';
       }
-      throw new Error(`lack of ${lackedAttr} in custom domain: \n${JSON.stringify(this.customDomainConf, null, '  ')}`);
+      throw new Error(`Lack of ${lackedAttr} in custom domain: \n${JSON.stringify(this.customDomainConf, null, '  ')}`);
     }
   }
 
@@ -158,14 +158,14 @@ export class FcCustomDomain extends IInputsBase {
 
     if (this.isDomainNameAuto) {
       // generate domain via domain component
-      this.logger.debug('auto domain name');
-      this.logger.info('using \'customDomain: auto\', FC-DEPLOY will try to generate related custom domain resources automatically');
+      this.logger.debug('Auto domain name');
+      this.logger.info('Using \'customDomain: auto\', FC-DEPLOY will try to generate related custom domain resources automatically');
       const profileOfDomain: ServerlessProfile = replaceProjectName(this.serverlessProfile, `${this.serverlessProfile?.project.projectName}-domain-project`);
       const domainComponent = new DomainComponent(profileOfDomain, this.serviceName, this.functionName, this.region, this.credentials, this.curPath, this.args);
       const domainComponentInputs = domainComponent.genComponentInputs('domain');
       const domainComponentIns = await core.load('devsapp/domain');
       const generatedDomain = await domainComponentIns.get(domainComponentInputs);
-      this.logger.info(`generated auto custom domain done: ${generatedDomain}`);
+      this.logger.info(`Generated auto custom domain done: ${generatedDomain}`);
       Object.assign(resolvedCustomDomainConf, {
         domainName: generatedDomain,
       });

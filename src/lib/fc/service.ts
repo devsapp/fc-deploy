@@ -169,7 +169,7 @@ export class FcService extends FcDeploy<ServiceConfig> {
     }
 
     if (_.isEmpty(attachedPolicies) && _.isEmpty(serviceRole)) { return undefined; }
-    this.logger.info(`wating for role: ${roleName} to be deployed`);
+    this.logger.info(`Wating for role: ${roleName} to be deployed`);
     this.hasAutoConfig = true;
     const alicloudRam = new AlicloudRam(this.serverlessProfile, this.credentials, this.region);
     const roleArn = await alicloudRam.makeRole(roleName, undefined, undefined, undefined, assumeRolePolicy, attachedPolicies);
@@ -193,9 +193,9 @@ export class FcService extends FcDeploy<ServiceConfig> {
       if (definition.isAutoConfig(logConfig)) {
         this.hasAutoConfig = true;
         const aliyunSls = new AlicloudSls(this.serverlessProfile, this.credentials, this.region);
-        this.logger.info('using \'logConfig: auto\', FC-DEPLOY will try to generate default sls project.');
+        this.logger.info('Using \'logConfig: auto\', FC-DEPLOY will try to generate default sls project.');
         resolvedLogConfig = await aliyunSls.createDefaultSls(this.name);
-        this.logger.info(`generated auto LogConfig done: \n${JSON.stringify(resolvedLogConfig, null, '  ')}`);
+        this.logger.info(`Generated auto LogConfig done: \n${JSON.stringify(resolvedLogConfig, null, '  ')}`);
       } else {
         throw new Error('logConfig only support auto/Auto when set to string.');
       }
@@ -218,10 +218,10 @@ export class FcService extends FcDeploy<ServiceConfig> {
       }
       this.hasAutoConfig = true;
       // vpc auto
-      this.logger.info('using \'vpcConfig: auto\', FC-DEPLOY will try to generate related vpc resources automatically');
+      this.logger.info('Using \'vpcConfig: auto\', FC-DEPLOY will try to generate related vpc resources automatically');
       const alicloudVpc = new AlicloudVpc(this.serverlessProfile, this.credentials, this.region);
       const vpcDeployRes = await alicloudVpc.createDefaultVpc();
-      this.logger.info(`generated auto VpcConfig done: \n${JSON.stringify(vpcDeployRes, null, '  ')}`);
+      this.logger.info(`Generated auto VpcConfig done: \n${JSON.stringify(vpcDeployRes, null, '  ')}`);
       return {
         vpcId: vpcDeployRes.vpcId,
         securityGroupId: vpcDeployRes.securityGroupId,
@@ -237,9 +237,9 @@ export class FcService extends FcDeploy<ServiceConfig> {
       if (definition.isAutoConfig(nasConfig)) {
         this.hasAutoConfig = true;
         const alicloudNas = new AlicloudNas(this.serverlessProfile, this.credentials, this.region);
-        this.logger.info('using \'nasConfig: auto\', FC-DEPLOY will try to generate related nas file system automatically');
+        this.logger.info('Using \'nasConfig: auto\', FC-DEPLOY will try to generate related nas file system automatically');
         const nasDefaultConfig = await alicloudNas.createDefaultNas(`${FC_NAS_SERVICE_PREFIX}${this.name}`, vpcConfig, `/${this.name}`, roleArn, assumeYes);
-        this.logger.info(`generated auto NasConfig done: \n${JSON.stringify(nasDefaultConfig, null, '  ')}`);
+        this.logger.info(`Generated auto NasConfig done: \n${JSON.stringify(nasDefaultConfig, null, '  ')}`);
         return nasDefaultConfig;
       } else {
         throw new Error('nasConfig only support auto/Auto when set to string.');

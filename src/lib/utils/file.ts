@@ -17,7 +17,7 @@ export async function getFileHash(filePath: string): Promise<string> {
   if (await isFile(filePath)) {
     return await md5File(filePath);
   }
-  throw new Error(`get file hash error, target is not a file, target path is: ${ filePath}`);
+  throw new Error(`Get file hash error, target is not a file, target path is: ${ filePath}`);
 }
 
 async function isFile(inputPath) {
@@ -31,7 +31,7 @@ async function pathJudge(inputPath, type) {
       case 'exists': return true;
       case 'isFile': return stats.isFile();
       case 'isDir': return stats.isDirectory();
-      default: throw new Error('unsupported type in pathJudge function.');
+      default: throw new Error('Unsupported type in pathJudge function.');
     }
   } catch (error) {
     if (error.code === 'ENOENT') {

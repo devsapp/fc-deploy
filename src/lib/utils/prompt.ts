@@ -1,4 +1,5 @@
 import inquirer from 'inquirer';
+import yaml from 'js-yaml';
 import { Logger } from '@serverless-devs/core';
 
 function isInteractiveEnvironment(): boolean {
@@ -22,24 +23,19 @@ export async function promptForConfirmContinue(message: string): Promise<boolean
 }
 
 export async function promptForConfirmOrDetails(message: string, details: any): Promise<boolean> {
-  if (!isInteractiveEnvironment()) { return true; }
-  let answers: any = await inquirer.prompt([{
-    type: 'list',
-    name: 'prompt',
-    message,
-    choices: ['yes', 'no', 'details'],
-  }]);
+  if (!isInteractiveEnvironment()) {
+      return true;
+    }
 
-  while (answers.prompt === 'details') {
-    Logger.log(JSON.stringify(details, null, '  '));
-    Logger.log('');
-    answers = await inquirer.prompt([{
+    Logger.log(`
+  ${yaml.dump({'detail': details})}`);
+
+    let answers: any = await inquirer.prompt([{
       type: 'list',
       name: 'prompt',
       message,
-      choices: ['yes', 'no', 'details'],
+      choices: ['yes', 'no'],
     }]);
-  }
 
   return answers.prompt === 'yes';
 }

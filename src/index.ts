@@ -31,8 +31,8 @@ export default class FcDeployComponent {
 
   async handlerBase() {
     const fcDefault = await core.loadComponent('devsapp/fc-default');
-    const res = await fcDefault.get();
-    if (res['deploy-type'] === 'pulumi') {
+    const res = await fcDefault.get({args: "deploy-type"});
+    if (res === 'pulumi') {
       return {
         fcBaseComponentIns: await core.loadComponent('devsapp/fc-base'),
         BaseComponent: FcBaseComponent,
@@ -71,10 +71,10 @@ export default class FcDeployComponent {
       };
     }
 
-    this.logger.info(`using region: ${region}`);
-    this.logger.info(`using access alias: ${access}`);
-    this.logger.info(`using accountId: ${mark(String(credentials.AccountID))}`);
-    this.logger.info(`using accessKeyId: ${mark(credentials.AccessKeyID)}`);
+    this.logger.info(`Using region: ${region}`);
+    this.logger.info(`Using access alias: ${access}`);
+    this.logger.info(`Using accountId: ${mark(String(credentials.AccountID))}`);
+    this.logger.info(`Using accessKeyId: ${mark(credentials.AccessKeyID)}`);
 
     const serverlessProfile: ServerlessProfile = {
       project: {
@@ -181,7 +181,7 @@ export default class FcDeployComponent {
         const resolvedTriggerConf: TriggerConfig = await fcTriggers[i].makeTrigger();
         hasAutoTriggerRole = hasAutoTriggerRole || fcTriggers[i].isRoleAuto;
         resolvedTriggerConfs.push(resolvedTriggerConf);
-        this.logger.debug(`resolved trigger: \n${JSON.stringify(resolvedTriggerConf, null, '  ')}`);
+        this.logger.debug(`Resolved trigger: \n${JSON.stringify(resolvedTriggerConf, null, '  ')}`);
       }
     }
 
@@ -192,20 +192,20 @@ export default class FcDeployComponent {
     const fcBaseComponent = new BaseComponent(profileOfFcBase, resolvedServiceConf, region, credentials, curPath, args, resolvedFunctionConf, resolvedTriggerConfs);
 
     const fcBaseComponentInputs = fcBaseComponent.genComponentInputs(componentName);
-    this.logger.info(`waiting for service ${resolvedServiceConf.name} to be deployed`);
+    this.logger.info(`Waiting for service ${resolvedServiceConf.name} to be deployed`);
     if (!_.isEmpty(resolvedFunctionConf)) {
-      this.logger.info(`waiting for function ${resolvedFunctionConf.name} to be deployed`);
+      this.logger.info(`Waiting for function ${resolvedFunctionConf.name} to be deployed`);
     }
     if (!_.isEmpty(resolvedTriggerConfs)) {
-      this.logger.info(`waiting for triggers ${resolvedTriggerConfs.map((t) => t.name)} to be deployed`);
+      this.logger.info(`Waiting for triggers ${resolvedTriggerConfs.map((t) => t.name)} to be deployed`);
     }
     await fcBaseComponentIns.deploy(fcBaseComponentInputs);
-    let deployedInfo = `\nservice: ${resolvedServiceConf.name}`;
+    let deployedInfo = `\nService: ${resolvedServiceConf.name}`;
     if (!_.isEmpty(resolvedFunctionConf)) {
-      deployedInfo += `\nfunction: ${resolvedFunctionConf.name}`;
+      deployedInfo += `\nFunction: ${resolvedFunctionConf.name}`;
     }
     if (!_.isEmpty(resolvedTriggerConfs)) {
-      deployedInfo += `\ntriggers ${resolvedTriggerConfs.map((t) => t.name)}`;
+      deployedInfo += `\nTriggers ${resolvedTriggerConfs.map((t) => t.name)}`;
     }
     this.logger.info(`Deployed:${deployedInfo}`);
     // deploy custom domain
@@ -220,7 +220,7 @@ export default class FcDeployComponent {
       }
     }
     if (!_.isEmpty(resolvedCustomDomainConfs)) {
-      this.logger.info(`waiting for custom domains ${resolvedCustomDomainConfs.map((d) => d.domainName)} to be deployed`);
+      this.logger.info(`Waiting for custom domains ${resolvedCustomDomainConfs.map((d) => d.domainName)} to be deployed`);
       const profileOfFcDomain = replaceProjectName(serverlessProfile, `${serverlessProfile?.project.projectName}-fc-domain-project`);
       for (const resolvedCustomDomainConf of resolvedCustomDomainConfs) {
         this.logger.debug(`waiting for custom domain ${resolvedCustomDomainConf.domainName} to be deployed`);
@@ -301,20 +301,20 @@ export default class FcDeployComponent {
 
     // const assumeYes = parsedArgs.data?.y || parsedArgs.data?.assumeYes;
     if (!nonOptionsArgs || nonOptionsArgs.length === 0) {
-      this.logger.error(' error: expects argument.');
+      this.logger.error(' Error: expects argument.');
       // help info
       core.help(REMOVE_HELP_INFO);
       return;
     }
     if (nonOptionsArgs.length > 1) {
-      this.logger.error(` error: unexpected argument: ${nonOptionsArgs[1]}`);
+      this.logger.error(` Error: unexpected argument: ${nonOptionsArgs[1]}`);
       // help info
       core.help(REMOVE_HELP_INFO);
       return;
     }
     const nonOptionsArg = nonOptionsArgs[0];
     if (!SUPPORTED_REMOVE_ARGS.includes(nonOptionsArg)) {
-      this.logger.error(` remove ${nonOptionsArg} is not supported now.`);
+      this.logger.error(` Remove ${nonOptionsArg} is not supported now.`);
       // help info
       core.help(REMOVE_HELP_INFO);
       return;
@@ -322,8 +322,8 @@ export default class FcDeployComponent {
 
     // remove non-domain
     if (nonOptionsArg !== 'domain') {
-      if (nonOptionsArg === 'function' && _.isEmpty(fcFunction)) { throw new Error('please add function config in s.yml/yaml'); }
-      if (nonOptionsArg === 'trigger' && _.isEmpty(fcTriggers)) { throw new Error('please add triggers config in s.yml/yaml'); }
+      if (nonOptionsArg === 'function' && _.isEmpty(fcFunction)) { throw new Error('Please add function config in s.yml/yaml'); }
+      if (nonOptionsArg === 'trigger' && _.isEmpty(fcTriggers)) { throw new Error('Please add triggers config in s.yml/yaml'); }
       const { fcBaseComponentIns, BaseComponent } = await this.handlerBase();
       const profileOfFcBase = replaceProjectName(serverlessProfile, `${serverlessProfile?.project.projectName}-fc-base-project`);
       const fcBaseComponent = new BaseComponent(profileOfFcBase, fcService.useRemote ? fcService.remoteConfig : fcService.localConfig, region, credentials, curPath, args, fcFunction?.useRemote ? fcFunction?.remoteConfig : fcFunction?.localConfig, fcTriggers.map((t) => (t?.useRemote ? t?.remoteConfig : t?.localConfig)));
@@ -355,7 +355,7 @@ export default class FcDeployComponent {
       return removeRes;
     }
     // remove domain
-    if (_.isEmpty(fcCustomDomains)) { throw new Error('please add custom domain config in s.yml/yaml'); }
+    if (_.isEmpty(fcCustomDomains)) { throw new Error('Please add custom domain config in s.yml/yaml'); }
     const profileOfFcDomain = replaceProjectName(serverlessProfile, `${serverlessProfile?.project.projectName}-fc-domain-project`);
     const removedCustomDomains: string[] = [];
     for (const fcCustomDomain of fcCustomDomains) {
