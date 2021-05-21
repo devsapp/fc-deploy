@@ -330,6 +330,10 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
     return roleArn;
   }
 
+  generateSystemDomain(): string {
+    return `https://${this.credentials.AccountID}.${this.region}.fc.aliyuncs.com/2016-08-15/proxy/${this.serviceName}/${this.functionName}/`;
+  }
+
   async makeTrigger(): Promise<TriggerConfig> {
     if (this.useRemote) { return this.remoteConfig; }
     if (_.isEmpty(this.localConfig)) { return undefined; }

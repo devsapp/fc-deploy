@@ -11,6 +11,7 @@ import * as _ from 'lodash';
 import { mark, ServerlessProfile, replaceProjectName, ICredentials } from './lib/profile';
 import { IProperties, IInputs } from './interface';
 import * as path from 'path';
+import { hasHttpPrefix } from './lib/utils/utils';
 
 export default class FcDeployComponent {
   @core.HLogger('FC-DEPLOY') logger: core.ILogger;
@@ -248,8 +249,24 @@ export default class FcDeployComponent {
     }
     // const returnedFunctionConf = Object.assign({}, resolvedFunctionConf, {  });
     if (!_.isEmpty(resolvedFunctionConf)) { Object.assign(res, { function: returnedFunctionConf }); }
-    if (!_.isEmpty(resolvedTriggerConfs)) { Object.assign(res, { triggers: resolvedTriggerConfs }); }
-    if (!_.isEmpty(resolvedCustomDomainConfs)) { Object.assign(res, { customDomains: resolvedCustomDomainConfs }); }
+    if (!_.isEmpty(resolvedTriggerConfs)) {
+      for (const fcTrigger of fcTriggers) {
+        // 只能同时部署一个 http trigger
+        if (fcTrigger.isHttpTrigger()) {
+          Object.assign(res, { systemDomain: fcTrigger.generateSystemDomain() });
+        }
+      }
+      Object.assign(res, { triggers: resolvedTriggerConfs });
+    }
+    if (!_.isEmpty(resolvedCustomDomainConfs)) {
+      for (let i = 0; i < resolvedCustomDomainConfs.length; i++) {
+        if (!hasHttpPrefix(resolvedCustomDomainConfs[i].domainName)) {
+          resolvedCustomDomainConfs[i].domainName = `http://${resolvedCustomDomainConfs[i].domainName}`;
+        }
+      }
+      Object.assign(res, { customDomains: resolvedCustomDomainConfs });
+    }
+
     return res;
   }
 
