@@ -89,5 +89,6 @@ export declare class FcTrigger extends FcDeploy<TriggerConfig> {
     isHttpTrigger(): boolean;
     isTimerTrigger(): boolean;
     makeInvocationRole(): Promise<string>;
+    generateSystemDomain(): string;
     makeTrigger(): Promise<TriggerConfig>;
 }

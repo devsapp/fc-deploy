@@ -4,64 +4,44 @@ access: default  #  秘钥别名
 
 services:
   fc-deploy-test: #  服务名称
-    component: /Users/zqf/Documents/git_proj/fc-deploy-alibaba-component/
+    component: ${path(../..)}
     props: #  组件的属性值
       region: cn-shanghai
       service:
         name: qianfeng-fc-deploy-service
-        description: 'demo for fc-deploy component'
+        description: demo for fc-deploy component
         internetAccess: true
       function:
-        name: http-trigger-function
+        name: test-function
         description: this is a test
         runtime: nodejs10
         codeUri: ./code
-        # ossBucket:
-        # ossKey:  # conflict with codeUri
         handler: index.handler
         memorySize: 128
         timeout: 60
-        initializationTimeout: 60
-        initializer: index.initializer
         instanceConcurrency: 1
         instanceType: e1
         environmentVariables:
           testEnv: true
       triggers:
-          - name: httpTrigger
-            type: http
-            config:
-              authType: anonymous
+        - name: httpTrigger
+          type: http
+          config:
+            authType: anonymous
+            methods:
+              - GET
+              - POST
+      customDomains:
+        - domainName: auto
+          protocol: HTTP  # HTTP 或 HTTP,HTTPS
+          routeConfigs:
+            - path: /*
+              serviceName: qianfeng-fc-deploy-service
+              functionName: test-function
               methods:
                 - GET
-  fc-deploy-test-1: #  服务名称
-    component: /Users/zqf/Documents/git_proj/fc-deploy-alibaba-component/
-    props: #  组件的属性值
-      region: cn-shanghai
-      service:
-        name: qianfeng-fc-deploy-service
-        description: 'demo for fc-deploy component'
-        internetAccess: true
-      function:
-        name: http-trigger-function-1
-        description: this is a test
-        runtime: nodejs10
-        codeUri: ./code
-        # ossBucket:
-        # ossKey:  # conflict with codeUri
-        handler: index.handler
-        memorySize: 128
-        timeout: 60
-        initializationTimeout: 60
-        initializer: index.initializer
-        instanceConcurrency: 1
-        instanceType: e1
-        environmentVariables:
-          testEnv: true
-      triggers:
-          - name: httpTrigger
-            type: http
-            config:
-              authType: anonymous
-              methods:
-                - GET
+                - POST
+          # certConfig:
+          #   certName: xxx
+          #   certificate: xxx
+          #   privateKey: xxx

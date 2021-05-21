@@ -20,3 +20,7 @@ export function createProgressBar(format, options) {
   };
   return bar;
 }
+
+export function hasHttpPrefix(s: string): boolean {
+  return s.startsWith('http://');
+}

@@ -4,8 +4,7 @@ access: default  #  秘钥别名
 
 services:
   fc-deploy-test: #  服务名称
-    # component: fc-deploy  # 组件名称
-    component: /Users/zqf/Documents/git_proj/fc-deploy-alibaba-component/
+    component: ${path(../..)}
     props: #  组件的属性值
       region: cn-shanghai
       service:
@@ -20,8 +19,6 @@ services:
         handler: index.handler
         memorySize: 128
         timeout: 60
-        initializationTimeout: 60
-        initializer: index.initializer
         instanceConcurrency: 1
         instanceType: e1
         environmentVariables:
@@ -33,6 +30,7 @@ services:
             authType: anonymous
             methods:
               - GET
+              - POST
       customDomains:
         - domainName: auto
           protocol: HTTP  # HTTP 或 HTTP,HTTPS
@@ -42,6 +40,7 @@ services:
               functionName: test-function
               methods:
                 - GET
+                - POST
           # certConfig:
           #   certName: xxx
           #   certificate: xxx
