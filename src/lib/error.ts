@@ -49,9 +49,9 @@ export function printPermissionTip(policyName, action, resource) {
   Logger.error('FC-DEPLOY', 'Via the link:  https://shell.aliyun.com/ or aliyun cli');
   Logger.error('FC-DEPLOY', '(Note: aliyun cli tool needs to be configured with credentials that have related RAM permissions, such as primary account\'s AK)');
   Logger.error('FC-DEPLOY', '\n1. Create Policy');
-  Logger.error('FC-DEPLOY', `aliyun ram CreatePolicy --PolicyName ${policyName} --PolicyDocument "${JSON.stringify(policy).replace(/"/g, '\\"')}"`);
+  Logger.error('FC-DEPLOY', `Aliyun ram CreatePolicy --PolicyName ${policyName} --PolicyDocument "${JSON.stringify(policy).replace(/"/g, '\\"')}"`);
   Logger.error('FC-DEPLOY', '\n2. Attach Policy To User');
-  Logger.error('FC-DEPLOY', `aliyun ram AttachPolicyToUser --PolicyName ${policyName} --PolicyType "Custom" --UserName "YOUR_USER_NAME"\n`);
+  Logger.error('FC-DEPLOY', `Aliyun ram AttachPolicyToUser --PolicyName ${policyName} --PolicyType "Custom" --UserName "YOUR_USER_NAME"\n`);
 }
 
 export function throwProcessedFCPermissionError(ex, region, ...resourceArr) {

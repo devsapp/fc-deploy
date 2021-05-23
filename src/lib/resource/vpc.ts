@@ -79,7 +79,7 @@ export class AlicloudVpc extends AlicloudClient {
     const usedZoneId = await this.selectVSwitchZoneId(fcAllowedZones, vpcZones, nasZones);
 
     if (!usedZoneId) {
-      throw new Error('no availiable zone for vswitch');
+      throw new Error('No availiable zone for vswitch');
     }
 
     this.logger.debug('select allowed switch zone: ', usedZoneId);

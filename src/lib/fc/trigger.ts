@@ -139,10 +139,10 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
 
   validateConfig() {
     if (_.isNil(this.functionName)) {
-      throw new Error('you can not add trigger config without function config');
+      throw new Error('You can not add trigger config without function config');
     }
     if (_.isEmpty(this.localConfig)) {
-      throw new Error('please add trigger config in triggers property');
+      throw new Error('Please add trigger config in triggers property');
     }
   }
   private async initLocalConfig(): Promise<void> {
@@ -177,7 +177,7 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
   }
 
   async makeInvocationRole(): Promise<string> {
-    this.logger.info(`waiting for making invocation role for trigger: ${this.name}`);
+    this.logger.info(`Waiting for making invocation role for trigger: ${this.name}`);
     const roleName: string = normalizeRoleOrPoliceName(`FcDeployCreateRole-${this.serviceName}-${this.functionName}`);
     let assumeRolePolicy: {[key: string]: any};
     let serviceOfAssumeRolePolicy: string;
@@ -320,7 +320,7 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
         ],
       };
     } else {
-      throw new Error(`unsupported trigger: \n${JSON.stringify(this.localConfig, null, '  ')}`);
+      throw new Error(`Unsupported trigger: \n${JSON.stringify(this.localConfig, null, '  ')}`);
     }
 
     // make role

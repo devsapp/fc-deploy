@@ -26,7 +26,7 @@ export async function pack(file: string, codeignore: any, zipPath: any) {
 
 async function packTo(file: string, codeignore: any, targetPath: string, prefix = '', zlibOptions = {}) {
   if (!(await fse.pathExists(file))) {
-    throw new Error(`zip file ${file} is not exist.`);
+    throw new Error(`Zip file ${file} is not exist.`);
   }
 
   core.Logger.debug('FC-DEPLOY', `pack file is ${targetPath}, absFilePath is ${file}`);
@@ -34,7 +34,7 @@ async function packTo(file: string, codeignore: any, targetPath: string, prefix 
   const stats = await fse.lstat(file);
 
   if (codeignore && codeignore(file)) {
-    throw new Error(`file ${file} is ignored.`);
+    throw new Error(`File ${file} is ignored.`);
   }
 
   core.Logger.debug('FC-DEPLOY', `append ${stats.isFile() ? 'file' : 'folder'}: ${file}, absolute path is ${path.resolve(file)}`);
@@ -101,7 +101,7 @@ async function packTo(file: string, codeignore: any, targetPath: string, prefix 
   } else if (stats.isDirectory()) {
     count = await zipFolder(zipArchiver, file, [], codeignore, file, prefix);
   } else {
-    throw new Error(`file ${file} must be a regular file or directory.`);
+    throw new Error(`File ${file} must be a regular file or directory.`);
   }
 
   return await new Promise((resolve, reject) => {
@@ -181,7 +181,7 @@ async function zipFolder(zipArchiver, folder, folders, codeignore, codeUri, pref
     } else if (s.isDirectory()) {
       return await zipFolder(zipArchiver, f, folders.slice(), codeignore, codeUri, prefix);
     }
-    console.error(`ignore file ${absFilePath}, because it isn't a file, symbolic link or directory`);
+    console.error(`Ignore file ${absFilePath}, because it isn't a file, symbolic link or directory`);
     return 0;
   }))).reduce(((sum, curr) => sum + curr), 0);
 }

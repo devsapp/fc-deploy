@@ -51,7 +51,7 @@ export class AlicloudAcr extends AlicloudClient {
     imageArr[0] = this.registry;
 
     const resolvedImage = imageArr.join('/');
-    this.logger.log(`docker push ${resolvedImage}...`, 'yellow');
+    this.logger.log(`Docker push ${resolvedImage}...`, 'yellow');
     execSync(`docker push ${resolvedImage}`, { stdio: 'inherit' });
   }
 }
