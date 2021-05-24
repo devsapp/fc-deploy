@@ -21,43 +21,11 @@ services:
         initializationTimeout: 3
         codeUri: ./code
       triggers:
-        - name: myTimer
-          type: timer
+        - name: httpTrigger
+          type: http
           config:
-            cronExpression: 0 1 2 3 4 5
-            enable: true
-  op_ecs:
-    component: ${path(../..)}  # 组件名称
-    props: #  组件的属性值
-      region: cn-shanghai
-      service:
-        name: qianfeng-demo
-        description: demo for fc-deploy component
-        internetAccess: false
-      function:
-        name: op_ecs
-        runtime: python3
-        handler: index.handler
-        timeout: 60
-        instanceType: e1
-        memorySize: 512
-        initializationTimeout: 3
-        codeUri: ./code
-  cffi_problem: 
-    component: ${path(../..)}  # 组件名称
-    props: #  组件的属性值
-      region: cn-shanghai
-      service:
-        name: qianfeng-demo
-        description: demo for fc-deploy component
-        internetAccess: false
-      function:
-        name: cffi_problem
-        runtime: python3
-        handler: index.handler
-        timeout: 60
-        instanceType: e1
-        memorySize: 512
-        initializationTimeout: 3
-        instanceConcurrency: 1
-        codeUri: ./code
+            authType: anonymous
+            methods:
+              - GET
+              - POST
+              - PUT

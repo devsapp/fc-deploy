@@ -9,6 +9,6 @@ export default abstract class FcDeploy<T> extends IInputsBase {
     unsetState(): Promise<void>;
     initRemoteConfig(type: string, serviceName: string, functionName?: string, triggerName?: string): Promise<void>;
     setResolvedConfig(name: string, resolvedConfig: any, setFlag: boolean): Promise<void>;
-    setUseRemote(name: string, type: string, useRemoteFlag?: boolean): Promise<void>;
+    setUseRemote(name: string, type: string, useRemoteFlag?: boolean, useLocalFlag?: boolean): Promise<void>;
     abstract genStateID(): string;
 }

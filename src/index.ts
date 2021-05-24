@@ -31,7 +31,7 @@ export default class FcDeployComponent {
 
   async handlerBase() {
     const fcDefault = await core.loadComponent('devsapp/fc-default');
-    const res = await fcDefault.get({args: "deploy-type"});
+    const res = await fcDefault.get({ args: 'deploy-type' });
     if (res === 'pulumi') {
       return {
         fcBaseComponentIns: await core.loadComponent('devsapp/fc-base'),
@@ -148,24 +148,29 @@ export default class FcDeployComponent {
     } = await this.handlerInputs(inputs);
     await this.report('fc-deploy', 'deploy', fcService?.credentials?.AccountID, access);
 
-    const parsedArgs: {[key: string]: any} = core.commandParse({ args }, { boolean: ['y', 'assume-yes', 'use-remote'] });
+    const parsedArgs: {[key: string]: any} = core.commandParse({ args }, {
+      boolean: ['assume-yes', 'use-remote', 'use-local'],
+      alias: { help: 'h', 'assume-yes': 'y' } });
     const argsData: any = parsedArgs?.data || {};
-    if (argsData.h || argsData.help) {
+    if (argsData.help) {
       core.help(DEPLOY_HELP_INFO);
       return;
     }
     const assumeYes: boolean = argsData.y || argsData.assumeYes || argsData['assume-yes'];
     const useRemote: boolean = argsData['use-remote'];
-    // TODO: 获取线上 服务、函数 配置（包含代码？），让用户选择以线上/线下配置为主。sync 组件
+    const useLocal: boolean = argsData['use-local'];
+    if (useLocal && useRemote) {
+      throw new Error('You can not set --use-remote and --use-local flag simultaneously');
+    }
 
     // service
-    await fcService.setUseRemote(fcService.name, 'service', useRemote);
+    await fcService.setUseRemote(fcService.name, 'service', useRemote, useLocal);
     const resolvedServiceConf: ServiceConfig = await fcService.makeService(assumeYes);
     this.logger.debug(`Resolved serviceConf is:\n${JSON.stringify(resolvedServiceConf, null, '  ')}`);
     // function
     let resolvedFunctionConf: FunctionConfig;
     if (!_.isNil(fcFunction)) {
-      await fcFunction.setUseRemote(fcFunction.name, 'function', useRemote);
+      await fcFunction.setUseRemote(fcFunction.name, 'function', useRemote, useLocal);
       const baseDir = path.dirname(curPath.configPath);
 
       const pushRegistry = parsedArgs.data?.pushRegistry;
@@ -177,7 +182,7 @@ export default class FcDeployComponent {
     let hasAutoTriggerRole = false;
     if (!_.isEmpty(fcTriggers)) {
       for (let i = 0; i < fcTriggers.length; i++) {
-        await fcTriggers[i].setUseRemote(fcTriggers[i].name, 'trigger', useRemote);
+        await fcTriggers[i].setUseRemote(fcTriggers[i].name, 'trigger', useRemote, useLocal);
         const resolvedTriggerConf: TriggerConfig = await fcTriggers[i].makeTrigger();
         hasAutoTriggerRole = hasAutoTriggerRole || fcTriggers[i].isRoleAuto;
         resolvedTriggerConfs.push(resolvedTriggerConf);
@@ -248,7 +253,11 @@ export default class FcDeployComponent {
       returnedFunctionConf.codeUri = fcFunction.useRemote ? fcFunction.remoteConfig?.codeUri : fcFunction.localConfig?.codeUri;
     }
     // const returnedFunctionConf = Object.assign({}, resolvedFunctionConf, {  });
-    if (!_.isEmpty(resolvedFunctionConf)) { Object.assign(res, { function: returnedFunctionConf }); }
+    if (!_.isEmpty(resolvedFunctionConf)) {
+      delete returnedFunctionConf.import;
+      delete returnedFunctionConf.protect;
+      Object.assign(res, { function: returnedFunctionConf });
+    }
     if (!_.isEmpty(resolvedTriggerConfs)) {
       for (const fcTrigger of fcTriggers) {
         // 只能同时部署一个 http trigger
@@ -256,7 +265,11 @@ export default class FcDeployComponent {
           Object.assign(res, { systemDomain: fcTrigger.generateSystemDomain() });
         }
       }
-      Object.assign(res, { triggers: resolvedTriggerConfs });
+      Object.assign(res, { triggers: resolvedTriggerConfs.map((t) => {
+        delete t.import;
+        delete t.protect;
+        return t;
+      }) });
     }
     if (!_.isEmpty(resolvedCustomDomainConfs)) {
       for (let i = 0; i < resolvedCustomDomainConfs.length; i++) {
@@ -289,7 +302,9 @@ export default class FcDeployComponent {
     } = await this.handlerInputs(inputs);
 
     await this.report('fc-deploy', 'remove', fcService?.credentials?.AccountID, access);
-    const parsedArgs: { [key: string]: any } = core.commandParse({ args }, { boolean: ['y', 'assume-yes', 'h', 'help', 's', 'silent'] });
+    const parsedArgs: {[key: string]: any} = core.commandParse({ args }, {
+      boolean: ['assume-yes', 'use-remote', 'use-local'],
+      alias: { help: 'h', 'assume-yes': 'y' } });
     if (parsedArgs.data?.h || parsedArgs.data?.help) {
       core.help(REMOVE_HELP_INFO);
       return;

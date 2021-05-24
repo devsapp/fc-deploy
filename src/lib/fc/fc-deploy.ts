@@ -79,40 +79,42 @@ export default abstract class FcDeploy<T> extends IInputsBase {
     await this.setKVInState(stateID, 'resolvedConfig', resolvedConfig);
   }
 
-  async setUseRemote(name: string, type: string, useRemoteFlag?: boolean): Promise<void> {
+  async setUseRemote(name: string, type: string, useRemoteFlag?: boolean, useLocalFlag?: boolean): Promise<void> {
     const stateID: string = this.genStateID();
-
-    if (useRemoteFlag && !this.existOnline) {
-      // --use-remote 参数为真，且线上资源不存在，则报错
-      throw new Error(`${type}: ${name} dose not exist online, please make sure the ${type} exists when use --use-remote flag.`);
-    }
     if (!this.existOnline) {
+      if (useRemoteFlag) {
+        // --use-remote 参数为真，且线上资源不存在，则报错
+        throw new Error(`${type}: ${name} dose not exist online, please make sure the ${type} exists when use --use-remote flag.`);
+      }
       // --use-remote 参数为假，且线上资源不存在，则默认使用线下配置，且之后不再询问
       this.logger.info(`${type}: ${name} dose not exist online, fc will use local config from now on.`);
-      await this.setKVInState(stateID, 'useRemote', false);
       this.useRemote = false;
-      return;
-    }
-    if (_.isNil(useRemoteFlag)) {
-      /* --use-remote 参数为假，且线上资源存在，则首先查询之前有无默认配置
-      //   若无，则询问用户是否使用线上，用户选择后，保存答案，之后不再询问
-      //   若有，则使用之前的默认配置
-      */
-      const state = await core.getState(stateID);
+    } else if (!useRemoteFlag && !useLocalFlag) {
+      /*
+        //   --use-remote 以及 --use-local 都为空
+        //    若用户之前未进行选择，则询问用户使用线上/线下配置，并保存用户选择
+        //    若用户之前已进行选择，则复用之前的选择
+        */
+      const state: any = await core.getState(stateID);
 
-      if (_.isNil(state?.useRemote)) {
+      if (state && Object.prototype.hasOwnProperty.call(state, 'useRemote')) {
+        this.useRemote = state.useRemote;
+      } else {
         const msg = `${type}: ${name} exists on line, do you want to use online config?`;
         const details: any = _.cloneDeep(this.remoteConfig);
         delete details.import;
         delete details.protect;
         this.useRemote = await promptForConfirmOrDetails(msg, details);
-      } else {
-        this.useRemote = state?.useRemote;
+        this.logger.log(`The deployment will use ${this.useRemote ? 'remote config' : 'local config'} from now on.\nYou can change it by setting --use-remote/--use-local flag in deploy command.`, 'yellow');
       }
-    } else {
-      // --use-remote 参数为真，且线上资源存在，则默认使用线上配置，且之后不再询问
-      this.useRemote = useRemoteFlag;
+    } else if (useRemoteFlag && !useLocalFlag) {
+      // 使用线上资源
+      this.useRemote = true;
+    } else if (!useRemoteFlag && useLocalFlag) {
+      // 使用线下资源
+      this.useRemote = false;
     }
+
     await this.setKVInState(stateID, 'useRemote', this.useRemote);
   }
 

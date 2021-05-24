@@ -124,7 +124,7 @@ var AlicloudAcr = /** @class */ (function (_super) {
                         imageArr = image.split('/');
                         imageArr[0] = this.registry;
                         resolvedImage = imageArr.join('/');
-                        this.logger.log("docker push " + resolvedImage + "...", 'yellow');
+                        this.logger.log("Docker push " + resolvedImage + "...", 'yellow');
                         child_process_1.execSync("docker push " + resolvedImage, { stdio: 'inherit' });
                         return [2 /*return*/];
                 }

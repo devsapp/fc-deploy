@@ -1,7 +1,7 @@
 {
   "name": "fc-delpoy",
   "main": "./dist/index.js",
-  "version": "0.0.13",
+  "version": "0.0.14",
   "dependencies": {
     "@serverless-devs/core": "^0.0.x",
     "@types/lodash": "^4.14.168",
@@ -20,7 +20,8 @@
     "@types/graceful-fs": "^4.1.5",
     "temp-dir": "^2.0.0",
     "uuid-by-string": "^3.0.2",
-    "promise-retry": "^2.0.1"
+    "promise-retry": "^2.0.1",
+    "js-yaml": "^4.1.0"
   },
   "devDependencies": {
     "@types/eslint": "^7.2.6",
@@ -34,8 +35,7 @@
     "ts-node": "^9.1.1",
     "typescript": "^3.9.7",
     "webpack": "^4.46.0",
-    "webpack-cli": "^4.4.0",
-    "js-yaml": "^4.1.0"
+    "webpack-cli": "^4.4.0"
   },
   "scripts": {
     "dev": "npx tsc -w -p tsconfig.json",

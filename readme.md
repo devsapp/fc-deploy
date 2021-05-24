@@ -7,11 +7,12 @@ s cli fc-default set deploy-type pulumi
 s cli fc-default set deploy-type sdk
 ```
 
-部署时可通过 ```--use-remote``` 来决定是否利用线上配置，默认使用线下配置。
+部署时可通过 ```--use-remote/--use-local``` 来决定利用线上/线下配置，此时不会出现交互式选择。
 
 ```shell
-# 部署资源，不加 --use-remote 则默认用线下配置
+# 部署资源
 $ s exec -- deploy -y --use-remote
+$ s exec -- deploy -y --use-local
 
 # 删除资源
 $ s exec -- remove service

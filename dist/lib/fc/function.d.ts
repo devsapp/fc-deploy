@@ -20,6 +20,8 @@ export interface FunctionConfig {
     initializer?: string;
     instanceConcurrency?: number;
     instanceType?: string;
+    import?: boolean;
+    protect?: boolean;
 }
 export interface CustomContainerConfig {
     image: string;

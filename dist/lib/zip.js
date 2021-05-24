@@ -104,14 +104,14 @@ function packTo(file, codeignore, targetPath, prefix, zlibOptions) {
                 case 0: return [4 /*yield*/, fse.pathExists(file)];
                 case 1:
                     if (!(_a.sent())) {
-                        throw new Error("zip file " + file + " is not exist.");
+                        throw new Error("Zip file " + file + " is not exist.");
                     }
                     core.Logger.debug('FC-DEPLOY', "pack file is " + targetPath + ", absFilePath is " + file);
                     return [4 /*yield*/, fse.lstat(file)];
                 case 2:
                     stats = _a.sent();
                     if (codeignore && codeignore(file)) {
-                        throw new Error("file " + file + " is ignored.");
+                        throw new Error("File " + file + " is ignored.");
                     }
                     core.Logger.debug('FC-DEPLOY', "append " + (stats.isFile() ? 'file' : 'folder') + ": " + file + ", absolute path is " + path.resolve(file));
                     bar = utils_1.createProgressBar(colors_1.green(':zipping') + " :bar :current/:total :rate files/s, :percent :etas", { total: 0 });
@@ -170,7 +170,7 @@ function packTo(file, codeignore, targetPath, prefix, zlibOptions) {
                 case 4:
                     count = _a.sent();
                     return [3 /*break*/, 6];
-                case 5: throw new Error("file " + file + " must be a regular file or directory.");
+                case 5: throw new Error("File " + file + " must be a regular file or directory.");
                 case 6: return [4 /*yield*/, new Promise(function (resolve, reject) {
                         output.on('close', function () {
                             var compressedSize = zipArchiver.pointer();
@@ -263,7 +263,7 @@ function zipFolder(zipArchiver, folder, folders, codeignore, codeUri, prefix) {
                                         return [4 /*yield*/, zipFolder(zipArchiver, f, folders.slice(), codeignore, codeUri, prefix)];
                                     case 8: return [2 /*return*/, _a.sent()];
                                     case 9:
-                                        console.error("ignore file " + absFilePath + ", because it isn't a file, symbolic link or directory");
+                                        console.error("Ignore file " + absFilePath + ", because it isn't a file, symbolic link or directory");
                                         return [2 /*return*/, 0];
                                 }
                             });

@@ -180,7 +180,7 @@ var AlicloudVpc = /** @class */ (function (_super) {
                     case 4:
                         usedZoneId = _a.sent();
                         if (!usedZoneId) {
-                            throw new Error('no availiable zone for vswitch');
+                            throw new Error('No availiable zone for vswitch');
                         }
                         this.logger.debug('select allowed switch zone: ', usedZoneId);
                         return [2 /*return*/, usedZoneId];
