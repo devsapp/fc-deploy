@@ -252,7 +252,7 @@ var FcService = /** @class */ (function (_super) {
                         if (_.isEmpty(attachedPolicies) && _.isEmpty(serviceRole)) {
                             return [2 /*return*/, undefined];
                         }
-                        this.logger.info("wating for role: " + roleName + " to be deployed");
+                        this.logger.info("Wating for role: " + roleName + " to be deployed");
                         this.hasAutoConfig = true;
                         alicloudRam = new ram_1.AlicloudRam(this.serverlessProfile, this.credentials, this.region);
                         return [4 /*yield*/, alicloudRam.makeRole(roleName, undefined, undefined, undefined, assumeRolePolicy, attachedPolicies)];
@@ -283,11 +283,11 @@ var FcService = /** @class */ (function (_super) {
                         if (!definition.isAutoConfig(logConfig)) return [3 /*break*/, 2];
                         this.hasAutoConfig = true;
                         aliyunSls = new sls_1.AlicloudSls(this.serverlessProfile, this.credentials, this.region);
-                        this.logger.info('using \'logConfig: auto\', FC-DEPLOY will try to generate default sls project.');
+                        this.logger.info('Using \'logConfig: auto\', FC-DEPLOY will try to generate default sls project.');
                         return [4 /*yield*/, aliyunSls.createDefaultSls(this.name)];
                     case 1:
                         resolvedLogConfig = _a.sent();
-                        this.logger.info("generated auto LogConfig done: \n" + JSON.stringify(resolvedLogConfig, null, '  '));
+                        this.logger.info("Generated auto LogConfig done: \n" + JSON.stringify(resolvedLogConfig, null, '  '));
                         return [3 /*break*/, 3];
                     case 2: throw new Error('logConfig only support auto/Auto when set to string.');
                     case 3: return [3 /*break*/, 5];
@@ -317,12 +317,12 @@ var FcService = /** @class */ (function (_super) {
                         }
                         this.hasAutoConfig = true;
                         // vpc auto
-                        this.logger.info('using \'vpcConfig: auto\', FC-DEPLOY will try to generate related vpc resources automatically');
+                        this.logger.info('Using \'vpcConfig: auto\', FC-DEPLOY will try to generate related vpc resources automatically');
                         alicloudVpc = new vpc_1.AlicloudVpc(this.serverlessProfile, this.credentials, this.region);
                         return [4 /*yield*/, alicloudVpc.createDefaultVpc()];
                     case 1:
                         vpcDeployRes = _a.sent();
-                        this.logger.info("generated auto VpcConfig done: \n" + JSON.stringify(vpcDeployRes, null, '  '));
+                        this.logger.info("Generated auto VpcConfig done: \n" + JSON.stringify(vpcDeployRes, null, '  '));
                         return [2 /*return*/, {
                                 vpcId: vpcDeployRes.vpcId,
                                 securityGroupId: vpcDeployRes.securityGroupId,
@@ -344,11 +344,11 @@ var FcService = /** @class */ (function (_super) {
                         if (!definition.isAutoConfig(nasConfig)) return [3 /*break*/, 2];
                         this.hasAutoConfig = true;
                         alicloudNas = new nas_1.AlicloudNas(this.serverlessProfile, this.credentials, this.region);
-                        this.logger.info('using \'nasConfig: auto\', FC-DEPLOY will try to generate related nas file system automatically');
+                        this.logger.info('Using \'nasConfig: auto\', FC-DEPLOY will try to generate related nas file system automatically');
                         return [4 /*yield*/, alicloudNas.createDefaultNas("" + static_1.FC_NAS_SERVICE_PREFIX + this.name, vpcConfig, "/" + this.name, roleArn, assumeYes)];
                     case 1:
                         nasDefaultConfig = _a.sent();
-                        this.logger.info("generated auto NasConfig done: \n" + JSON.stringify(nasDefaultConfig, null, '  '));
+                        this.logger.info("Generated auto NasConfig done: \n" + JSON.stringify(nasDefaultConfig, null, '  '));
                         return [2 /*return*/, nasDefaultConfig];
                     case 2: throw new Error('nasConfig only support auto/Auto when set to string.');
                     case 3: return [2 /*return*/, nasConfig];

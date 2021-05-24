@@ -41,6 +41,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.promptForConfirmOrDetails = exports.promptForConfirmContinue = void 0;
 var inquirer_1 = __importDefault(require("inquirer"));
+var js_yaml_1 = __importDefault(require("js-yaml"));
 var core_1 = require("@serverless-devs/core");
 function isInteractiveEnvironment() {
     return process.stdin.isTTY;
@@ -79,32 +80,19 @@ function promptForConfirmOrDetails(message, details) {
                     if (!isInteractiveEnvironment()) {
                         return [2 /*return*/, true];
                     }
+                    core_1.Logger.log("\n  " + js_yaml_1.default.dump({ detail: details }));
                     return [4 /*yield*/, inquirer_1.default.prompt([{
                                 type: 'list',
                                 name: 'prompt',
                                 message: message,
-                                choices: ['yes', 'no', 'details'],
+                                choices: ['yes', 'no'],
                             }])];
                 case 1:
                     answers = _a.sent();
-                    _a.label = 2;
-                case 2:
-                    if (!(answers.prompt === 'details')) return [3 /*break*/, 4];
-                    core_1.Logger.log(JSON.stringify(details, null, '  '));
-                    core_1.Logger.log('');
-                    return [4 /*yield*/, inquirer_1.default.prompt([{
-                                type: 'list',
-                                name: 'prompt',
-                                message: message,
-                                choices: ['yes', 'no', 'details'],
-                            }])];
-                case 3:
-                    answers = _a.sent();
-                    return [3 /*break*/, 2];
-                case 4: return [2 /*return*/, answers.prompt === 'yes'];
+                    return [2 /*return*/, answers.prompt === 'yes'];
             }
         });
     });
 }
 exports.promptForConfirmOrDetails = promptForConfirmOrDetails;
-//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoicHJvbXB0LmpzIiwic291cmNlUm9vdCI6IiIsInNvdXJjZXMiOlsiLi4vLi4vLi4vc3JjL2xpYi91dGlscy9wcm9tcHQudHMiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7O0FBQUEsc0RBQWdDO0FBQ2hDLDhDQUErQztBQUUvQyxTQUFTLHdCQUF3QjtJQUMvQixPQUFPLE9BQU8sQ0FBQyxLQUFLLENBQUMsS0FBSyxDQUFDO0FBQzdCLENBQUM7QUFFRCxTQUFzQix3QkFBd0IsQ0FBQyxPQUFlOzs7Ozs7b0JBQzVELElBQUksQ0FBQyx3QkFBd0IsRUFBRSxFQUFFO3dCQUFFLHNCQUFPLElBQUksRUFBQztxQkFBRTtvQkFHakMscUJBQU0sa0JBQVEsQ0FBQyxNQUFNLENBQUMsQ0FBQztnQ0FDckMsSUFBSSxFQUFFLFNBQVM7Z0NBQ2YsSUFBSSxFQUFFLElBQUk7Z0NBQ1YsT0FBTyxTQUFBOzZCQUNSLENBQUMsQ0FBQyxFQUFBOztvQkFKRyxPQUFPLEdBQUcsU0FJYjtvQkFFSCxJQUFJLE9BQU8sQ0FBQyxFQUFFLEVBQUU7d0JBQ2Qsc0JBQU8sSUFBSSxFQUFDO3FCQUNiO29CQUNELHNCQUFPLEtBQUssRUFBQzs7OztDQUNkO0FBZEQsNERBY0M7QUFFRCxTQUFzQix5QkFBeUIsQ0FBQyxPQUFlLEVBQUUsT0FBWTs7Ozs7O29CQUMzRSxJQUFJLENBQUMsd0JBQXdCLEVBQUUsRUFBRTt3QkFBRSxzQkFBTyxJQUFJLEVBQUM7cUJBQUU7b0JBQzlCLHFCQUFNLGtCQUFRLENBQUMsTUFBTSxDQUFDLENBQUM7Z0NBQ3hDLElBQUksRUFBRSxNQUFNO2dDQUNaLElBQUksRUFBRSxRQUFRO2dDQUNkLE9BQU8sU0FBQTtnQ0FDUCxPQUFPLEVBQUUsQ0FBQyxLQUFLLEVBQUUsSUFBSSxFQUFFLFNBQVMsQ0FBQzs2QkFDbEMsQ0FBQyxDQUFDLEVBQUE7O29CQUxDLE9BQU8sR0FBUSxTQUtoQjs7O3lCQUVJLENBQUEsT0FBTyxDQUFDLE1BQU0sS0FBSyxTQUFTLENBQUE7b0JBQ2pDLGFBQU0sQ0FBQyxHQUFHLENBQUMsSUFBSSxDQUFDLFNBQVMsQ0FBQyxPQUFPLEVBQUUsSUFBSSxFQUFFLElBQUksQ0FBQyxDQUFDLENBQUM7b0JBQ2hELGFBQU0sQ0FBQyxHQUFHLENBQUMsRUFBRSxDQUFDLENBQUM7b0JBQ0wscUJBQU0sa0JBQVEsQ0FBQyxNQUFNLENBQUMsQ0FBQztnQ0FDL0IsSUFBSSxFQUFFLE1BQU07Z0NBQ1osSUFBSSxFQUFFLFFBQVE7Z0NBQ2QsT0FBTyxTQUFBO2dDQUNQLE9BQU8sRUFBRSxDQUFDLEtBQUssRUFBRSxJQUFJLEVBQUUsU0FBUyxDQUFDOzZCQUNsQyxDQUFDLENBQUMsRUFBQTs7b0JBTEgsT0FBTyxHQUFHLFNBS1AsQ0FBQzs7d0JBR04sc0JBQU8sT0FBTyxDQUFDLE1BQU0sS0FBSyxLQUFLLEVBQUM7Ozs7Q0FDakM7QUFyQkQsOERBcUJDIn0=
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoicHJvbXB0LmpzIiwic291cmNlUm9vdCI6IiIsInNvdXJjZXMiOlsiLi4vLi4vLi4vc3JjL2xpYi91dGlscy9wcm9tcHQudHMiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7O0FBQUEsc0RBQWdDO0FBQ2hDLG9EQUEyQjtBQUMzQiw4Q0FBK0M7QUFFL0MsU0FBUyx3QkFBd0I7SUFDL0IsT0FBTyxPQUFPLENBQUMsS0FBSyxDQUFDLEtBQUssQ0FBQztBQUM3QixDQUFDO0FBRUQsU0FBc0Isd0JBQXdCLENBQUMsT0FBZTs7Ozs7O29CQUM1RCxJQUFJLENBQUMsd0JBQXdCLEVBQUUsRUFBRTt3QkFBRSxzQkFBTyxJQUFJLEVBQUM7cUJBQUU7b0JBR2pDLHFCQUFNLGtCQUFRLENBQUMsTUFBTSxDQUFDLENBQUM7Z0NBQ3JDLElBQUksRUFBRSxTQUFTO2dDQUNmLElBQUksRUFBRSxJQUFJO2dDQUNWLE9BQU8sU0FBQTs2QkFDUixDQUFDLENBQUMsRUFBQTs7b0JBSkcsT0FBTyxHQUFHLFNBSWI7b0JBRUgsSUFBSSxPQUFPLENBQUMsRUFBRSxFQUFFO3dCQUNkLHNCQUFPLElBQUksRUFBQztxQkFDYjtvQkFDRCxzQkFBTyxLQUFLLEVBQUM7Ozs7Q0FDZDtBQWRELDREQWNDO0FBRUQsU0FBc0IseUJBQXlCLENBQUMsT0FBZSxFQUFFLE9BQVk7Ozs7OztvQkFDM0UsSUFBSSxDQUFDLHdCQUF3QixFQUFFLEVBQUU7d0JBQy9CLHNCQUFPLElBQUksRUFBQztxQkFDYjtvQkFFRCxhQUFNLENBQUMsR0FBRyxDQUFDLFNBQ1QsaUJBQUksQ0FBQyxJQUFJLENBQUMsRUFBRSxNQUFNLEVBQUUsT0FBTyxFQUFFLENBQUcsQ0FBQyxDQUFDO29CQUVmLHFCQUFNLGtCQUFRLENBQUMsTUFBTSxDQUFDLENBQUM7Z0NBQzFDLElBQUksRUFBRSxNQUFNO2dDQUNaLElBQUksRUFBRSxRQUFRO2dDQUNkLE9BQU8sU0FBQTtnQ0FDUCxPQUFPLEVBQUUsQ0FBQyxLQUFLLEVBQUUsSUFBSSxDQUFDOzZCQUN2QixDQUFDLENBQUMsRUFBQTs7b0JBTEcsT0FBTyxHQUFRLFNBS2xCO29CQUVILHNCQUFPLE9BQU8sQ0FBQyxNQUFNLEtBQUssS0FBSyxFQUFDOzs7O0NBQ2pDO0FBaEJELDhEQWdCQyJ9

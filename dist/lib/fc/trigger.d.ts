@@ -6,6 +6,8 @@ export interface TriggerConfig {
     type: 'oss' | 'log' | 'timer' | 'http' | 'mnsTopic' | 'cdnEvents' | 'tablestore';
     role?: string;
     sourceArn?: string;
+    import?: boolean;
+    protect?: boolean;
     config: OssTriggerConfig | LogTriggerConfig | TimerTriggerConfig | HttpTriggerConfig | MnsTriggerConfig | CdnTriggerConfig | TablestoreConfig;
 }
 export interface TablestoreConfig {

@@ -24,18 +24,18 @@ export async function promptForConfirmContinue(message: string): Promise<boolean
 
 export async function promptForConfirmOrDetails(message: string, details: any): Promise<boolean> {
   if (!isInteractiveEnvironment()) {
-      return true;
-    }
+    return true;
+  }
 
-    Logger.log(`
-  ${yaml.dump({'detail': details})}`);
+  Logger.log(`
+  ${yaml.dump({ detail: details })}`);
 
-    let answers: any = await inquirer.prompt([{
-      type: 'list',
-      name: 'prompt',
-      message,
-      choices: ['yes', 'no'],
-    }]);
+  const answers: any = await inquirer.prompt([{
+    type: 'list',
+    name: 'prompt',
+    message,
+    choices: ['yes', 'no'],
+  }]);
 
   return answers.prompt === 'yes';
 }

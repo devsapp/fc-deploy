@@ -81,7 +81,7 @@ function getFileHash(filePath) {
                     if (!_a.sent()) return [3 /*break*/, 3];
                     return [4 /*yield*/, md5_file_1.default(filePath)];
                 case 2: return [2 /*return*/, _a.sent()];
-                case 3: throw new Error("get file hash error, target is not a file, target path is: " + filePath);
+                case 3: throw new Error("Get file hash error, target is not a file, target path is: " + filePath);
             }
         });
     });
@@ -111,7 +111,7 @@ function pathJudge(inputPath, type) {
                         case 'exists': return [2 /*return*/, true];
                         case 'isFile': return [2 /*return*/, stats.isFile()];
                         case 'isDir': return [2 /*return*/, stats.isDirectory()];
-                        default: throw new Error('unsupported type in pathJudge function.');
+                        default: throw new Error('Unsupported type in pathJudge function.');
                     }
                     return [3 /*break*/, 3];
                 case 2:

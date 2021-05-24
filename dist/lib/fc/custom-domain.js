@@ -119,7 +119,7 @@ var FcCustomDomain = /** @class */ (function (_super) {
             return;
         }
         if (!this.hasHttpTrigger) {
-            throw new Error('there should be http trigger when custom domain exists');
+            throw new Error('There should be http trigger when custom domain exists');
         }
         if (this.customDomainConf.protocol.toLocaleLowerCase().indexOf('https')) {
             if (Object.prototype.hasOwnProperty.call(this.customDomainConf, 'certConfig')) {
@@ -137,7 +137,7 @@ var FcCustomDomain = /** @class */ (function (_super) {
             else if (!Object.prototype.hasOwnProperty.call(this.customDomainConf, 'routeConfigs')) {
                 lackedAttr = 'routeConfigs';
             }
-            throw new Error("lack of " + lackedAttr + " in custom domain: \n" + JSON.stringify(this.customDomainConf, null, '  '));
+            throw new Error("Lack of " + lackedAttr + " in custom domain: \n" + JSON.stringify(this.customDomainConf, null, '  '));
         }
     };
     FcCustomDomain.prototype.initLocalConfig = function () {
@@ -267,8 +267,8 @@ var FcCustomDomain = /** @class */ (function (_super) {
                         });
                         if (!this.isDomainNameAuto) return [3 /*break*/, 7];
                         // generate domain via domain component
-                        this.logger.debug('auto domain name');
-                        this.logger.info('using \'customDomain: auto\', FC-DEPLOY will try to generate related custom domain resources automatically');
+                        this.logger.debug('Auto domain name');
+                        this.logger.info('Using \'customDomain: auto\', FC-DEPLOY will try to generate related custom domain resources automatically');
                         profileOfDomain = profile_1.replaceProjectName(this.serverlessProfile, ((_a = this.serverlessProfile) === null || _a === void 0 ? void 0 : _a.project.projectName) + "-domain-project");
                         domainComponent = new domain_1.DomainComponent(profileOfDomain, this.serviceName, this.functionName, this.region, this.credentials, this.curPath, this.args);
                         domainComponentInputs = domainComponent.genComponentInputs('domain');
@@ -278,7 +278,7 @@ var FcCustomDomain = /** @class */ (function (_super) {
                         return [4 /*yield*/, domainComponentIns.get(domainComponentInputs)];
                     case 6:
                         generatedDomain = _e.sent();
-                        this.logger.info("generated auto custom domain done: " + generatedDomain);
+                        this.logger.info("Generated auto custom domain done: " + generatedDomain);
                         Object.assign(resolvedCustomDomainConf, {
                             domainName: generatedDomain,
                         });
