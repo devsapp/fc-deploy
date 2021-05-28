@@ -4,6 +4,7 @@ import { TriggerConfig } from '../fc/trigger';
 import * as _ from 'lodash';
 import { ServerlessProfile, ICredentials } from '../profile';
 import { Component } from './component';
+import { isAutoConfig } from '../definition';
 
 export class FcBaseSdkComponent extends Component {
   readonly serviceConf: ServiceConfig;
@@ -23,7 +24,22 @@ export class FcBaseSdkComponent extends Component {
     }
     const resolvedServiceConf: { [key: string]: any } = _.cloneDeep(this.serviceConf);
 
-    if (!_.isEmpty(this.serviceConf.nasConfig)) {
+    if (isAutoConfig(resolvedServiceConf?.vpcConfig)) {
+      this.logger.debug('Detect vpcConfig: auto in fc-base inputs, fc will delete it.');
+      delete resolvedServiceConf.vpcConfig;
+    } else if (resolvedServiceConf?.vpcConfig) {
+      delete resolvedServiceConf.vpcConfig.vpcId;
+    }
+
+    if (isAutoConfig(resolvedServiceConf?.logConfig)) {
+      this.logger.debug('Detect logConfig: auto in fc-base inputs, fc will delete it.');
+      delete resolvedServiceConf.logConfig;
+    }
+
+    if (isAutoConfig(resolvedServiceConf?.nasConfig)) {
+      this.logger.debug('Detect nasConfig: auto in fc-base inputs, fc will delete it.');
+      delete resolvedServiceConf.nasConfig;
+    } else if (!_.isEmpty(resolvedServiceConf?.nasConfig)) {
       const resolvedNasConf = {
         // @ts-ignore
         userId: this.serviceConf.nasConfig.userId,
