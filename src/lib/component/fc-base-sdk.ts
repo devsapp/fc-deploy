@@ -27,8 +27,6 @@ export class FcBaseSdkComponent extends Component {
     if (isAutoConfig(resolvedServiceConf?.vpcConfig)) {
       this.logger.debug('Detect vpcConfig: auto in fc-base inputs, fc will delete it.');
       delete resolvedServiceConf.vpcConfig;
-    } else if (resolvedServiceConf?.vpcConfig) {
-      delete resolvedServiceConf.vpcConfig.vpcId;
     }
 
     if (isAutoConfig(resolvedServiceConf?.logConfig)) {
