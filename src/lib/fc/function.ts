@@ -86,7 +86,7 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
     if (!_.isNil(this.localConfig.codeUri) && !_.isNil(this.localConfig.ossKey)) {
       throw new Error('\'codeUri\' and \'ossKey\' can not both exist in function config.');
     }
-    if (_.isNil(this.localConfig.codeUri) && _.isNil(this.localConfig.ossKey)) {
+    if (_.isEmpty(this.localConfig) && _.isNil(this.localConfig.codeUri) && _.isNil(this.localConfig.ossKey)) {
       throw new Error('\'codeUri\' and \'ossKey\' can not be empty in function config at the same time.');
     }
   }
