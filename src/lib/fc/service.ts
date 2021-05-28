@@ -72,9 +72,9 @@ export class FcService extends FcDeploy<ServiceConfig> {
       isAutoConfig(this.localConfig.nasConfig) ||
       isAutoConfig(this.localConfig.vpcConfig) ||
       (_.isEmpty(this.localConfig.role) && !_.isEmpty(resolvedConfigInState.role))) {
-      this.localConfig.logConfig = isAutoConfig(this.localConfig.logConfig) ? resolvedConfigInState.logConfig : this.localConfig.logConfig;
-      this.localConfig.nasConfig = isAutoConfig(this.localConfig.nasConfig) ? resolvedConfigInState.nasConfig : this.localConfig.nasConfig;
-      this.localConfig.vpcConfig = isAutoConfig(this.localConfig.vpcConfig) ? resolvedConfigInState.vpcConfig : this.localConfig.vpcConfig;
+      this.localConfig.logConfig = (isAutoConfig(this.localConfig.logConfig) && !_.isEmpty(resolvedConfigInState.logConfig)) ? resolvedConfigInState.logConfig : this.localConfig.logConfig;
+      this.localConfig.nasConfig = (isAutoConfig(this.localConfig.nasConfig) && !_.isEmpty(resolvedConfigInState.nasConfig)) ? resolvedConfigInState.nasConfig : this.localConfig.nasConfig;
+      this.localConfig.vpcConfig = (isAutoConfig(this.localConfig.vpcConfig) && !_.isEmpty(resolvedConfigInState.vpcConfig)) ? resolvedConfigInState.vpcConfig : this.localConfig.vpcConfig;
       this.localConfig.role = (_.isEmpty(this.localConfig.role) && !_.isEmpty(resolvedConfigInState.role)) ? resolvedConfigInState.role : this.localConfig.role;
     }
 
