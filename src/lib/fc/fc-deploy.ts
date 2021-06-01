@@ -40,12 +40,17 @@ export default abstract class FcDeploy<T> extends IInputsBase {
   async initRemoteConfig(type: string, serviceName: string, functionName?: string, triggerName?: string): Promise<void> {
     // 基于 fc-info 获取线上配置
     const profileOfFcInfo = replaceProjectName(this.serverlessProfile, `${this.serverlessProfile?.project.projectName}-fc-info-project`);
-    const fcInfo: FcInfo = new FcInfo(serviceName, profileOfFcInfo, this.region, this.credentials, this.curPath, `--${type}`, functionName, triggerName);
+    const fcInfo: FcInfo = new FcInfo(serviceName, profileOfFcInfo, this.region, this.credentials, this.curPath, null, functionName, triggerName ? [triggerName] : null);
     const fcInfoComponentInputs: any = await fcInfo.genComponentInputs('fc-info');
     const fcInfoComponentIns: any = await core.load('devsapp/fc-info');
     let remoteConfig: T;
     try {
-      remoteConfig = await fcInfoComponentIns.info(fcInfoComponentInputs);
+      const info: any = await fcInfoComponentIns.info(fcInfoComponentInputs);
+      if (type === 'trigger') {
+        remoteConfig = info?.triggers[0];
+      } else {
+        remoteConfig = info[type];
+      }
     } catch (e) {
       if (!e.toString().includes('NotFoundError')) {
         throw e;

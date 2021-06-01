@@ -5,13 +5,13 @@ import * as _ from 'lodash';
 export default class FcInfoComponent extends Component {
   private readonly serviceName: string;
   private readonly functionName?: string;
-  private readonly triggerName?: string;
+  private readonly triggerNames?: string[];
 
-  constructor(serviceName: string, serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string, args?: string, functionName?: string, triggerName?: string) {
+  constructor(serviceName: string, serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string, args?: string, functionName?: string, triggerNames?: string[]) {
     super(serverlessProfile, region, credentials, curPath, args);
     this.serviceName = serviceName;
     this.functionName = functionName;
-    this.triggerName = triggerName;
+    this.triggerNames = triggerNames;
   }
 
   genComponentProp(): any {
@@ -28,9 +28,9 @@ export default class FcInfoComponent extends Component {
       });
     }
 
-    if (!_.isEmpty(this.triggerName)) {
+    if (!_.isEmpty(this.triggerNames)) {
       Object.assign(prop, {
-        triggerName: this.triggerName,
+        triggerNames: this.triggerNames,
       });
     }
 
