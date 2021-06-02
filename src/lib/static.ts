@@ -131,6 +131,7 @@ export const REMOVE_HELP_INFO = [
     optionList: [
       {
         name: 'name',
+        typeLabel: '{underline <name>}',
         description: 'Resource name to be removed, only for trigger/domain resource.',
         alias: '-n',
         type: String,
