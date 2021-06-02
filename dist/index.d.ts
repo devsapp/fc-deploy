@@ -13,6 +13,6 @@ export default class FcDeployComponent {
         [key: string]: any;
     }>;
     deploy(inputs: IInputs): Promise<any>;
-    help(): void;
+    help(inputs: IInputs): Promise<void>;
     remove(inputs: IInputs): Promise<any>;
 }

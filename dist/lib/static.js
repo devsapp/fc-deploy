@@ -45,7 +45,7 @@ exports.COMPONENT_HELP_INFO = [
     },
     {
         header: 'Synopsis',
-        content: '$ fc-deploy <command> <options>',
+        content: '$ s <command> <options>',
     },
     {
         header: 'Command List',
@@ -59,9 +59,15 @@ exports.COMPONENT_HELP_INFO = [
         header: 'Global Options',
         optionList: [
             {
-                name: 'assumeYes',
+                name: 'assume-yes',
                 description: 'Assume that the answer to any question which would be asked is yes.',
                 alias: 'y',
+                type: Boolean,
+            },
+            {
+                name: 'help',
+                description: 'Display help for command.',
+                alias: 'h',
                 type: Boolean,
             },
         ],
@@ -69,9 +75,10 @@ exports.COMPONENT_HELP_INFO = [
     {
         header: 'Examples',
         content: [
-            '$ s exec -- {bold deploy} {bold --assumeYes}',
-            '$ s exec -- {bold remove} {underline service}',
-            '$ s exec -- {bold help}',
+            '$ s {bold deploy} {bold --help}',
+            '$ s {bold deploy} {bold --assume-yes}',
+            '$ s {bold remove} {underline service} ',
+            '$ s {bold help}',
         ],
     },
 ];
@@ -82,7 +89,7 @@ exports.DEPLOY_HELP_INFO = [
     },
     {
         header: 'Usage',
-        content: '$ fc-deploy deploy <options>',
+        content: '$ s deploy <options>',
     },
     {
         header: 'Options',
@@ -93,9 +100,8 @@ exports.DEPLOY_HELP_INFO = [
                 type: Boolean,
             },
             {
-                name: 'help',
-                description: 'Help for deploy.',
-                alias: 'h',
+                name: 'use-local',
+                description: 'Deploy resource using local config.',
                 type: Boolean,
             },
         ],
@@ -104,9 +110,15 @@ exports.DEPLOY_HELP_INFO = [
         header: 'Global Options',
         optionList: [
             {
-                name: 'assumeYes',
+                name: 'assume-yes',
                 description: 'Assume that the answer to any question which would be asked is yes.',
                 alias: 'y',
+                type: Boolean,
+            },
+            {
+                name: 'help',
+                description: 'Display help for command.',
+                alias: 'h',
                 type: Boolean,
             },
         ],
@@ -114,7 +126,7 @@ exports.DEPLOY_HELP_INFO = [
     {
         header: 'Examples',
         content: [
-            '$ s exec -- {bold deploy} {underline --use-remote}',
+            '$ s {bold deploy} {underline --use-remote}',
         ],
     },
 ];
@@ -122,23 +134,35 @@ exports.REMOVE_HELP_INFO = [
     {
         header: 'Remove resources',
         content: 'Specify RESOURCE to remove it and resource belonging to it.\n' +
-            'If service is specified, service and its functions should be removed.\n' +
-            'If function is specified, function and its triggers should be removed.\n' +
-            'If trigger is specified, you can specify the trigger name to remove the specific trigger or remove all triggers without name.\n' +
-            'If domain is specified, you can specify the domain name to remove the specific domain or remove all domains without name.',
+            'If {bold service} is specified, service and its functions should be removed.\n' +
+            'If {bold function} is specified, function and its triggers should be removed.\n' +
+            'If {bold trigger} is specified, you can specify the trigger name to remove the specific trigger or remove all triggers without trigger name.\n' +
+            'If {bold domain} is specified, you can specify the domain name to remove the specific domain or remove all domains without domain name.',
     },
     {
         header: 'Usage',
-        content: '$ fc-deploy remove <RESOURCE> <options>',
+        content: '$ s remove <RESOURCE> <options>',
     },
     {
         header: 'Options',
         optionList: [
             {
                 name: 'name',
+                typeLabel: '{underline <name>}',
                 description: 'Resource name to be removed, only for trigger/domain resource.',
                 alias: '-n',
                 type: String,
+            },
+        ],
+    },
+    {
+        header: 'Global Options',
+        optionList: [
+            {
+                name: 'assume-yes',
+                description: 'Assume that the answer to any question which would be asked is yes.',
+                alias: 'y',
+                type: Boolean,
             },
             {
                 name: 'help',
@@ -149,24 +173,13 @@ exports.REMOVE_HELP_INFO = [
         ],
     },
     {
-        header: 'Global Options',
-        optionList: [
-            {
-                name: 'assumeYes',
-                description: 'Assume that the answer to any question which would be asked is yes.',
-                alias: 'y',
-                type: Boolean,
-            },
-        ],
-    },
-    {
         header: 'Examples',
         content: [
-            '$ s exec -- {bold remove} {underline service}',
-            '$ s exec -- {bold remove} {underline function}',
-            '$ s exec -- {bold remove} {underline trigger} [{bold --name} {underline name}]',
-            '$ s exec -- {bold remove} {underline domain} [{bold --name} {underline name}]',
+            '$ s {bold remove} {underline service}',
+            '$ s {bold remove} {underline function}',
+            '$ s {bold remove} {underline trigger} [{bold --name} {underline name}]',
+            '$ s {bold remove} {underline domain} [{bold --name} {underline name}]',
         ],
     },
 ];
-//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoic3RhdGljLmpzIiwic291cmNlUm9vdCI6IiIsInNvdXJjZXMiOlsiLi4vLi4vc3JjL2xpYi9zdGF0aWMudHMiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7OztBQUFBLHFDQUF5QjtBQUN6Qix5Q0FBNkI7QUFFaEIsUUFBQSxxQkFBcUIsR0FBRztJQUNuQyxXQUFXLEVBQUUsNkRBQTZEO0lBQzFFLE9BQU8sRUFBRSxVQUFVO0lBQ25CLE9BQU8sRUFBRSxlQUFlO0lBQ3hCLFVBQVUsRUFBRSxHQUFHO0lBQ2YsT0FBTyxFQUFFLENBQUM7SUFDVixNQUFNLEVBQUUsSUFBSTtJQUNaLG1CQUFtQixFQUFFLENBQUM7SUFDdEIsWUFBWSxFQUFFLElBQUk7SUFDbEIsT0FBTyxFQUFFLElBQUk7Q0FDZCxDQUFDO0FBRVcsUUFBQSxxQkFBcUIsR0FBRyxDQUFDLFNBQVMsRUFBRSxVQUFVLEVBQUUsU0FBUyxFQUFFLFFBQVEsQ0FBQyxDQUFDO0FBQ3JFLFFBQUEsaUJBQWlCLEdBQUcsSUFBSSxDQUFDLElBQUksQ0FBQyxFQUFFLENBQUMsT0FBTyxFQUFFLEVBQUUsa0JBQWtCLENBQUMsQ0FBQztBQUNoRSxRQUFBLGlCQUFpQixHQUFHLElBQUksQ0FBQyxJQUFJLENBQUMseUJBQWlCLEVBQUUsTUFBTSxDQUFDLENBQUM7QUFDekQsUUFBQSxxQkFBcUIsR0FBRyxVQUFVLENBQUM7QUFDbkMsUUFBQSxXQUFXLEdBQUcsa0NBQWtDLENBQUM7QUFFakQsUUFBQSxtQkFBbUIsR0FBRztJQUNqQztRQUNFLE1BQU0sRUFBRSxxQkFBcUI7UUFDN0IsT0FBTyxFQUFFLHVGQUF1RjtLQUNqRztJQUNEO1FBQ0UsTUFBTSxFQUFFLFVBQVU7UUFDbEIsT0FBTyxFQUFFLGlDQUFpQztLQUMzQztJQUNEO1FBQ0UsTUFBTSxFQUFFLGNBQWM7UUFDdEIsT0FBTyxFQUFFO1lBQ1AsRUFBRSxJQUFJLEVBQUUsTUFBTSxFQUFFLE9BQU8sRUFBRSwyQkFBMkIsRUFBRTtZ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
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoic3RhdGljLmpzIiwic291cmNlUm9vdCI6IiIsInNvdXJjZXMiOlsiLi4vLi4vc3JjL2xpYi9zdGF0aWMudHMiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7OztBQUFBLHFDQUF5QjtBQUN6Qix5Q0FBNkI7QUFFaEIsUUFBQSxxQkFBcUIsR0FBRztJQUNuQyxXQUFXLEVBQUUsNkRBQTZEO0lBQzFFLE9BQU8sRUFBRSxVQUFVO0lBQ25CLE9BQU8sRUFBRSxlQUFlO0lBQ3hCLFVBQVUsRUFBRSxHQUFHO0lBQ2YsT0FBTyxFQUFFLENBQUM7SUFDVixNQUFNLEVBQUUsSUFBSTtJQUNaLG1CQUFtQixFQUFFLENBQUM7SUFDdEIsWUFBWSxFQUFFLElBQUk7SUFDbEIsT0FBTyxFQUFFLElBQUk7Q0FDZCxDQUFDO0FBRVcsUUFBQSxxQkFBcUIsR0FBRyxDQUFDLFNBQVMsRUFBRSxVQUFVLEVBQUUsU0FBUyxFQUFFLFFBQVEsQ0FBQyxDQUFDO0FBQ3JFLFFBQUEsaUJBQWlCLEdBQUcsSUFBSSxDQUFDLElBQUksQ0FBQyxFQUFFLENBQUMsT0FBTyxFQUFFLEVBQUUsa0JBQWtCLENBQUMsQ0FBQztBQUNoRSxRQUFBLGlCQUFpQixHQUFHLElBQUksQ0FBQyxJQUFJLENBQUMseUJBQWlCLEVBQUUsTUFBTSxDQUFDLENBQUM7QUFDekQsUUFBQSxxQkFBcUIsR0FBRyxVQUFVLENBQUM7QUFDbkMsUUFBQSxXQUFXLEdBQUcsa0NBQWtDLENBQUM7QUFFakQsUUFBQSxtQkFBbUIsR0FBRztJQUNqQztRQUNFLE1BQU0sRUFBRSxxQkFBcUI7UUFDN0IsT0FBTyxFQUFFLHVGQUF1RjtLQUNqRztJQUNEO1FBQ0UsTUFBTSxFQUFFLFVBQVU7UUFDbEIsT0FBTyxFQUFFLHlCQUF5QjtLQUNuQztJQUNEO1FBQ0UsTUFBTSxFQUFFLGNBQWM7UUFDdEIsT0FBTyxFQUFFO1lBQ1AsRUFBRSxJQUFJLEVBQUUsTUFBTSxFQUFFLE9BQU8sRUFBRSwyQkFBMkIsRUFBRTtZ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
