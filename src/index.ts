@@ -61,7 +61,7 @@ export default class FcDeployComponent {
     const projectName: string = project?.projectName;
     const { region } = properties;
 
-    if (args?.includes('help')) {
+    if (args?.includes('--help')) {
       return {
         region,
         credentials,

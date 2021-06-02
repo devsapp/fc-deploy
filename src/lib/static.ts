@@ -26,7 +26,7 @@ export const COMPONENT_HELP_INFO = [
   },
   {
     header: 'Synopsis',
-    content: '$ fc-deploy <command> <options>',
+    content: '$ s <command> <options>',
   },
   {
     header: 'Command List',
@@ -40,9 +40,15 @@ export const COMPONENT_HELP_INFO = [
     header: 'Global Options',
     optionList: [
       {
-        name: 'assumeYes',
+        name: 'assume-yes',
         description: 'Assume that the answer to any question which would be asked is yes.',
         alias: 'y',
+        type: Boolean,
+      },
+      {
+        name: 'help',
+        description: 'Display help for command.',
+        alias: 'h',
         type: Boolean,
       },
     ],
@@ -50,9 +56,10 @@ export const COMPONENT_HELP_INFO = [
   {
     header: 'Examples',
     content: [
-      '$ s exec -- {bold deploy} {bold --assumeYes}',
-      '$ s exec -- {bold remove} {underline service}',
-      '$ s exec -- {bold help}',
+      '$ s {bold deploy} {bold --help}',
+      '$ s {bold deploy} {bold --assume-yes}',
+      '$ s {bold remove} {underline service} ',
+      '$ s {bold help}',
     ],
   },
 ];
@@ -64,7 +71,7 @@ export const DEPLOY_HELP_INFO = [
   },
   {
     header: 'Usage',
-    content: '$ fc-deploy deploy <options>',
+    content: '$ s deploy <options>',
   },
   {
     header: 'Options',
@@ -75,9 +82,8 @@ export const DEPLOY_HELP_INFO = [
         type: Boolean,
       },
       {
-        name: 'help',
-        description: 'Help for deploy.',
-        alias: 'h',
+        name: 'use-local',
+        description: 'Deploy resource using local config.',
         type: Boolean,
       },
     ],
@@ -86,9 +92,15 @@ export const DEPLOY_HELP_INFO = [
     header: 'Global Options',
     optionList: [
       {
-        name: 'assumeYes',
+        name: 'assume-yes',
         description: 'Assume that the answer to any question which would be asked is yes.',
         alias: 'y',
+        type: Boolean,
+      },
+      {
+        name: 'help',
+        description: 'Display help for command.',
+        alias: 'h',
         type: Boolean,
       },
     ],
@@ -96,7 +108,7 @@ export const DEPLOY_HELP_INFO = [
   {
     header: 'Examples',
     content: [
-      '$ s exec -- {bold deploy} {underline --use-remote}',
+      '$ s {bold deploy} {underline --use-remote}',
     ],
   },
 ];
@@ -105,14 +117,14 @@ export const REMOVE_HELP_INFO = [
   {
     header: 'Remove resources',
     content: 'Specify RESOURCE to remove it and resource belonging to it.\n' +
-'If service is specified, service and its functions should be removed.\n' +
-'If function is specified, function and its triggers should be removed.\n' +
-'If trigger is specified, you can specify the trigger name to remove the specific trigger or remove all triggers without name.\n' +
-'If domain is specified, you can specify the domain name to remove the specific domain or remove all domains without name.',
+'If {bold service} is specified, service and its functions should be removed.\n' +
+'If {bold function} is specified, function and its triggers should be removed.\n' +
+'If {bold trigger} is specified, you can specify the trigger name to remove the specific trigger or remove all triggers without trigger name.\n' +
+'If {bold domain} is specified, you can specify the domain name to remove the specific domain or remove all domains without domain name.',
   },
   {
     header: 'Usage',
-    content: '$ fc-deploy remove <RESOURCE> <options>',
+    content: '$ s remove <RESOURCE> <options>',
   },
   {
     header: 'Options',
@@ -123,6 +135,17 @@ export const REMOVE_HELP_INFO = [
         alias: '-n',
         type: String,
       },
+    ],
+  },
+  {
+    header: 'Global Options',
+    optionList: [
+      {
+        name: 'assume-yes',
+        description: 'Assume that the answer to any question which would be asked is yes.',
+        alias: 'y',
+        type: Boolean,
+      },
       {
         name: 'help',
         description: 'Help for rm.',
@@ -132,23 +155,12 @@ export const REMOVE_HELP_INFO = [
     ],
   },
   {
-    header: 'Global Options',
-    optionList: [
-      {
-        name: 'assumeYes',
-        description: 'Assume that the answer to any question which would be asked is yes.',
-        alias: 'y',
-        type: Boolean,
-      },
-    ],
-  },
-  {
     header: 'Examples',
     content: [
-      '$ s exec -- {bold remove} {underline service}',
-      '$ s exec -- {bold remove} {underline function}',
-      '$ s exec -- {bold remove} {underline trigger} [{bold --name} {underline name}]',
-      '$ s exec -- {bold remove} {underline domain} [{bold --name} {underline name}]',
+      '$ s {bold remove} {underline service}',
+      '$ s {bold remove} {underline function}',
+      '$ s {bold remove} {underline trigger} [{bold --name} {underline name}]',
+      '$ s {bold remove} {underline domain} [{bold --name} {underline name}]',
     ],
   },
 ];
