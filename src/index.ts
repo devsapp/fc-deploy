@@ -287,7 +287,8 @@ export default class FcDeployComponent {
     return res;
   }
 
-  help(): void {
+  async help(inputs: IInputs): Promise<void> {
+    await this.report('fc-deploy', 'help', null, inputs?.project?.access);
     core.help(COMPONENT_HELP_INFO);
   }
 
