@@ -45,17 +45,20 @@ export declare const DEPLOY_HELP_INFO: ({
     optionList?: undefined;
 } | {
     header: string;
-    optionList: ({
+    optionList: {
         name: string;
         description: string;
         type: BooleanConstructor;
-        alias?: undefined;
-    } | {
+    }[];
+    content?: undefined;
+} | {
+    header: string;
+    optionList: {
         name: string;
         description: string;
         alias: string;
         type: BooleanConstructor;
-    })[];
+    }[];
     content?: undefined;
 } | {
     header: string;
@@ -68,17 +71,22 @@ export declare const REMOVE_HELP_INFO: ({
     optionList?: undefined;
 } | {
     header: string;
-    optionList: ({
+    optionList: {
         name: string;
+        typeLabel: string;
         description: string;
         alias: string;
         type: StringConstructor;
-    } | {
+    }[];
+    content?: undefined;
+} | {
+    header: string;
+    optionList: {
         name: string;
         description: string;
         alias: string;
         type: BooleanConstructor;
-    })[];
+    }[];
     content?: undefined;
 } | {
     header: string;
