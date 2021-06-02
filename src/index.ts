@@ -23,10 +23,14 @@ export default class FcDeployComponent {
       uid = credentials.AccountID;
     }
 
-    core.reportComponent(componentName, {
-      command,
-      uid,
-    });
+    try {
+      core.reportComponent(componentName, {
+        command,
+        uid,
+      });
+    } catch (e) {
+      this.logger.warn(`Component ${componentName} report error: ${e.message}`);
+    }
   }
 
   async handlerBase() {
