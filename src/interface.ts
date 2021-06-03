@@ -7,7 +7,9 @@ import { ServerlessProfile } from './lib/profile';
 export interface IInputs extends ServerlessProfile {
   props: IProperties;
   args: string;
-  path: string;
+  path: {
+    configPath: string; // 配置路径
+  };
 }
 
 export interface IProperties {

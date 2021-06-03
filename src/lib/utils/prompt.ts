@@ -1,5 +1,5 @@
 import inquirer from 'inquirer';
-import yaml from 'js-yaml';
+import * as yaml from 'js-yaml';
 import { Logger } from '@serverless-devs/core';
 
 function isInteractiveEnvironment(): boolean {
