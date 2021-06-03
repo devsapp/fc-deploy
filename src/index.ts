@@ -61,7 +61,7 @@ export default class FcDeployComponent {
     const credentials: ICredentials = await core.getCredential(access);
     // 去除 args 的行首以及行尾的空格
     const args: string = inputs?.args.replace(/(^\s*)|(\s*$)/g, '');
-    const curPath: string = inputs?.path;
+    const curPath: string = inputs?.path?.configPath;
     const projectName: string = project?.projectName;
     const { region } = properties;
 
@@ -99,19 +99,16 @@ export default class FcDeployComponent {
 
     this.logger.debug(`instantiate serviceConfig with : \n${JSON.stringify(serviceConf, null, '  ')}`);
     const fcService = new FcService(serviceConf, functionConf, serverlessProfile, region, credentials, curPath, args);
-    await fcService.init();
 
     if (!_.isEmpty(functionConf)) {
       this.logger.debug(`functionConfig not empty: \n${JSON.stringify(functionConf, null, '  ')}, instantiate it.`);
       fcFunction = new FcFunction(functionConf, serviceConf?.name, serverlessProfile, region, credentials, curPath, args);
-      await fcFunction.init();
     }
 
     if (!_.isEmpty(triggerConfs)) {
       this.logger.debug(`triggersConfig not empty: \n${JSON.stringify(triggerConfs, null, '  ')}, instantiate them.`);
       for (const triggerConf of triggerConfs) {
         const fcTrigger = new FcTrigger(triggerConf, serviceConf?.name, functionConf?.name, serverlessProfile, region, credentials, curPath, args);
-        await fcTrigger.init();
         fcTriggers.push(fcTrigger);
       }
     }
@@ -120,7 +117,6 @@ export default class FcDeployComponent {
       this.logger.debug(`customDomains not empty: \n${JSON.stringify(customDomainConfs, null, '  ')}, instantiate them.`);
       for (const customDomainConf of customDomainConfs) {
         const fcCustomDomain = new FcCustomDomain(customDomainConf, serviceConf?.name, functionConf?.name, triggerConfs, serverlessProfile, region, credentials, curPath, args);
-        await fcCustomDomain.init();
         fcCustomDomains.push(fcCustomDomain);
       }
     }
@@ -168,14 +164,16 @@ export default class FcDeployComponent {
     }
 
     // service
+    await fcService.init();
     await fcService.setUseRemote(fcService.name, 'service', useRemote, useLocal);
     const resolvedServiceConf: ServiceConfig = await fcService.makeService(assumeYes);
     this.logger.debug(`Resolved serviceConf is:\n${JSON.stringify(resolvedServiceConf, null, '  ')}`);
     // function
     let resolvedFunctionConf: FunctionConfig;
     if (!_.isNil(fcFunction)) {
+      await fcFunction.init(assumeYes);
       await fcFunction.setUseRemote(fcFunction.name, 'function', useRemote, useLocal);
-      const baseDir = path.dirname(curPath.configPath);
+      const baseDir = path.dirname(curPath);
 
       const pushRegistry = parsedArgs.data?.pushRegistry;
       resolvedFunctionConf = await fcFunction.makeFunction(baseDir, pushRegistry);
@@ -186,6 +184,7 @@ export default class FcDeployComponent {
     let hasAutoTriggerRole = false;
     if (!_.isEmpty(fcTriggers)) {
       for (let i = 0; i < fcTriggers.length; i++) {
+        await fcTriggers[i].init();
         await fcTriggers[i].setUseRemote(fcTriggers[i].name, 'trigger', useRemote, useLocal);
         const resolvedTriggerConf: TriggerConfig = await fcTriggers[i].makeTrigger();
         hasAutoTriggerRole = hasAutoTriggerRole || fcTriggers[i].isRoleAuto;
@@ -222,6 +221,7 @@ export default class FcDeployComponent {
     const resolvedCustomDomainConfs: CustomDomainConfig[] = [];
     if (!_.isEmpty(fcCustomDomains)) {
       for (let i = 0; i < fcCustomDomains.length; i++) {
+        await fcCustomDomains[i].init();
         const resolvedCustomDomainConf: CustomDomainConfig = await fcCustomDomains[i].makeCustomDomain();
         hasAutoCustomDomainNameInDomains = hasAutoCustomDomainNameInDomains || fcCustomDomains[i].isDomainNameAuto;
         resolvedCustomDomainConfs.push(resolvedCustomDomainConf);
