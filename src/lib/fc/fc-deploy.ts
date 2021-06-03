@@ -52,9 +52,10 @@ export default abstract class FcDeploy<T> extends IInputsBase {
         remoteConfig = info[type];
       }
     } catch (e) {
-      if (!e.toString().includes('NotFoundError')) {
-        throw e;
-      }
+      this.logger.warn(`Get remote ${type} failed, error is: ${e.message}.Fc will use local config from now on.`);
+      // if (!e.toString().includes('NotFoundError')) {
+      //   throw e;
+      // }
     }
 
     if (!_.isEmpty(remoteConfig)) {
@@ -66,7 +67,7 @@ export default abstract class FcDeploy<T> extends IInputsBase {
       } else if (type === 'trigger') {
         resourceName = triggerName;
       }
-      this.logger.info(`${type}: ${resourceName} exists online`);
+      this.logger.info(`${type}: ${resourceName} exists online.`);
       this.logger.debug(`online config of ${type}: ${resourceName} is ${JSON.stringify(remoteConfig, null, '  ')}`);
       this.existOnline = true;
       this.remoteConfig = remoteConfig;
@@ -89,7 +90,7 @@ export default abstract class FcDeploy<T> extends IInputsBase {
     if (!this.existOnline) {
       if (useRemoteFlag) {
         // --use-remote 参数为真，且线上资源不存在，则报错
-        throw new Error(`${type}: ${name} dose not exist online, please make sure the ${type} exists when use --use-remote flag.`);
+        throw new Error(`${type}: ${name} dose not exist online, please make sure the ${type} exists or you have permission to access remote ${type} when use --use-remote flag.`);
       }
       // --use-remote 参数为假，且线上资源不存在，则默认使用线下配置，且之后不再询问
       this.logger.info(`${type}: ${name} dose not exist online, fc will use local config from now on.`);
