@@ -9,6 +9,7 @@ import { ServerlessProfile, ICredentials, replaceProjectName } from '../profile'
 import FcDeploy from './fc-deploy';
 import FcSync from '../component/fc-sync';
 import * as core from '@serverless-devs/core';
+import os from 'os';
 
 export interface FunctionConfig {
   name: string;
@@ -48,6 +49,7 @@ export function isCustomContainerRuntime(runtime: string): boolean {
 export class FcFunction extends FcDeploy<FunctionConfig> {
   readonly serviceName: string;
   readonly name: string;
+  static readonly DEFAULT_SYNC_CODE_PATH: string = path.join(os.homedir(), '.s', 'cache', 'fc-deploy', 'remote-code');
   constructor(functionConf: FunctionConfig, serviceName: string, serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string, args?: string) {
     super(functionConf, serverlessProfile, region, credentials, curPath, args);
     this.serviceName = serviceName;
@@ -70,11 +72,13 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
 
   async syncRemoteCode(): Promise<string> {
     // 基于 fc-sync 获取函数代码
+    await fse.ensureDir(FcFunction.DEFAULT_SYNC_CODE_PATH, 0o777);
     const profileOfFcSync = replaceProjectName(this.serverlessProfile, `${this.serverlessProfile?.project.projectName}-fc-sync-project`);
-    const fcSync: FcSync = new FcSync(this.serviceName, profileOfFcSync, this.region, this.credentials, this.curPath, '--code', this.name, undefined);
+    const fcSync: FcSync = new FcSync(this.serviceName, profileOfFcSync, this.region, this.credentials, this.curPath, '--type code', this.name, null, FcFunction.DEFAULT_SYNC_CODE_PATH);
     const fcSyncComponentInputs: any = await fcSync.genComponentInputs('fc-sync');
     const fcSyncComponentIns: any = await core.load('devsapp/fc-sync');
-    const codeUri: string = await fcSyncComponentIns.sync(fcSyncComponentInputs);
+    const syncRes: any = await fcSyncComponentIns.sync(fcSyncComponentInputs);
+    const codeUri: string = syncRes?.codeFiles[this.name];
     this.logger.debug(`sync code of function ${this.serviceName}:${this.name} to ${codeUri}`);
     return codeUri;
   }
@@ -183,11 +187,24 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
   }
 
   async removeZipCode(codeZipPath: string): Promise<void> {
-    if (!this.useRemote && !isCustomContainerRuntime(this.localConfig?.runtime) && this.localConfig?.codeUri) {
+    if (this.useRemote && !isCustomContainerRuntime(this.localConfig?.runtime)) {
+      this.logger.debug(`removing zip code: ${codeZipPath} downloaded from remote.`);
+      try {
+        await fse.unlink(codeZipPath);
+      } catch (e) {
+        this.logger.warn(`Removing zip code: ${codeZipPath} error: ${e.message}`);
+      }
+      return;
+    }
+    if (!isCustomContainerRuntime(this.localConfig?.runtime) && this.localConfig?.codeUri) {
       if (!this.localConfig?.codeUri.endsWith('.zip') && !this.localConfig?.codeUri.endsWith('.jar') && !this.localConfig?.codeUri.endsWith('.war')) {
         if (!_.isNil(codeZipPath)) {
           this.logger.debug(`removing zip code: ${codeZipPath}`);
-          await fse.unlink(codeZipPath);
+          try {
+            await fse.unlink(codeZipPath);
+          } catch (e) {
+            this.logger.warn(`Removing zip code: ${codeZipPath} error: ${e.message}`);
+          }
         }
       }
     }
