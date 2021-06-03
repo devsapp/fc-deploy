@@ -283,6 +283,13 @@ export default class FcDeployComponent {
       }
       Object.assign(res, { customDomains: resolvedCustomDomainConfs });
     }
+    if (fcService.hasAutoConfig || hasAutoTriggerRole) {
+      if (fcService.hasAutoConfig) {
+        this.logger.log(`\nThere is auto config in the service: ${fcService?.name}`, 'yellow');
+      } else {
+        this.logger.log('\nThere is generated role config in the triggers config', 'yellow');
+      }
+    }
 
     return res;
   }
