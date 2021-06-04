@@ -35,7 +35,7 @@ export declare class FcFunction extends FcDeploy<FunctionConfig> {
     static readonly DEFAULT_BUILD_ARTIFACTS_PATH_SUFFIX: string;
     static readonly DEFAULT_SYNC_CODE_PATH: string;
     constructor(functionConf: FunctionConfig, serviceName: string, serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string, args?: string);
-    init(assumeYes?: boolean): Promise<void>;
+    initLocal(assumeYes?: boolean): Promise<void>;
     getCodeUriWithBuildPath(): any;
     initLocalConfig(assumeYes?: boolean): Promise<void>;
     syncRemoteCode(): Promise<string>;

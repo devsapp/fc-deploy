@@ -59,9 +59,8 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
     this.serviceName = serviceName;
     this.name = functionConf?.name;
   }
-  async init(assumeYes?: boolean): Promise<void> {
+  async initLocal(assumeYes?: boolean): Promise<void> {
     this.validateConfig();
-    await this.initRemoteConfig('function', this.serviceName, this.name);
     await this.initLocalConfig(assumeYes);
   }
 

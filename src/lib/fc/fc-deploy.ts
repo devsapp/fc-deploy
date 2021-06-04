@@ -37,7 +37,7 @@ export default abstract class FcDeploy<T> extends IInputsBase {
     }
   }
 
-  async initRemoteConfig(type: string, serviceName: string, functionName?: string, triggerName?: string): Promise<void> {
+  async initRemote(type: string, serviceName: string, functionName?: string, triggerName?: string): Promise<void> {
     // 基于 fc-info 获取线上配置
     const profileOfFcInfo = replaceProjectName(this.serverlessProfile, `${this.serverlessProfile?.project.projectName}-fc-info-project`);
     const fcInfo: FcInfo = new FcInfo(serviceName, profileOfFcInfo, this.region, this.credentials, this.curPath, null, functionName, triggerName ? [triggerName] : null);
@@ -72,6 +72,10 @@ export default abstract class FcDeploy<T> extends IInputsBase {
       this.existOnline = true;
       this.remoteConfig = remoteConfig;
       Object.assign(this.remoteConfig, {
+        import: true,
+        protect: false,
+      });
+      Object.assign(this.localConfig, {
         import: true,
         protect: false,
       });

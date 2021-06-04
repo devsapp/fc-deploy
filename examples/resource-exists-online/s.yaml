@@ -8,11 +8,11 @@ services:
     props: #  组件的属性值
       region: cn-shanghai
       service:
-        name: qianfeng-demo
+        name: qianfeng-demo-2
         description: demo for fc-deploy component
         internetAccess: false
       function:
-        name: node-demo
+        name: http-function
         runtime: nodejs12
         handler: index.handler
         timeout: 60
@@ -21,7 +21,7 @@ services:
         initializationTimeout: 3
         codeUri: ./code
       triggers:
-        - name: httpTrigger
+        - name: defaultTrigger
           type: http
           config:
             authType: anonymous

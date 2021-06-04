@@ -132,9 +132,8 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
     return `${this.credentials.AccountID}-${this.region}-${this.serviceName}-${this.functionName}-${this.name}`;
   }
 
-  async init(): Promise<void> {
+  async initLocal(): Promise<void> {
     this.validateConfig();
-    await this.initRemoteConfig('trigger', this.serviceName, this.functionName, this.name);
     await this.initLocalConfig();
     this.logger.debug(`local trigger config is: ${JSON.stringify(this.localConfig, null, '  ')} after init.`);
   }
