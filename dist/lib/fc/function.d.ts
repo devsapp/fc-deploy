@@ -32,9 +32,12 @@ export declare function isCustomContainerRuntime(runtime: string): boolean;
 export declare class FcFunction extends FcDeploy<FunctionConfig> {
     readonly serviceName: string;
     readonly name: string;
+    static readonly DEFAULT_BUILD_ARTIFACTS_PATH_SUFFIX: string;
+    static readonly DEFAULT_SYNC_CODE_PATH: string;
     constructor(functionConf: FunctionConfig, serviceName: string, serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string, args?: string);
-    init(): Promise<void>;
-    initLocalConfig(): Promise<void>;
+    init(assumeYes?: boolean): Promise<void>;
+    getCodeUriWithBuildPath(): any;
+    initLocalConfig(assumeYes?: boolean): Promise<void>;
     syncRemoteCode(): Promise<string>;
     genStateID(): string;
     validateConfig(): void;

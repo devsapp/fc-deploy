@@ -1,7 +1,7 @@
 {
   "name": "fc-delpoy",
   "main": "./dist/index.js",
-  "version": "0.0.19",
+  "version": "0.0.20",
   "dependencies": {
     "@alicloud/fc2": "^2.2.2",
     "@alicloud/pop-core": "^1.7.10",
