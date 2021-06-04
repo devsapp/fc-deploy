@@ -20,7 +20,7 @@ export declare class FcService extends FcDeploy<ServiceConfig> {
     hasAutoConfig: boolean;
     name: string;
     constructor(serviceConf: ServiceConfig, functionConf: FunctionConfig, serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string, args?: string);
-    init(): Promise<void>;
+    initLocal(): Promise<void>;
     genStateID(): string;
     validateConfig(): void;
     initLocalConfig(): Promise<void>;

@@ -36,9 +36,8 @@ export class FcService extends FcDeploy<ServiceConfig> {
     this.name = serviceConf?.name;
   }
 
-  async init(): Promise<void> {
+  async initLocal(): Promise<void> {
     this.validateConfig();
-    await this.initRemoteConfig('service', this.name);
     await this.initLocalConfig();
     this.logger.debug(`local service config is: ${JSON.stringify(this.localConfig, null, '  ')} after init.`);
   }

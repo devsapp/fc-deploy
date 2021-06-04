@@ -58,7 +58,7 @@ export class FcCustomDomain extends IInputsBase {
     }
   }
 
-  async init(): Promise<void> {
+  async initLocal(): Promise<void> {
     this.validateConfig();
     await this.initLocalConfig();
   }
