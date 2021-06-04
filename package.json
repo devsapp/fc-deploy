@@ -1,12 +1,12 @@
 {
   "name": "fc-delpoy",
   "main": "./dist/index.js",
-  "version": "0.0.21",
+  "version": "0.0.22",
   "dependencies": {
     "@alicloud/fc2": "^2.2.2",
     "@alicloud/pop-core": "^1.7.10",
     "@serverless-devs/core": "^0.0.x",
-    "@types/fs-extra": "^9.0.0",
+    "fs-extra": "^10.0.0",
     "@types/graceful-fs": "^4.1.5",
     "@types/inquirer": "^7.3.1",
     "@types/lodash": "^4.14.168",
