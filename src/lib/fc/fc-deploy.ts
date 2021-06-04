@@ -52,10 +52,9 @@ export default abstract class FcDeploy<T> extends IInputsBase {
         remoteConfig = info[type];
       }
     } catch (e) {
-      this.logger.warn(`Get remote ${type} failed, error is: ${e.message}.Fc will use local config from now on.`);
-      // if (!e.toString().includes('NotFoundError')) {
-      //   throw e;
-      // }
+      if (!e.toString().includes('NotFoundError')) {
+        this.logger.warn(`Get remote ${type} failed, error is: ${e.message}.Fc will use local config from now on.`);
+      }
     }
 
     if (!_.isEmpty(remoteConfig)) {
