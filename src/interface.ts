@@ -10,6 +10,7 @@ export interface IInputs extends ServerlessProfile {
   path: {
     configPath: string; // 配置路径
   };
+  command: string;
 }
 
 export interface IProperties {

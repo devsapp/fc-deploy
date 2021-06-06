@@ -54,8 +54,10 @@ export default class FcDeployComponent {
   // 解析入参
   async handlerInputs(inputs: IInputs): Promise<{[key: string]: any}> {
     const project = inputs?.project;
-    const properties: IProperties = inputs?.props;
     const access: string = project?.access;
+    await this.report('fc-deploy', inputs?.command, null, inputs?.project?.access);
+
+    const properties: IProperties = inputs?.props;
 
     const appName: string = inputs?.appName;
     const credentials: ICredentials = await core.getCredential(access);
@@ -64,14 +66,18 @@ export default class FcDeployComponent {
     const curPath: string = inputs?.path?.configPath;
     const projectName: string = project?.projectName;
     const { region } = properties;
-
-    if (args?.includes('--help')) {
+    const parsedArgs: {[key: string]: any} = core.commandParse({ args }, {
+      boolean: ['help'],
+      alias: { help: 'h' } });
+    const argsData: any = parsedArgs?.data || {};
+    if (argsData?.help) {
       return {
         region,
         credentials,
         curPath,
         args,
         access,
+        isHelp: true,
       };
     }
 
@@ -146,18 +152,17 @@ export default class FcDeployComponent {
       credentials,
       curPath,
       args,
-      access,
+      isHelp,
     } = await this.handlerInputs(inputs);
-    await this.report('fc-deploy', 'deploy', fcService?.credentials?.AccountID, access);
-
-    const parsedArgs: {[key: string]: any} = core.commandParse({ args }, {
-      boolean: ['assume-yes', 'use-remote', 'use-local'],
-      alias: { help: 'h', 'assume-yes': 'y' } });
-    const argsData: any = parsedArgs?.data || {};
-    if (argsData.help) {
+    if (isHelp) {
       core.help(DEPLOY_HELP_INFO);
       return;
     }
+    const parsedArgs: {[key: string]: any} = core.commandParse({ args }, {
+      boolean: ['help', 'assume-yes', 'use-remote', 'use-local'],
+      alias: { help: 'h', 'assume-yes': 'y' } });
+    const argsData: any = parsedArgs?.data || {};
+
     const assumeYes: boolean = argsData.y || argsData.assumeYes || argsData['assume-yes'];
     const useRemote: boolean = argsData['use-remote'];
     const useLocal: boolean = argsData['use-local'];
@@ -312,17 +317,16 @@ export default class FcDeployComponent {
       credentials,
       curPath,
       args,
-      access,
+      isHelp,
     } = await this.handlerInputs(inputs);
-
-    await this.report('fc-deploy', 'remove', fcService?.credentials?.AccountID, access);
-    const parsedArgs: {[key: string]: any} = core.commandParse({ args }, {
-      boolean: ['assume-yes', 'use-remote', 'use-local'],
-      alias: { help: 'h', 'assume-yes': 'y' } });
-    if (parsedArgs.data?.h || parsedArgs.data?.help) {
+    if (isHelp) {
       core.help(REMOVE_HELP_INFO);
       return;
     }
+    const parsedArgs: {[key: string]: any} = core.commandParse({ args }, {
+      boolean: ['help', 'assume-yes', 'use-remote', 'use-local'],
+      alias: { help: 'h', 'assume-yes': 'y' } });
+
     // TODO: 获取线上 服务、函数 配置（是否能够包含代码？），让用户选择以线上/线下配置为主。sync 组件
 
     // 处理命令行参数
