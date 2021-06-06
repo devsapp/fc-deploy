@@ -9,6 +9,7 @@ export interface IInputs extends ServerlessProfile {
     path: {
         configPath: string;
     };
+    command: string;
 }
 export interface IProperties {
     region: string;
