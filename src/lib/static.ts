@@ -50,7 +50,7 @@ export const COMPONENT_HELP_INFO = [
 export const DEPLOY_HELP_INFO = [
   {
     header: 'Deploy',
-    content: 'Deploy alicloud function computer resources',
+    content: 'Deploy a serverless application.',
   },
   {
     header: 'Usage',
@@ -91,7 +91,17 @@ export const DEPLOY_HELP_INFO = [
   {
     header: 'Examples with Yaml',
     content: [
+      '$ s {bold deploy}',
+      '$ s <ProjectName> {bold deploy}',
       '$ s {bold deploy} {underline --use-remote}',
+      '$ s {bold exec} -- {bold deploy} {underline --use-remote}',
+      '$ s {bold exec} <ProjectName> -- {bold deploy} {underline --use-remote}',
+    ],
+  },
+  {
+    header: 'Examples with CLI',
+    content: [
+      'You can refer to the usage of fc-api and execute [s cli fc-api -h] for help',
     ],
   },
 ];
@@ -99,7 +109,7 @@ export const DEPLOY_HELP_INFO = [
 export const REMOVE_HELP_INFO = [
   {
     header: 'Remove',
-    content: 'Remove the specific alicloud function computer RESOURCE and its child resource.\n' +
+    content: 'Specify RESOURCE to remove it and resource belonging to it.\n' +
 'If {bold service} is specified, service and its functions should be removed.\n' +
 'If {bold function} is specified, function and its triggers should be removed.\n' +
 'If {bold trigger} is specified, you can specify the trigger name to remove the specific trigger or remove all triggers without trigger name.\n' +
@@ -108,6 +118,31 @@ export const REMOVE_HELP_INFO = [
   {
     header: 'Usage',
     content: '$ s remove <RESOURCE> <options>',
+  },
+  {
+    header: 'Resource',
+    optionList: [
+      {
+        name: 'service',
+        description: 'The service resource.',
+        type: String,
+      },
+      {
+        name: 'function',
+        description: 'The function resource.',
+        type: String,
+      },
+      {
+        name: 'trigger',
+        description: 'The trigger resource.',
+        type: String,
+      },
+      {
+        name: 'domain',
+        description: 'The domain resource.',
+        type: String,
+      },
+    ],
   },
   {
     header: 'Options',
@@ -141,10 +176,17 @@ export const REMOVE_HELP_INFO = [
   {
     header: 'Examples with Yaml',
     content: [
+      '$ s {bold remove}',
+      '$ s <ProjectName> {bold remove}',
       '$ s {bold remove} {underline service}',
-      '$ s {bold remove} {underline function}',
-      '$ s {bold remove} {underline trigger} [{bold --name} {underline name}]',
       '$ s {bold remove} {underline domain} [{bold --name} {underline name}]',
+      '$ s exec -- {bold remove} {underline domain} [{bold --name} {underline name}]',
+    ],
+  },
+  {
+    header: 'Examples with CLI',
+    content: [
+      'You can refer to the usage of fc-api and execute [s cli fc-api -h] for help',
     ],
   },
 ];

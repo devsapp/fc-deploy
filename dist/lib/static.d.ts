@@ -61,6 +61,14 @@ export declare const REMOVE_HELP_INFO: ({
     header: string;
     optionList: {
         name: string;
+        description: string;
+        type: StringConstructor;
+    }[];
+    content?: undefined;
+} | {
+    header: string;
+    optionList: {
+        name: string;
         typeLabel: string;
         description: string;
         alias: string;
