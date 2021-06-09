@@ -39,7 +39,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.retryDeployUntilSlsCreated = exports.promiseRetry = void 0;
 var promise_retry_1 = __importDefault(require("promise-retry"));
+var error_1 = require("./error");
+var time_1 = require("./utils/time");
 var defaultRetries = 2;
 function promiseRetry(fn) {
     return __awaiter(this, void 0, void 0, function () {
@@ -55,5 +58,42 @@ function promiseRetry(fn) {
         });
     });
 }
-exports.default = promiseRetry;
-//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoicmV0cnkuanMiLCJzb3VyY2VSb290IjoiIiwic291cmNlcyI6WyIuLi8uLi9zcmMvbGliL3JldHJ5LnRzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiJBQUFBLFlBQVksQ0FBQzs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7QUFFYixnRUFBa0M7QUFFbEMsSUFBTSxjQUFjLEdBQUcsQ0FBQyxDQUFDO0FBRXpCLFNBQThCLFlBQVksQ0FBQyxFQUFPOzs7O1lBQzFDLFlBQVksR0FBRztnQkFDbkIsT0FBTyxFQUFFLGNBQWM7Z0JBQ3ZCLE1BQU0sRUFBRSxDQUFDO2dCQUNULFVBQVUsRUFBRSxDQUFDLEdBQUcsSUFBSTtnQkFDcEIsU0FBUyxFQUFFLElBQUk7YUFDaEIsQ0FBQztZQUNGLHNCQUFPLHVCQUFLLENBQUMsRUFBRSxFQUFFLFlBQVksQ0FBQyxFQUFDOzs7Q0FDaEM7QUFSRCwrQkFRQyJ9
+exports.promiseRetry = promiseRetry;
+function retryDeployUntilSlsCreated(componentInstance, componentInputs) {
+    return __awaiter(this, void 0, void 0, function () {
+        var slsRetry, retryTimes, e_1;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    slsRetry = 0;
+                    retryTimes = 12;
+                    _a.label = 1;
+                case 1:
+                    _a.trys.push([1, 3, , 7]);
+                    return [4 /*yield*/, componentInstance.deploy(componentInputs)];
+                case 2:
+                    _a.sent();
+                    return [2 /*return*/];
+                case 3:
+                    e_1 = _a.sent();
+                    if (!error_1.isSlsNotExistException(e_1)) return [3 /*break*/, 5];
+                    slsRetry++;
+                    if (slsRetry >= retryTimes) {
+                        throw e_1;
+                    }
+                    return [4 /*yield*/, time_1.sleep(3000)];
+                case 4:
+                    _a.sent();
+                    return [3 /*break*/, 6];
+                case 5: throw e_1;
+                case 6: return [3 /*break*/, 7];
+                case 7:
+                    if (slsRetry < retryTimes) return [3 /*break*/, 1];
+                    _a.label = 8;
+                case 8: return [2 /*return*/];
+            }
+        });
+    });
+}
+exports.retryDeployUntilSlsCreated = retryDeployUntilSlsCreated;
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoicmV0cnkuanMiLCJzb3VyY2VSb290IjoiIiwic291cmNlcyI6WyIuLi8uLi9zcmMvbGliL3JldHJ5LnRzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiJBQUFBLFlBQVksQ0FBQzs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7O0FBRWIsZ0VBQWtDO0FBQ2xDLGlDQUFpRDtBQUNqRCxxQ0FBcUM7QUFFckMsSUFBTSxjQUFjLEdBQUcsQ0FBQyxDQUFDO0FBRXpCLFNBQXNCLFlBQVksQ0FBQyxFQUFPOzs7O1lBQ2xDLFlBQVksR0FBRztnQkFDbkIsT0FBTyxFQUFFLGNBQWM7Z0JBQ3ZCLE1BQU0sRUFBRSxDQUFDO2dCQUNULFVBQVUsRUFBRSxDQUFDLEdBQUcsSUFBSTtnQkFDcEIsU0FBUyxFQUFFLElBQUk7YUFDaEIsQ0FBQztZQUNGLHNCQUFPLHVCQUFLLENBQUMsRUFBRSxFQUFFLFlBQVksQ0FBQyxFQUFDOzs7Q0FDaEM7QUFSRCxvQ0FRQztBQUVELFNBQXNCLDBCQUEwQixDQUFDLGlCQUFzQixFQUFFLGVBQW9COzs7Ozs7b0JBQ3ZGLFFBQVEsR0FBRyxDQUFDLENBQUM7b0JBQ1gsVUFBVSxHQUFHLEVBQUUsQ0FBQzs7OztvQkFHbEIscUJBQU0saUJBQWlCLENBQUMsTUFBTSxDQUFDLGVBQWUsQ0FBQyxFQUFBOztvQkFBL0MsU0FBK0MsQ0FBQztvQkFDaEQsc0JBQU87Ozt5QkFFSCw4QkFBc0IsQ0FBQyxHQUFDLENBQUMsRUFBekIsd0JBQXlCO29CQUMzQixRQUFRLEVBQUUsQ0FBQztvQkFFWCxJQUFJLFFBQVEsSUFBSSxVQUFVLEVBQUU7d0JBQzFCLE1BQU0sR0FBQyxDQUFDO3FCQUNUO29CQUVELHFCQUFNLFlBQUssQ0FBQyxJQUFJLENBQUMsRUFBQTs7b0JBQWpCLFNBQWlCLENBQUM7O3dCQUNYLE1BQU0sR0FBQyxDQUFDOzs7d0JBRVosUUFBUSxHQUFHLFVBQVU7Ozs7OztDQUMvQjtBQW5CRCxnRUFtQkMifQ==

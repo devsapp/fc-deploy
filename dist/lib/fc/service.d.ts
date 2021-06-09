@@ -26,7 +26,6 @@ export declare class FcService extends FcDeploy<ServiceConfig> {
     initLocalConfig(): Promise<void>;
     static extractFcRole(role: any): any;
     generateServiceRole(): Promise<string>;
-    generateDefaultLogConfig(): LogConfig;
     generateServiceLog(): Promise<LogConfig>;
     generateServiceVpc(isNasAuto: boolean): Promise<VpcConfig>;
     generateServiceNas(vpcConfig: VpcConfig, roleArn: string, assumeYes?: boolean): Promise<NasConfig>;
