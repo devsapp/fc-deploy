@@ -1,4 +1,5 @@
 import { Logger } from '@serverless-devs/core';
+import * as _ from 'lodash';
 
 export function throwProcessedPopPermissionError(ex: any, action) {
   if (!ex.code || !ex.url || (ex.code !== 'NoPermission' && ex.code !== 'Forbidden.RAM' && !ex.code.includes('Forbbiden'))) { // NAS 返回的权限错误码是 Forbbiden.ram
@@ -68,4 +69,10 @@ export function throwProcessedFCPermissionError(ex, region, ...resourceArr) {
   const policyName = generatePolicyName(action, region, ...resourceArr);
   printPermissionTip(policyName, action, resource);
   throw ex;
+}
+
+export function isSlsNotExistException(e) {
+  return _.includes(e.message, 'POST /services failed with 400')
+    && _.includes(e.message, 'not exist')
+    && (_.includes(e.message, 'logstore') || _.includes(e.message, 'project'));
 }

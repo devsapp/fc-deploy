@@ -12,6 +12,8 @@ import { mark, ServerlessProfile, replaceProjectName, ICredentials } from './lib
 import { IProperties, IInputs } from './interface';
 import * as path from 'path';
 import { hasHttpPrefix } from './lib/utils/utils';
+import { promiseRetry, retryDeployUntilSlsCreated } from './lib/retry';
+import { isSlsNotExistException } from './lib/error';
 
 export default class FcDeployComponent {
   @core.HLogger('FC-DEPLOY') logger: core.ILogger;
@@ -214,7 +216,22 @@ export default class FcDeployComponent {
     if (!_.isEmpty(resolvedTriggerConfs)) {
       this.logger.info(`Waiting for triggers ${resolvedTriggerConfs.map((t) => t.name)} to be deployed`);
     }
-    await fcBaseComponentIns.deploy(fcBaseComponentInputs);
+
+    await promiseRetry(async (retry: any, times: number): Promise<any> => {
+      try {
+        await retryDeployUntilSlsCreated(fcBaseComponentIns, fcBaseComponentInputs);
+        return;
+      } catch (ex) {
+        if (ex.code === 'AccessDenied' || isSlsNotExistException(ex)) {
+          throw ex;
+        }
+        this.logger.debug(`error when createService or updateService, serviceName is ${fcService.name}, error is: \n${ex}`);
+
+        this.logger.log(`\tretry ${times} times`, 'red');
+        retry(ex);
+      }
+    });
+
     let deployedInfo = `\nService: ${resolvedServiceConf.name}`;
     if (!_.isEmpty(resolvedFunctionConf)) {
       deployedInfo += `\nFunction: ${resolvedFunctionConf.name}`;
