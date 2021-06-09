@@ -175,13 +175,6 @@ export class FcService extends FcDeploy<ServiceConfig> {
     return roleArn;
   }
 
-  generateDefaultLogConfig(): LogConfig {
-    return {
-      project: `aliyun-fc-deploy-component-generated-project-${this.region}`,
-      logstore: 'function-log',
-    };
-  }
-
   async generateServiceLog(): Promise<LogConfig> {
     const { logConfig } = this.localConfig;
     if (_.isEmpty(logConfig)) {

@@ -110,7 +110,7 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
     // 基于 fc-sync 获取函数代码
     await fse.ensureDir(FcFunction.DEFAULT_SYNC_CODE_PATH, 0o777);
     const profileOfFcSync = replaceProjectName(this.serverlessProfile, `${this.serverlessProfile?.project.projectName}-fc-sync-project`);
-    const fcSync: FcSync = new FcSync(this.serviceName, profileOfFcSync, this.region, this.credentials, this.curPath, '--type code', this.name, null, FcFunction.DEFAULT_SYNC_CODE_PATH);
+    const fcSync: FcSync = new FcSync(this.serviceName, profileOfFcSync, this.region, this.credentials, this.curPath, '--type code -f', this.name, null, FcFunction.DEFAULT_SYNC_CODE_PATH);
     const fcSyncComponentInputs: any = await fcSync.genComponentInputs('fc-sync');
     const fcSyncComponentIns: any = await core.load('devsapp/fc-sync');
     const syncRes: any = await fcSyncComponentIns.sync(fcSyncComponentInputs);
@@ -245,25 +245,34 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
       }
     }
   }
-
+  async packRemoteCode(): Promise<string> {
+    const syncedCodePath: string = await this.syncRemoteCode();
+    await fse.ensureDir(FC_CODE_CACHE_DIR);
+    const zipPath = path.join(FC_CODE_CACHE_DIR, `${this.credentials.AccountID}-${this.region}-${this.serviceName}-${this.name}-remote.zip`);
+    return await pack(syncedCodePath, null, zipPath);
+  }
 
   async makeFunctionCode(baseDir: string, pushRegistry?: string): Promise<{ codeZipPath?: string; codeOssObject?: string }> {
     this.logger.debug('waiting for making function code.');
-    if (this.useRemote) {
-      return { codeZipPath: await this.syncRemoteCode() };
-    }
     // return { codeZipPath, codeOssObject }
     if (isCustomContainerRuntime(this.localConfig?.runtime) && !_.isNil(pushRegistry)) {
       // push image
-      const alicloudAcr = new AlicloudAcr(pushRegistry, this.serverlessProfile, this.credentials, this.region);
-      await alicloudAcr.pushImage(this.localConfig?.customContainerConfig.image);
+      if (this.useRemote) {
+        const alicloudAcr = new AlicloudAcr(pushRegistry, this.serverlessProfile, this.credentials, this.region);
+        await alicloudAcr.pushImage(this.localConfig?.customContainerConfig.image);
+      }
       return {};
     }
 
-    if (!isCustomContainerRuntime(this.localConfig?.runtime) && this.localConfig?.codeUri) {
+    if (!isCustomContainerRuntime(this.localConfig?.runtime)) {
       // zip
       this.logger.debug(`waiting for packaging function: ${this.name} code...`);
-      const codeZipPath = await this.zipCode(baseDir);
+      let codeZipPath: string;
+      if (this.useRemote) {
+        codeZipPath = await this.packRemoteCode();
+      } else if (this.localConfig?.codeUri) {
+        codeZipPath = await this.zipCode(baseDir);
+      }
       this.logger.debug(`zipped code path: ${codeZipPath}`);
       if (this.localConfig?.ossBucket) {
         // upload to oss, return codeOssObject
