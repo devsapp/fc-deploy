@@ -28,7 +28,6 @@ async function packTo(file: string, codeignore: any, targetPath: string, prefix 
   if (!(await fse.pathExists(file))) {
     throw new Error(`Zip file ${file} is not exist.`);
   }
-
   core.Logger.debug('FC-DEPLOY', `pack file is ${targetPath}, absFilePath is ${file}`);
 
   const stats = await fse.lstat(file);
@@ -77,7 +76,7 @@ async function packTo(file: string, codeignore: any, targetPath: string, prefix 
     this._entriesCount++;
     this._queue.push({
       data,
-      source: new Buffer(0),
+      source: Buffer.alloc(0),
     });
 
     return this;
@@ -148,7 +147,6 @@ async function zipFolder(zipArchiver, folder, folders, codeignore, codeUri, pref
       core.Logger.debug('FC-DEPLOY', `before zip: could not found fPath ${fPath}, absolute fPath is ${path.resolve(fPath)}, exception is ${error}, skiping`);
       return 0;
     }
-
     if (codeignore && codeignore(fPath)) {
       core.Logger.debug('FC-DEPLOY', `file ${fPath} is ignored.`);
       return 0;
@@ -183,7 +181,7 @@ async function zipFolder(zipArchiver, folder, folders, codeignore, codeUri, pref
     }
     console.error(`Ignore file ${absFilePath}, because it isn't a file, symbolic link or directory`);
     return 0;
-  }))).reduce(((sum, curr) => sum + curr), 0);
+  }))).reduce(((sum: any, curr: any) => sum + curr), 0);
 }
 
 function isBootstrapPath(absFilePath, absCodeUri, isFile = true) {
