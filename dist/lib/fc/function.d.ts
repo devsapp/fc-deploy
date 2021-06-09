@@ -32,6 +32,7 @@ export declare function isCustomContainerRuntime(runtime: string): boolean;
 export declare class FcFunction extends FcDeploy<FunctionConfig> {
     readonly serviceName: string;
     readonly name: string;
+    originalCodeUri: string;
     static readonly DEFAULT_BUILD_ARTIFACTS_PATH_SUFFIX: string;
     static readonly DEFAULT_SYNC_CODE_PATH: string;
     constructor(functionConf: FunctionConfig, serviceName: string, serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string, args?: string);
@@ -42,9 +43,10 @@ export declare class FcFunction extends FcDeploy<FunctionConfig> {
     genStateID(): string;
     validateConfig(): void;
     makeFunctionConfig(): FunctionConfig;
-    generateCodeIngore(baseDir: string): Promise<(f: any) => boolean>;
+    generateCodeIngore(baseDir: string): Promise<Function>;
     zipCode(baseDir: any): Promise<string>;
     removeZipCode(codeZipPath: string): Promise<void>;
+    packRemoteCode(): Promise<string>;
     makeFunctionCode(baseDir: string, pushRegistry?: string): Promise<{
         codeZipPath?: string;
         codeOssObject?: string;
