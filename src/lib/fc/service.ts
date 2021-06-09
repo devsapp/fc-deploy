@@ -94,7 +94,7 @@ export class FcService extends FcDeploy<ServiceConfig> {
   async generateServiceRole(): Promise<string> {
     const attachedPolicies = [];
 
-    const serviceRole = this.localConfig.role;
+    const serviceRole: any = this.localConfig.role;
     const assumeRolePolicy = [
       {
         Action: 'sts:AssumeRole',

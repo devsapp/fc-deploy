@@ -4,6 +4,7 @@ import ignore from 'ignore';
 import * as fse from 'fs-extra';
 import path from 'path';
 import * as _ from 'lodash';
+import { Logger } from '@serverless-devs/core';
 
 const ignoredFile = ['.git', '.svn', '.env', '.DS_Store', 'template.packaged.yml', '.nas.yml', '.s/nas', '.s/tmp', '.s/package'];
 
@@ -27,7 +28,7 @@ function selectIgnored(runtime) {
   }
 }
 
-async function getIgnoreContent(ignoreFilePath) {
+async function getIgnoreContent(ignoreFilePath: string): Promise<string> {
   let fileContent = '';
 
   if (fse.existsSync(ignoreFilePath)) {
@@ -36,28 +37,35 @@ async function getIgnoreContent(ignoreFilePath) {
   return fileContent;
 }
 
-export async function isIgnored(baseDir, runtime) {
+export async function isIgnored(baseDir: string, runtime: string, ignoreRelativePath?: string): Promise<Function> {
   const ignoreFilePath = path.join(baseDir, '.fcignore');
 
-  const fileContent = await getIgnoreContent(ignoreFilePath);
-
+  const fileContent: string = await getIgnoreContent(ignoreFilePath);
+  const fileContentList: string[] = fileContent.split('\n');
+  // 对于 build 后的构建物，会将 codeUri 中包含的子目录消除
+  // 例如 codeUri: ./code，则 build 后，生成的 codeUri 为 ./.s/build/artifacts/${serviceName}/${functionName}
+  // 因此需要将 .fcjgnore 中的路径对原始 codeUri 求相对路径后作为新的 ignore 内容
+  if (ignoreRelativePath) {
+    for (let i = 0; i < fileContentList.length; i++) {
+      fileContentList[i] = path.relative(ignoreRelativePath, fileContentList[i]);
+    }
+  }
   const ignoreDependencies = selectIgnored(runtime);
-
   // const ignoreList = await generateIgnoreFileFromNasYml(baseDir);
 
-  const ignoredPaths = parser(`${[...ignoredFile, ...ignoreDependencies].join('\n')}\n${fileContent}`);
-
+  const ignoredPaths = parser(`${[...ignoredFile, ...ignoreDependencies, ...fileContentList].join('\n')}`);
+  Logger.debug('FC-DEPLOY', `ignoredPaths is: ${ignoredPaths}`);
   const ig = ignore().add(ignoredPaths);
+
   return function (f) {
     const relativePath = path.relative(baseDir, f);
-
     if (relativePath === '') { return false; }
     return ig.ignores(relativePath);
   };
 }
 
 export async function updateIgnore(baseDir, patterns) {
-  const ignoreFilePath = `${baseDir}/.fcignore`;
+  const ignoreFilePath = path.join(baseDir, '.fcignore');
 
   const fileContent = await getIgnoreContent(ignoreFilePath);
 
