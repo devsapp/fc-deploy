@@ -1,6 +1,7 @@
 import { AlicloudClient } from './client';
 import { execSync } from 'child_process';
 import { ServerlessProfile, ICredentials } from '../profile';
+import StdoutFormatter from '../component/stdout-formatter';
 
 export class AlicloudAcr extends AlicloudClient {
   readonly registry: string;
@@ -41,7 +42,7 @@ export class AlicloudAcr extends AlicloudClient {
       });
       this.logger.log(`Login to registry: ${this.registry} with user: ${dockerTmpUser}`, 'green');
     } catch (e) {
-      this.logger.warn(`Login to registry: ${this.registry} failed with temporary token.`);
+      this.logger.warn(StdoutFormatter.stdoutFormatter.warn('registry', `login to ${this.registry} failed with temporary token`));
     }
   }
 
@@ -51,7 +52,7 @@ export class AlicloudAcr extends AlicloudClient {
     imageArr[0] = this.registry;
 
     const resolvedImage = imageArr.join('/');
-    this.logger.log(`Docker push ${resolvedImage}...`, 'yellow');
+    this.logger.log(`Pushing docker image: ${resolvedImage}...`, 'yellow');
     execSync(`docker push ${resolvedImage}`, { stdio: 'inherit' });
   }
 }
