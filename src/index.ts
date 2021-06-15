@@ -14,6 +14,7 @@ import * as path from 'path';
 import { hasHttpPrefix } from './lib/utils/utils';
 import { promiseRetry, retryDeployUntilSlsCreated } from './lib/retry';
 import { isSlsNotExistException } from './lib/error';
+import StdoutFormatter from './lib/component/stdout-formatter';
 
 export default class FcDeployComponent {
   @core.HLogger('FC-DEPLOY') logger: core.ILogger;
@@ -24,15 +25,12 @@ export default class FcDeployComponent {
       const credentials: ICredentials = await core.getCredential(access);
       uid = credentials.AccountID;
     }
-
-    try {
-      core.reportComponent(componentName, {
-        command,
-        uid,
-      });
-    } catch (e) {
-      this.logger.warn(`Component ${componentName} report error: ${e.message}`);
-    }
+    core.reportComponent(componentName, {
+      command,
+      uid,
+    }).catch((e) => {
+      this.logger.warn(StdoutFormatter.stdoutFormatter.warn('component report', `component name: ${componentName}, method: ${command}`, e.message));
+    });
   }
 
   async handlerBase() {
@@ -55,6 +53,7 @@ export default class FcDeployComponent {
 
   // 解析入参
   async handlerInputs(inputs: IInputs): Promise<{[key: string]: any}> {
+    await StdoutFormatter.initStdout();
     const project = inputs?.project;
     const access: string = project?.access;
     await this.report('fc-deploy', inputs?.command, null, inputs?.project?.access);
@@ -83,10 +82,10 @@ export default class FcDeployComponent {
       };
     }
 
-    this.logger.info(`Using region: ${region}`);
-    this.logger.info(`Using access alias: ${access}`);
-    this.logger.info(`Using accountId: ${mark(String(credentials.AccountID))}`);
-    this.logger.info(`Using accessKeyId: ${mark(credentials.AccessKeyID)}`);
+    this.logger.info(StdoutFormatter.stdoutFormatter.using('region', region));
+    this.logger.info(StdoutFormatter.stdoutFormatter.using('access alias', access));
+    this.logger.info(StdoutFormatter.stdoutFormatter.using('accountID', mark(String(credentials.AccountID))));
+    this.logger.info(StdoutFormatter.stdoutFormatter.using('accountID', mark(String(credentials.AccessKeyID))));
 
     const serverlessProfile: ServerlessProfile = {
       project: {
@@ -209,12 +208,12 @@ export default class FcDeployComponent {
     const fcBaseComponent = new BaseComponent(profileOfFcBase, resolvedServiceConf, region, credentials, curPath, args, resolvedFunctionConf, resolvedTriggerConfs);
 
     const fcBaseComponentInputs = fcBaseComponent.genComponentInputs(componentName);
-    this.logger.info(`Waiting for service ${resolvedServiceConf.name} to be deployed`);
+    this.logger.info(StdoutFormatter.stdoutFormatter.create('service', resolvedServiceConf.name));
     if (!_.isEmpty(resolvedFunctionConf)) {
-      this.logger.info(`Waiting for function ${resolvedFunctionConf.name} to be deployed`);
+      this.logger.info(StdoutFormatter.stdoutFormatter.create('function', resolvedFunctionConf.name));
     }
     if (!_.isEmpty(resolvedTriggerConfs)) {
-      this.logger.info(`Waiting for triggers ${resolvedTriggerConfs.map((t) => t.name)} to be deployed`);
+      this.logger.info(StdoutFormatter.stdoutFormatter.create('triggers', JSON.stringify(resolvedTriggerConfs.map((t) => t.name))));
     }
 
     await promiseRetry(async (retry: any, times: number): Promise<any> => {
@@ -226,20 +225,11 @@ export default class FcDeployComponent {
           throw ex;
         }
         this.logger.debug(`error when createService or updateService, serviceName is ${fcService.name}, error is: \n${ex}`);
-
-        this.logger.log(`\tretry ${times} times`, 'red');
+        this.logger.info(StdoutFormatter.stdoutFormatter.retry('service', `create ${resolvedServiceConf.name}`, '', times));
         retry(ex);
       }
     });
 
-    let deployedInfo = `\nService: ${resolvedServiceConf.name}`;
-    if (!_.isEmpty(resolvedFunctionConf)) {
-      deployedInfo += `\nFunction: ${resolvedFunctionConf.name}`;
-    }
-    if (!_.isEmpty(resolvedTriggerConfs)) {
-      deployedInfo += `\nTriggers ${resolvedTriggerConfs.map((t) => t.name)}`;
-    }
-    this.logger.info(`Deployed:${deployedInfo}`);
     // deploy custom domain
     let hasAutoCustomDomainNameInDomains = false;
     const resolvedCustomDomainConfs: CustomDomainConfig[] = [];
@@ -253,16 +243,15 @@ export default class FcDeployComponent {
       }
     }
     if (!_.isEmpty(resolvedCustomDomainConfs)) {
-      this.logger.info(`Waiting for custom domains ${resolvedCustomDomainConfs.map((d) => d.domainName)} to be deployed`);
       const profileOfFcDomain = replaceProjectName(serverlessProfile, `${serverlessProfile?.project.projectName}-fc-domain-project`);
       for (const resolvedCustomDomainConf of resolvedCustomDomainConfs) {
-        this.logger.debug(`waiting for custom domain ${resolvedCustomDomainConf.domainName} to be deployed`);
+        this.logger.info(StdoutFormatter.stdoutFormatter.create('custom domain', resolvedCustomDomainConf.domainName));
+
         const fcDomainComponent = new FcDomainComponent(profileOfFcDomain, resolvedCustomDomainConf, region, credentials, curPath, args);
         const fcDomainComponentInputs = fcDomainComponent.genComponentInputs();
         const fcDoaminComponentIns = await core.load('devsapp/fc-domain');
         await fcDoaminComponentIns.deploy(fcDomainComponentInputs);
       }
-      this.logger.info(`Deployed:\ncustom domains ${resolvedCustomDomainConfs.map((d) => d.domainName)}`);
     }
     // remove zipped code
     if (!_.isEmpty(resolvedFunctionConf)) { await fcFunction.removeZipCode(resolvedFunctionConf?.codeUri); }

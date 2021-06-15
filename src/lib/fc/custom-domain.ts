@@ -5,6 +5,7 @@ import { isAutoConfig } from '../definition';
 import * as core from '@serverless-devs/core';
 import { DomainComponent } from '../component/domain';
 import * as fse from 'fs-extra';
+import StdoutFormatter from '../component/stdout-formatter';
 
 export interface CustomDomainConfig {
   domainName: string;
@@ -159,13 +160,13 @@ export class FcCustomDomain extends IInputsBase {
     if (this.isDomainNameAuto) {
       // generate domain via domain component
       this.logger.debug('Auto domain name');
-      this.logger.info('Using \'customDomain: auto\', FC-DEPLOY will try to generate related custom domain resources automatically');
+      this.logger.info(StdoutFormatter.stdoutFormatter.using('customDomain: auto', 'fc will try to generate related custom domain resources automatically'));
       const profileOfDomain: ServerlessProfile = replaceProjectName(this.serverlessProfile, `${this.serverlessProfile?.project.projectName}-domain-project`);
       const domainComponent = new DomainComponent(profileOfDomain, this.serviceName, this.functionName, this.region, this.credentials, this.curPath, this.args);
       const domainComponentInputs = domainComponent.genComponentInputs('domain');
       const domainComponentIns = await core.load('devsapp/domain');
       const generatedDomain = await domainComponentIns.get(domainComponentInputs);
-      this.logger.info(`Generated auto custom domain done: ${generatedDomain}`);
+      this.logger.info(`Generated auto custom domain: ${generatedDomain}`);
       Object.assign(resolvedCustomDomainConf, {
         domainName: generatedDomain,
       });

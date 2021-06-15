@@ -24,3 +24,7 @@ export function createProgressBar(format, options) {
 export function hasHttpPrefix(s: string): boolean {
   return s.startsWith('http://');
 }
+
+export function capitalizeFirstLetter(s: string) {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}

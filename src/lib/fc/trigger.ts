@@ -5,6 +5,7 @@ import { DESCRIPTION } from '../static';
 import { ServerlessProfile, ICredentials } from '../profile';
 import * as core from '@serverless-devs/core';
 import FcDeploy from './fc-deploy';
+import StdoutFormatter from '../component/stdout-formatter';
 
 export interface TriggerConfig {
   name: string;
@@ -178,8 +179,8 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
   }
 
   async makeInvocationRole(): Promise<string> {
-    this.logger.info(`Waiting for making invocation role for trigger: ${this.name}`);
     const roleName: string = normalizeRoleOrPoliceName(`FcDeployCreateRole-${this.serviceName}-${this.functionName}`);
+    this.logger.info(StdoutFormatter.stdoutFormatter.set(`invocation role for trigger: ${this.name}`, roleName));
     let assumeRolePolicy: {[key: string]: any};
     let serviceOfAssumeRolePolicy: string;
     let policyConf: CustomPolicyConfig;

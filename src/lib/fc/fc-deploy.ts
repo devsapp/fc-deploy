@@ -3,7 +3,8 @@ import * as core from '@serverless-devs/core';
 import * as _ from 'lodash';
 import { promptForConfirmOrDetails } from '../utils/prompt';
 import FcInfo from '../component/fc-info';
-
+import { capitalizeFirstLetter } from '../utils/utils';
+import StdoutFormatter from '../component/stdout-formatter';
 
 export default abstract class FcDeploy<T> extends IInputsBase {
   localConfig: T;
@@ -38,11 +39,20 @@ export default abstract class FcDeploy<T> extends IInputsBase {
   }
 
   async initRemote(type: string, serviceName: string, functionName?: string, triggerName?: string): Promise<void> {
+    let resourceName: string;
+    if (type === 'service') {
+      resourceName = serviceName;
+    } else if (type === 'function') {
+      resourceName = functionName;
+    } else if (type === 'trigger') {
+      resourceName = triggerName;
+    }
     // 基于 fc-info 获取线上配置
     const profileOfFcInfo = replaceProjectName(this.serverlessProfile, `${this.serverlessProfile?.project.projectName}-fc-info-project`);
     const fcInfo: FcInfo = new FcInfo(serviceName, profileOfFcInfo, this.region, this.credentials, this.curPath, null, functionName, triggerName ? [triggerName] : null);
     const fcInfoComponentInputs: any = await fcInfo.genComponentInputs('fc-info');
     const fcInfoComponentIns: any = await core.load('devsapp/fc-info');
+    this.logger.info(StdoutFormatter.stdoutFormatter.check(type, resourceName));
     let remoteConfig: T;
     try {
       const info: any = await fcInfoComponentIns.info(fcInfoComponentInputs);
@@ -53,20 +63,12 @@ export default abstract class FcDeploy<T> extends IInputsBase {
       }
     } catch (e) {
       if (!e.toString().includes('NotFoundError')) {
-        this.logger.warn(`Get remote ${type} failed, error is: ${e.message}.Fc will use local config from now on.`);
+        this.logger.warn(StdoutFormatter.stdoutFormatter.warn(`remote ${type}`, `error is: ${e.message}`, 'Fc will use local config from now on'));
       }
     }
 
     if (!_.isEmpty(remoteConfig)) {
-      let resourceName: string;
-      if (type === 'service') {
-        resourceName = serviceName;
-      } else if (type === 'function') {
-        resourceName = functionName;
-      } else if (type === 'trigger') {
-        resourceName = triggerName;
-      }
-      this.logger.info(`${type}: ${resourceName} exists online.`);
+      this.logger.info(`${capitalizeFirstLetter(type)}: ${resourceName} already exists online.`);
       this.logger.debug(`online config of ${type}: ${resourceName} is ${JSON.stringify(remoteConfig, null, '  ')}`);
       this.existOnline = true;
       this.remoteConfig = remoteConfig;
@@ -96,7 +98,7 @@ export default abstract class FcDeploy<T> extends IInputsBase {
         throw new Error(`${type}: ${name} dose not exist online, please make sure the ${type} exists or you have permission to access remote ${type} when use --use-remote flag.`);
       }
       // --use-remote 参数为假，且线上资源不存在，则默认使用线下配置，且之后不再询问
-      this.logger.info(`${type}: ${name} dose not exist online, fc will use local config from now on.`);
+      this.logger.info(`${capitalizeFirstLetter(type)}: ${name} dose not exist online, fc will use local config from now on.`);
       this.useRemote = false;
     } else if (!useRemoteFlag && !useLocalFlag) {
       /*
@@ -114,7 +116,7 @@ export default abstract class FcDeploy<T> extends IInputsBase {
         delete details.import;
         delete details.protect;
         this.useRemote = await promptForConfirmOrDetails(msg, details);
-        this.logger.log(`The deployment will use ${this.useRemote ? 'remote config' : 'local config'} from now on.\nYou can change it by setting --use-remote/--use-local flag in deploy command.`, 'yellow');
+        this.logger.log(`Using ${this.useRemote ? 'remote config' : 'local config'} from now on.\nYou can change it by setting --use-remote/--use-local flag in deploy command.`, 'yellow');
       }
     } else if (useRemoteFlag && !useLocalFlag) {
       // 使用线上资源
