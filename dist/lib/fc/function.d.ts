@@ -37,13 +37,13 @@ export declare class FcFunction extends FcDeploy<FunctionConfig> {
     static readonly DEFAULT_SYNC_CODE_PATH: string;
     constructor(functionConf: FunctionConfig, serviceName: string, serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string, args?: string);
     initLocal(assumeYes?: boolean): Promise<void>;
-    getCodeUriWithBuildPath(): any;
+    getCodeUriWithBuildPath(): Promise<any>;
     initLocalConfig(assumeYes?: boolean): Promise<void>;
     syncRemoteCode(): Promise<string>;
     genStateID(): string;
     validateConfig(): void;
     makeFunctionConfig(): FunctionConfig;
-    generateCodeIngore(baseDir: string): Promise<Function>;
+    generateCodeIngore(baseDir: string): Promise<Function | null>;
     zipCode(baseDir: any): Promise<string>;
     removeZipCode(codeZipPath: string): Promise<void>;
     packRemoteCode(): Promise<string>;
