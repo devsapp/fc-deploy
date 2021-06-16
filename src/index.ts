@@ -56,12 +56,12 @@ export default class FcDeployComponent {
     await StdoutFormatter.initStdout();
     const project = inputs?.project;
     const access: string = project?.access;
-    await this.report('fc-deploy', inputs?.command, null, inputs?.project?.access);
+    const credentials: ICredentials = await core.getCredential(access);
+    await this.report('fc-deploy', inputs?.command, credentials.AccountID, inputs?.project?.access);
 
     const properties: IProperties = inputs?.props;
 
     const appName: string = inputs?.appName;
-    const credentials: ICredentials = await core.getCredential(access);
     // 去除 args 的行首以及行尾的空格
     const args: string = inputs?.args.replace(/(^\s*)|(\s*$)/g, '');
     const curPath: string = inputs?.path?.configPath;

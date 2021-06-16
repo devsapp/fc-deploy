@@ -62,8 +62,12 @@ export class AlicloudRam extends AlicloudClient {
 
 
 export function extractRoleNameFromArn(roleArn: string): string {
-  if (!roleArn.startsWith('acs:ram::')) {
-    throw new Error(`Invalid format of role arn: ${roleArn}`);
-  }
+  checkRoleArnFormat(roleArn);
   return roleArn.match(/acs:ram::[0-9]+:role\/(\S*)/)[1];
+}
+
+export function checkRoleArnFormat(roleArn: string): void {
+  if (!roleArn.startsWith('acs:ram::')) {
+    throw new Error(`Invalid format of role arn: ${roleArn}, it should start with \'acs:ram::\'`);
+  }
 }
