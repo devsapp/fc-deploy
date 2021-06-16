@@ -94,9 +94,13 @@ export class FcService extends FcDeploy<ServiceConfig> {
   }
 
   async generateServiceRole(): Promise<string> {
-    const attachedPolicies = [];
-
     const serviceRole: any = this.localConfig.role;
+    if (_.isString(serviceRole)) {
+      const roleName: string = extractRoleNameFromArn(serviceRole);
+      this.logger.info(StdoutFormatter.stdoutFormatter.using('role', `extracted name is ${roleName}`));
+      return serviceRole;
+    }
+    const attachedPolicies = [];
     const assumeRolePolicy = [
       {
         Action: 'sts:AssumeRole',
@@ -111,7 +115,7 @@ export class FcService extends FcDeploy<ServiceConfig> {
       roleName = `fcDeployDefaultRole-${this.localConfig?.name}`;
       roleName = normalizeRoleOrPoliceName(roleName);
     } else {
-      roleName = _.isString(serviceRole) ? extractRoleNameFromArn(serviceRole) : serviceRole.name;
+      roleName = serviceRole.name;
     }
     if (serviceRole && !_.isString(serviceRole)) {
       if (serviceRole?.policies) { attachedPolicies.push(...serviceRole?.policies); }
