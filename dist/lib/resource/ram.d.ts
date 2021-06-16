@@ -20,3 +20,4 @@ export declare class AlicloudRam extends AlicloudClient {
     makeRole(roleName: string, args?: string, description?: string, resourceName?: string, assumeRolePolicy?: any, attachedPolicies?: Array<string | CustomPolicyConfig>): Promise<string>;
 }
 export declare function extractRoleNameFromArn(roleArn: string): string;
+export declare function checkRoleArnFormat(roleArn: string): void;
