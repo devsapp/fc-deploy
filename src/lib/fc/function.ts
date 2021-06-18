@@ -259,7 +259,7 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
     // return { codeZipPath, codeOssObject }
     if (isCustomContainerRuntime(this.localConfig?.runtime) && !_.isNil(pushRegistry)) {
       // push image
-      if (this.useRemote) {
+      if (!this.useRemote) {
         const alicloudAcr = new AlicloudAcr(pushRegistry, this.serverlessProfile, this.credentials, this.region);
         await alicloudAcr.pushImage(this.localConfig?.customContainerConfig.image);
       }
