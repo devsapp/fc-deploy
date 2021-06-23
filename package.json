@@ -43,13 +43,13 @@
   "scripts": {
     "dev": "npx tsc -w -p tsconfig.json",
     "prebuild": "rimraf dist",
-    "build": "npx tsc -p tsconfig.json",
+    "build": "npm run fix && npm run lint && npx tsc -p tsconfig.json",
     "build:component": "npx webpack --mode=production",
     "publish": "npm run build:component && s platform publish",
     "test": "jest",
     "test:cov": "jest --coverage",
-    "lint": "f2elint scan",
-    "fix": "f2elint fix",
+    "lint": "f2elint scan -i ./src",
+    "fix": "f2elint fix -i ./src",
     "typecheck": "npx tsc -p tsconfig.json --noEmit"
   },
   "husky": {

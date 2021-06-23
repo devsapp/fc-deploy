@@ -95,7 +95,8 @@ export class FcService extends FcDeploy<ServiceConfig> {
 
   async generateServiceRole(): Promise<string> {
     const serviceRole: any = this.localConfig.role;
-    if (_.isString(serviceRole)) {
+    // 用户指定 roleArn 时不做任何更新 Role 的处理
+    if (_.isString(serviceRole) && !_.toLower(serviceRole).includes('fcdeploydefaultrole')) {
       const roleName: string = extractRoleNameFromArn(serviceRole);
       this.logger.info(StdoutFormatter.stdoutFormatter.using('role', `extracted name is ${roleName}`));
       return serviceRole;
@@ -114,6 +115,8 @@ export class FcService extends FcDeploy<ServiceConfig> {
     if (_.isNil(serviceRole)) {
       roleName = `fcDeployDefaultRole-${this.localConfig?.name}`;
       roleName = normalizeRoleOrPoliceName(roleName);
+    } else if (_.isString(serviceRole)) {
+      roleName = extractRoleNameFromArn(serviceRole);
     } else {
       roleName = serviceRole.name;
     }
