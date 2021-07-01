@@ -4,7 +4,7 @@ import { AlicloudClient } from './client';
 import { replaceProjectName } from '../profile';
 
 export interface RoleConfig {
-  name: string;
+  name?: string;
   policies?: Array<string | CustomPolicyConfig>;
 }
 
@@ -21,8 +21,25 @@ export interface PolicyStatementConfig {
   Condition?: any;
 }
 
-export function normalizeRoleOrPoliceName(roleName: string): string {
+function normalizeRoleOrPoliceName(roleName: string): string {
   return roleName.replace(/_/g, '-');
+}
+
+const generateNameMaxLengthMessage = {
+  serviceName: (maxNameLeng: number) => `The service name is greater than ${maxNameLeng}, please reduce the service name`,
+  regionAndServiceName: (maxNameLeng: number) => `The total length of the region and service name exceeds ${maxNameLeng}, please reduce the service name`,
+  serviceNameAndFunctionName: (maxNameLeng: number) => `The total length of the service name and function name exceeds ${maxNameLeng}, please reduce the service or function name`,
+};
+
+export function generateRamResourceName(prefix: string, name: string, type: 'serviceName' | 'regionAndServiceName' | 'serviceNameAndFunctionName') {
+  const policeName = normalizeRoleOrPoliceName(`${prefix}${name}`);
+
+  const maxNameLeng = 64 - prefix.length;
+  if (name.length > maxNameLeng) {
+    throw new Error(generateNameMaxLengthMessage[type](maxNameLeng) || `The police name(${policeName}) is greater than 64, please reduce the resource name`);
+  }
+
+  return policeName;
 }
 
 export class AlicloudRam extends AlicloudClient {

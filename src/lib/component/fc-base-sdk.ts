@@ -19,7 +19,7 @@ export class FcBaseSdkComponent extends Component {
   }
 
   genServiceProp(): { [key: string]: any } {
-    if (_.isEmpty(this.serviceConf.nasConfig) && _.isEmpty(this.serviceConf.vpcConfig)) {
+    if (_.isEmpty(this.serviceConf.logConfig) && _.isEmpty(this.serviceConf.nasConfig) && _.isEmpty(this.serviceConf.vpcConfig)) {
       return this.serviceConf;
     }
     const resolvedServiceConf: { [key: string]: any } = _.cloneDeep(this.serviceConf);

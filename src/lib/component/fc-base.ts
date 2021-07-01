@@ -6,6 +6,8 @@ import { ServerlessProfile, ICredentials } from '../profile';
 import { Component } from './component';
 import { isAutoConfig } from '../definition';
 
+const notSupportResourseErrorMessage = (resourseType: string) => `Pulumi does not support ${resourseType} temporarily, please use to switch to [s cli fc-default set deploy-type sdk] to operate again, or delete this configuration`;
+
 export class FcBaseComponent extends Component {
   readonly serviceConf: ServiceConfig;
   readonly functionConf?: FunctionConfig;
@@ -19,7 +21,7 @@ export class FcBaseComponent extends Component {
   }
 
   genServiceProp(): { [key: string]: any } {
-    if (_.isEmpty(this.serviceConf.nasConfig) && _.isEmpty(this.serviceConf.vpcConfig)) {
+    if (_.isEmpty(this.serviceConf.logConfig) && _.isEmpty(this.serviceConf.nasConfig) && _.isEmpty(this.serviceConf.vpcConfig)) {
       return this.serviceConf;
     }
     const resolvedServiceConf: { [key: string]: any } = _.cloneDeep(this.serviceConf);
@@ -80,9 +82,6 @@ export class FcBaseComponent extends Component {
         filename: this.functionConf.codeUri,
       });
     }
-    if (resolvedFunctionConf.layers) {
-      throw new Error('Does not support layers.');
-    }
     this.logger.debug('Function input to fc base component generated.');
     return resolvedFunctionConf;
   }
@@ -116,6 +115,37 @@ export class FcBaseComponent extends Component {
       Object.assign(prop, { triggers: this.genTriggerProp() });
     }
     Object.assign(prop, { region: this.region });
+
+    if (prop.function.instanceLifecycleConfig) {
+      throw new Error(notSupportResourseErrorMessage('instanceLifecycleConfig'));
+    }
+    if (prop.function.layers) {
+      throw new Error(notSupportResourseErrorMessage('layers'));
+    }
+    if (prop.function.customContainerConfig?.instanceID) {
+      throw new Error(notSupportResourseErrorMessage('customContainerConfig instanceID'));
+    }
+    if (prop.function.customContainerConfig?.accelerationType) {
+      throw new Error(notSupportResourseErrorMessage('customContainerConfig accelerationType'));
+    }
+    if (prop.function.asyncConfiguration) {
+      throw new Error(notSupportResourseErrorMessage('asyncConfiguration'));
+    }
+
+    if (prop.service.tracingConfig) {
+      throw new Error(notSupportResourseErrorMessage('tracingConfig'));
+    }
+
+    // TODO: logConfig auto 默认为 true
+    if (_.isBoolean(prop.service.logConfig?.enableInstanceMetrics)) {
+      this.logger.error('enableInstanceMetrics is temporarily not supported, delete this field.');
+      delete prop.service.logConfig?.enableInstanceMetrics;
+    }
+    if (_.isBoolean(prop.service.logConfig?.enableRequestMetrics)) {
+      this.logger.error('enableRequestMetrics is temporarily not supported, delete this field.');
+      delete prop.service.logConfig?.enableRequestMetrics;
+    }
+
     return prop;
   }
 }

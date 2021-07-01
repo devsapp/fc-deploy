@@ -1,6 +1,6 @@
 import { FunctionConfig } from './function';
 import { LogConfig, AlicloudSls } from '../resource/sls';
-import { RoleConfig, normalizeRoleOrPoliceName, CustomPolicyConfig, PolicyStatementConfig, extractRoleNameFromArn, AlicloudRam } from '../resource/ram';
+import { RoleConfig, generateRamResourceName, CustomPolicyConfig, PolicyStatementConfig, extractRoleNameFromArn, AlicloudRam } from '../resource/ram';
 import { VpcConfig, AlicloudVpc } from '../resource/vpc';
 import { NasConfig, AlicloudNas } from '../resource/nas';
 import * as definition from '../definition';
@@ -21,6 +21,7 @@ export interface ServiceConfig {
   role?: string | RoleConfig;
   vpcConfig?: VpcConfig | 'auto' | 'Auto';
   nasConfig?: NasConfig | 'atuo' | 'Auto';
+  tracingConfig?: 'Enable' | 'Disable';
 }
 
 
@@ -111,15 +112,7 @@ export class FcService extends FcDeploy<ServiceConfig> {
         },
       },
     ];
-    let roleName;
-    if (_.isNil(serviceRole)) {
-      roleName = `fcDeployDefaultRole-${this.localConfig?.name}`;
-      roleName = normalizeRoleOrPoliceName(roleName);
-    } else if (_.isString(serviceRole)) {
-      roleName = extractRoleNameFromArn(serviceRole);
-    } else {
-      roleName = serviceRole.name;
-    }
+    const roleName: string = serviceRole?.name || generateRamResourceName('fcDeployDefaultRole-', this.localConfig?.name, 'serviceName');
     if (serviceRole && !_.isString(serviceRole)) {
       if (serviceRole?.policies) { attachedPolicies.push(...serviceRole?.policies); }
     }
@@ -127,7 +120,7 @@ export class FcService extends FcDeploy<ServiceConfig> {
     if (this.hasFunctionAsyncConfig) {
       attachedPolicies.push('AliyunFCInvocationAccess');
 
-      const mnsPolicyName = normalizeRoleOrPoliceName(`AliyunFcGeneratedMNSPolicy-${this.region}-${this.name}`);
+      const mnsPolicyName = generateRamResourceName('AliyunFcGeneratedMNSPolicy-', `${this.region}-${this.name}`, 'regionAndServiceName');
       const mnsPolicyStatement: PolicyStatementConfig = {
         Action: [
           'mns:SendMessage',
@@ -159,7 +152,7 @@ export class FcService extends FcDeploy<ServiceConfig> {
         throw new Error('logConfig only support auto/Auto when set to string.');
       }
     } else if (logConfig?.project && logConfig?.logstore) {
-      const logPolicyName = normalizeRoleOrPoliceName(`AliyunFcGeneratedLogPolicy-${this.region}-${this.name}`);
+      const logPolicyName = generateRamResourceName('AliyunFcGeneratedLogPolicy-', `${this.region}-${this.name}`, 'regionAndServiceName');
       const logPolicyStatement: PolicyStatementConfig = {
         Action: [
           'log:PostLogStoreLogs',
@@ -209,6 +202,8 @@ export class FcService extends FcDeploy<ServiceConfig> {
       resolvedLogConfig = {
         project: logConfig.project,
         logstore: logConfig.logstore,
+        enableRequestMetrics: logConfig.enableRequestMetrics || false,
+        enableInstanceMetrics: logConfig.enableInstanceMetrics || false,
       };
     }
     return resolvedLogConfig;
@@ -271,6 +266,10 @@ export class FcService extends FcDeploy<ServiceConfig> {
     const resolvedServiceConf: ServiceConfig = {
       name: this.name,
     };
+
+    if (!_.isNil(this.localConfig.tracingConfig)) {
+      Object.assign(resolvedServiceConf, { tracingConfig: this.localConfig.tracingConfig });
+    }
 
     if (!_.isNil(this.localConfig.description)) {
       Object.assign(resolvedServiceConf, { description: this.localConfig.description });

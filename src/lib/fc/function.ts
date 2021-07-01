@@ -37,12 +37,37 @@ export interface FunctionConfig {
   instanceType?: string;
   import?: boolean;
   protect?: boolean;
+  instanceLifecycleConfig?: InstanceLifecycleConfig;
+  asyncConfiguration?: AsyncConfiguration;
+}
+
+export interface AsyncConfiguration {
+  destination: {
+    OnSuccess: string;
+    OnFailure: string;
+  };
+  maxAsyncEventAgeInSeconds: number;
+  maxAsyncRetryAttempts: number;
+  statefulInvocation: boolean;
+}
+
+export interface InstanceLifecycleConfig {
+  preFreeze?: {
+    handler?: string;
+    timeout?: number;
+  };
+  preStop?: {
+    handler?: string;
+    timeout?: number;
+  };
 }
 
 export interface CustomContainerConfig {
   image: string;
   command?: string;
   args?: string;
+  instanceID?: string;
+  accelerationType?: 'Default' | 'None';
 }
 
 
@@ -146,6 +171,8 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
       instanceConcurrency: this.localConfig?.instanceConcurrency || FUNCTION_CONF_DEFAULT.instanceConcurrency,
       instanceType: this.localConfig?.instanceType || FUNCTION_CONF_DEFAULT.instanceType,
       runtime: this.localConfig?.runtime || FUNCTION_CONF_DEFAULT.runtime,
+      instanceLifecycleConfig: this.localConfig?.instanceLifecycleConfig,
+      asyncConfiguration: this.localConfig?.asyncConfiguration,
       layers: this.localConfig?.layers,
     };
     if (!_.isNil(this.localConfig?.initializer)) {
