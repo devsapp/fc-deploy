@@ -23,7 +23,7 @@ export interface FunctionConfig {
   ossKey?: string; // conflict with codeUri
   caPort?: number;
   customContainerConfig?: CustomContainerConfig;
-  handler: string;
+  handler?: string;
   memorySize?: number;
   runtime: string;
   timeout?: number;
@@ -188,8 +188,8 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
     }
     if (isCustomContainerRuntime(this.localConfig?.runtime)) {
       Object.assign(resolvedFunctionConf, {
+        handler: this.localConfig?.handler || 'not-used',
         caPort: this.localConfig?.caPort || FUNCTION_CONF_DEFAULT.caPort,
-        handler: 'not-used',
         customContainerConfig: this.localConfig?.customContainerConfig,
       });
     } else if (!_.isNil(this.localConfig?.ossBucket) && !_.isNil(this.localConfig?.ossKey)) {
