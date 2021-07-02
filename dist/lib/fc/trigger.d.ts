@@ -1,4 +1,3 @@
-import { LogConfig } from '../resource/sls';
 import { ServerlessProfile, ICredentials } from '../profile';
 import FcDeploy from './fc-deploy';
 export interface TriggerConfig {
@@ -46,7 +45,10 @@ export interface MnsTriggerConfig {
 export declare function instanceOfMnsTriggerConfig(data: any): data is MnsTriggerConfig;
 export interface LogTriggerConfig {
     jobConfig: LogTriggerJobConfig;
-    logConfig: LogConfig;
+    logConfig: {
+        project: string;
+        logstore: string;
+    };
     functionParameter?: {
         [key: string]: any;
     };

@@ -8,7 +8,7 @@ export interface FunctionConfig {
     ossKey?: string;
     caPort?: number;
     customContainerConfig?: CustomContainerConfig;
-    handler: string;
+    handler?: string;
     memorySize?: number;
     runtime: string;
     timeout?: number;
@@ -22,11 +22,34 @@ export interface FunctionConfig {
     instanceType?: string;
     import?: boolean;
     protect?: boolean;
+    instanceLifecycleConfig?: InstanceLifecycleConfig;
+    asyncConfiguration?: AsyncConfiguration;
+}
+export interface AsyncConfiguration {
+    destination: {
+        OnSuccess: string;
+        OnFailure: string;
+    };
+    maxAsyncEventAgeInSeconds: number;
+    maxAsyncRetryAttempts: number;
+    statefulInvocation: boolean;
+}
+export interface InstanceLifecycleConfig {
+    preFreeze?: {
+        handler?: string;
+        timeout?: number;
+    };
+    preStop?: {
+        handler?: string;
+        timeout?: number;
+    };
 }
 export interface CustomContainerConfig {
     image: string;
     command?: string;
     args?: string;
+    instanceID?: string;
+    accelerationType?: 'Default' | 'None';
 }
 export declare function isCustomContainerRuntime(runtime: string): boolean;
 export declare class FcFunction extends FcDeploy<FunctionConfig> {
