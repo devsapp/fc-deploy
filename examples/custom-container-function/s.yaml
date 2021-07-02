@@ -11,11 +11,21 @@ services:
         name: qianfeng-fc-deploy-service
         description: 'demo for fc-deploy component'
         internetAccess: true
+        role:
+          name: qianfeng-fc-deploy-role
+          policies:
+            - AliyunContainerRegistryReadOnlyAccess
       function:
         name: custom-container-function
         runtime: custom-container
+        caPort: 8080
+        codeUri: ./
+        timeout: 60
         customContainerConfig:
-          image: xxx
+          # image: ${env(image)}
+          image: registry.cn-shanghai.aliyuncs.com/fc-demo/qianfeng-node-express:v1
+          command: '["node"]'
+          args: '["server.js"]'
         environmentVariables:
           testEnv: true
       triggers:
@@ -25,12 +35,12 @@ services:
             authType: anonymous
             methods:
               - GET
+              - POST
+              - PUT
       customDomains:
         - domainName: auto
           protocol: HTTP
           routeConfigs:
-            - path: /a
+            - path: /*
               serviceName: qianfeng-fc-deploy-service
               functionName: custom-container-function
-              methods:
-                - GET

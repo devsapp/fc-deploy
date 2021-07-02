@@ -183,7 +183,7 @@ export default class FcDeployComponent {
       await fcFunction.setUseRemote(fcFunction.name, 'function', useRemote, useLocal);
       const baseDir = path.dirname(curPath);
 
-      const pushRegistry = parsedArgs.data?.pushRegistry;
+      const pushRegistry = parsedArgs.data['push-registry'];
       resolvedFunctionConf = await fcFunction.makeFunction(baseDir, pushRegistry);
       this.logger.debug(`Resolved functionConf is:\n${JSON.stringify(resolvedFunctionConf, null, '  ')}`);
     }

@@ -17,19 +17,25 @@ export class AlicloudAcr extends AlicloudClient {
   }
 
   async getAcrPopClient(): Promise<any> {
-    return await this.getPopClient(`https://cr.${this.region}.aliyuncs.com`, '2016-06-07');
+    return await this.getPopClient(`https://cr.${this.region}.aliyuncs.com`, '2018-12-01');
+  }
+
+  getAcrClient(): any {
+    return this.getRoaClient(`https://cr.${this.region}.aliyuncs.com`, '2016-06-07');
   }
 
   async loginToRegistry(): Promise<void> {
-    const acrClient = await this.getAcrPopClient();
+    const acrClient = this.getAcrClient();
+
     const httpMethod = 'GET';
     const uriPath = '/tokens';
-    const queries = {};
+    const queries: any = {};
     const body = '{}';
-    const headers = {
+    const headers: any = {
       'Content-Type': 'application/json',
     };
     const requestOption = {};
+
     const response = await acrClient.request(httpMethod, uriPath, queries, body, headers, requestOption);
 
     const dockerTmpUser = response.data.tempUserName;

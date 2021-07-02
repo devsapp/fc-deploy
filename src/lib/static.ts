@@ -69,6 +69,11 @@ export const DEPLOY_HELP_INFO = [
         description: 'Deploy resource using local config.',
         type: Boolean,
       },
+      {
+        name: 'push-registry',
+        typeLabel: '{underline <registry>}',
+        description: 'Specify registry or registry type of the image when use custom container runtime.\nRegistry type includes \'acr-internet\' and \'acr-vpc\'',
+      },
     ],
   },
   {
