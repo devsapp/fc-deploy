@@ -5,6 +5,9 @@ import * as p from 'path';
 import { ServerlessProfile, ICredentials, IInputsBase } from '../profile';
 import * as _ from 'lodash';
 
+const { ROAClient } = require('@alicloud/pop-core');
+
+
 const hashedMachineId = require('node-machine-id').machineId;
 const FC = require('@alicloud/fc2');
 
@@ -43,6 +46,16 @@ export class AlicloudClient extends IInputsBase {
 
     return pop;
   }
+
+  getRoaClient(endpoint: string, apiVersion: string): any {
+    return new ROAClient({
+      accessKeyId: this.credentials?.AccessKeyID,
+      accessKeySecret: this.credentials?.AccessKeySecret,
+      endpoint,
+      apiVersion,
+    });
+  }
+
 
   async getFcClient(): Promise<any> {
     const locale: string = await osLocale();
