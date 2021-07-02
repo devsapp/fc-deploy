@@ -13,6 +13,7 @@ export interface ServiceConfig {
     role?: string | RoleConfig;
     vpcConfig?: VpcConfig | 'auto' | 'Auto';
     nasConfig?: NasConfig | 'atuo' | 'Auto';
+    tracingConfig?: 'Enable' | 'Disable';
 }
 export declare class FcService extends FcDeploy<ServiceConfig> {
     readonly hasFunctionAsyncConfig: boolean;

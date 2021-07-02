@@ -1,6 +1,6 @@
 import { AlicloudClient } from './client';
 export interface RoleConfig {
-    name: string;
+    name?: string;
     policies?: Array<string | CustomPolicyConfig>;
 }
 export interface CustomPolicyConfig {
@@ -14,7 +14,7 @@ export interface PolicyStatementConfig {
     Resource: string[] | string;
     Condition?: any;
 }
-export declare function normalizeRoleOrPoliceName(roleName: string): string;
+export declare function generateRamResourceName(prefix: string, name: string, type: 'serviceName' | 'regionAndServiceName' | 'serviceNameAndFunctionName'): string;
 export declare class AlicloudRam extends AlicloudClient {
     genRamComponentProp(roleName: string, resourceName?: string, assumeRolePolicy?: any, attachedPolicies?: Array<string | CustomPolicyConfig>, description?: string): any;
     makeRole(roleName: string, args?: string, description?: string, resourceName?: string, assumeRolePolicy?: any, attachedPolicies?: Array<string | CustomPolicyConfig>): Promise<string>;

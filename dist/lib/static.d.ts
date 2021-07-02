@@ -33,11 +33,17 @@ export declare const DEPLOY_HELP_INFO: ({
     optionList?: undefined;
 } | {
     header: string;
-    optionList: {
+    optionList: ({
         name: string;
         description: string;
         type: BooleanConstructor;
-    }[];
+        typeLabel?: undefined;
+    } | {
+        name: string;
+        typeLabel: string;
+        description: string;
+        type?: undefined;
+    })[];
     content?: undefined;
 } | {
     header: string;

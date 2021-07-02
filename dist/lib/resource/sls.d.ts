@@ -2,7 +2,11 @@ import { AlicloudClient } from './client';
 export interface LogConfig {
     project: string;
     logstore: string;
+    enableRequestMetrics?: boolean;
+    enableInstanceMetrics?: boolean;
 }
+export declare const generateProjectName: (accountID: any, region: string) => string;
+export declare const generateLogstoreName: (serviceName: string) => string;
 export declare class AlicloudSls extends AlicloudClient {
     createDefaultSls(fcServiceName: string): Promise<any>;
 }
