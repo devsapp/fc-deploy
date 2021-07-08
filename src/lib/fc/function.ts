@@ -94,13 +94,14 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
   async getCodeUriWithBuildPath(): Promise<any> {
     const baseDir: string = path.dirname(this.curPath);
     const buildBasePath: string = path.join(baseDir, FcFunction.DEFAULT_BUILD_ARTIFACTS_PATH_SUFFIX);
-    if (!fse.pathExistsSync(buildBasePath) || fse.lstatSync(buildBasePath).isFile() || isCustomContainerRuntime(this.localConfig.runtime)) {
+    const buildCodeUri: string = path.join(buildBasePath, this.serviceName, this.name);
+    if (!fse.pathExistsSync(buildBasePath) || fse.lstatSync(buildBasePath).isFile() || isCustomContainerRuntime(this.localConfig.runtime) || !fse.pathExistsSync(buildCodeUri) || fse.lstatSync(buildCodeUri).isFile()) {
       return {
         codeUri: this.localConfig.codeUri,
         isBuild: false,
       };
     }
-    const buildCodeUri: string = path.join(buildBasePath, this.serviceName, this.name);
+
     this.logger.info(`Fc detects that you have run build command for function: ${this.name}.`);
     this.logger.info(StdoutFormatter.stdoutFormatter.using('codeUri', buildCodeUri));
     return {
