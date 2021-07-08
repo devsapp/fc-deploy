@@ -59,6 +59,10 @@ export class FcCustomDomain extends IInputsBase {
     }
   }
 
+  genStateID(): string {
+    return `${this.credentials.AccountID}-${this.region}-${this.serviceName}-${this.functionName}-customDomain-auto`;
+  }
+
   async initLocal(): Promise<void> {
     this.validateConfig();
     await this.initLocalConfig();
@@ -89,16 +93,15 @@ export class FcCustomDomain extends IInputsBase {
 
   async initLocalConfig(): Promise<void> {
     if (_.isEmpty(this.customDomainConf)) { return; }
-    const stateKey = `${this.credentials.AccountID}-${this.region}-${this.serviceName}-${this.functionName}-customDomain-auto`;
     let state;
     try {
-      state = await core.getState(stateKey);
+      state = await core.getState(this.genStateID());
     } catch (e) {
       if (e.message !== 'The current file does not exist') {
         throw e;
       }
     }
-    this.logger.debug(`state of key: ${stateKey}`);
+    this.logger.debug(`state of key: ${this.genStateID()}`);
     if (_.isEmpty(state)) { return; }
     if (this.isDomainNameAuto) { this.customDomainConf.domainName = state.domainName; }
   }
@@ -106,17 +109,22 @@ export class FcCustomDomain extends IInputsBase {
   async setStatedCustomDomainConf(resolvedCustomDomainConf: CustomDomainConfig): Promise<void> {
     if (this.isDomainNameAuto) {
       this.logger.debug('set resolved custom domain config into state.');
-      const stateKey = `${this.credentials.AccountID}-${this.region}-${this.serviceName}-${this.functionName}-customDomain-auto`;
-      await core.setState(stateKey, resolvedCustomDomainConf);
+      await core.setState(this.genStateID(), resolvedCustomDomainConf);
     }
   }
 
   async delStatedCustomDomainConf(): Promise<void> {
-    const stateKey = `${this.credentials.AccountID}-${this.region}-${this.serviceName}-${this.functionName}-customDomain-auto`;
-    const state = await core.getState(stateKey);
+    const state = await core.getState(this.genStateID());
     if (_.isEmpty(state)) { return; }
-    await core.setState(stateKey, {});
+    await core.setState(this.genStateID(), {});
   }
+
+  async getStatedCustomDomainConf(): Promise<string> {
+    const state = await core.getState(this.genStateID());
+    if (_.isEmpty(state)) { return ''; }
+    return state.domainName;
+  }
+
 
   async makeCustomDomain(): Promise<CustomDomainConfig> {
     const resolvedCustomDomainConf: CustomDomainConfig = _.cloneDeep(this.customDomainConf);
@@ -158,14 +166,17 @@ export class FcCustomDomain extends IInputsBase {
     });
 
     if (this.isDomainNameAuto) {
-      // generate domain via domain component
-      this.logger.debug('Auto domain name');
-      this.logger.info(StdoutFormatter.stdoutFormatter.using('customDomain: auto', 'fc will try to generate related custom domain resources automatically'));
-      const profileOfDomain: ServerlessProfile = replaceProjectName(this.serverlessProfile, `${this.serverlessProfile?.project.projectName}-domain-project`);
-      const domainComponent = new DomainComponent(profileOfDomain, this.serviceName, this.functionName, this.region, this.credentials, this.curPath, this.args);
-      const domainComponentInputs = domainComponent.genComponentInputs('domain');
-      const domainComponentIns = await core.load('devsapp/domain');
-      const generatedDomain = await domainComponentIns.get(domainComponentInputs);
+      let generatedDomain = await this.getStatedCustomDomainConf();
+      if (!_.isEmpty(generatedDomain)) {
+        // generate domain via domain component
+        this.logger.debug('Auto domain name');
+        this.logger.info(StdoutFormatter.stdoutFormatter.using('customDomain: auto', 'fc will try to generate related custom domain resources automatically'));
+        const profileOfDomain: ServerlessProfile = replaceProjectName(this.serverlessProfile, `${this.serverlessProfile?.project.projectName}-domain-project`);
+        const domainComponent = new DomainComponent(profileOfDomain, this.serviceName, this.functionName, this.region, this.credentials, this.curPath, this.args);
+        const domainComponentInputs = domainComponent.genComponentInputs('domain');
+        const domainComponentIns = await core.load('devsapp/domain');
+        generatedDomain = await domainComponentIns.get(domainComponentInputs);
+      }
       this.logger.info(`Generated auto custom domain: ${generatedDomain}`);
       Object.assign(resolvedCustomDomainConf, {
         domainName: generatedDomain,
