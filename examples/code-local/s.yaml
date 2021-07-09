@@ -9,6 +9,7 @@ services:
       region: cn-shanghai
       service:
         name: qianfeng-fc-deploy-service
+        internetAccess: true
       function:
         name: test-function
         description: this is a test

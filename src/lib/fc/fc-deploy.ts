@@ -9,6 +9,7 @@ import StdoutFormatter from '../component/stdout-formatter';
 export default abstract class FcDeploy<T> extends IInputsBase {
   localConfig: T;
   remoteConfig: T;
+  statefulConfig: T; // 上一次部署的配置
   existOnline: boolean;
   useRemote: boolean;
 
@@ -31,10 +32,32 @@ export default abstract class FcDeploy<T> extends IInputsBase {
   }
 
   async unsetState(): Promise<void> {
-    const stateID: string = this.genStateID();
-    const state: any = await core.getState(stateID);
+    const state: any = await this.getState();
     if (!_.isEmpty(state)) {
-      await core.setState(stateID, {});
+      await core.setState(this.genStateID(), {});
+    }
+  }
+
+  async getState(): Promise<any> {
+    const stateId: string = this.genStateID();
+    return await core.getState(stateId);
+  }
+
+  async initStateful(): Promise<void> {
+    try {
+      const state: any = await this.getState();
+      this.statefulConfig = state?.statefulConfig || {};
+      // @ts-ignore
+      delete this.statefulConfig.import;
+      // @ts-ignore
+      delete this.statefulConfig.protect;
+      this.logger.debug(`Stateful config: ${JSON.stringify(this.statefulConfig, null, '  ')}`);
+    } catch (e) {
+      if (e?.message !== 'The current file does not exist') {
+        this.logger.warn(StdoutFormatter.stdoutFormatter.warn('stateful config', 'initialized failed.Stateful config deployed last time is set to null'));
+        this.logger.debug(`error: ${e}`);
+      }
+      this.statefulConfig = null;
     }
   }
 
@@ -47,7 +70,7 @@ export default abstract class FcDeploy<T> extends IInputsBase {
     } else if (type === 'trigger') {
       resourceName = triggerName;
     }
-    // 基于 fc-info 获取线上配置
+    // Get config info via fc-info component
     const profileOfFcInfo = replaceProjectName(this.serverlessProfile, `${this.serverlessProfile?.project.projectName}-fc-info-project`);
     const fcInfo: FcInfo = new FcInfo(serviceName, profileOfFcInfo, this.region, this.credentials, this.curPath, null, functionName, triggerName ? [triggerName] : null);
     const fcInfoComponentInputs: any = await fcInfo.genComponentInputs('fc-info');
@@ -63,7 +86,7 @@ export default abstract class FcDeploy<T> extends IInputsBase {
       }
     } catch (e) {
       if (!e.toString().includes('NotFoundError')) {
-        this.logger.warn(StdoutFormatter.stdoutFormatter.warn(`remote ${type}`, `error is: ${e.message}`, 'Fc will use local config from now on'));
+        this.logger.warn(StdoutFormatter.stdoutFormatter.warn(`remote ${type}`, `error is: ${e.message}`, 'Fc will use local config.'));
       }
     }
 
@@ -72,6 +95,13 @@ export default abstract class FcDeploy<T> extends IInputsBase {
       this.logger.debug(`online config of ${type}: ${resourceName} is ${JSON.stringify(remoteConfig, null, '  ')}`);
       this.existOnline = true;
       this.remoteConfig = remoteConfig;
+      // If initializationTimeout exists and initializer doesn't exist, delete it
+      if (_.has(this.remoteConfig, 'initializationTimeout') && !_.has(this.remoteConfig, 'initializer')) {
+        // @ts-ignore
+        delete this.remoteConfig.initializationTimeout;
+      }
+      // @ts-ignore
+      if (this.remoteConfig?.config && _.has(this.remoteConfig?.config, 'qualifier') && _.isNil(this.remoteConfig.config.qualifier)) { delete this.remoteConfig.config.qualifier; }
       Object.assign(this.remoteConfig, {
         import: true,
         protect: false,
@@ -83,50 +113,60 @@ export default abstract class FcDeploy<T> extends IInputsBase {
     }
   }
 
-  async setResolvedConfig(name: string, resolvedConfig: any, setFlag: boolean): Promise<void> {
-    if (!setFlag) { return; }
+  async setStatefulConfig(): Promise<void> {
     const stateID: string = this.genStateID();
-    this.logger.debug(`set resolved config of ${name} into state.`);
-    await this.setKVInState(stateID, 'resolvedConfig', resolvedConfig);
+    this.logger.debug(`set stateful config of ${JSON.stringify(this.statefulConfig, null, '  ')} into state.`);
+    await this.setKVInState(stateID, 'statefulConfig', this.statefulConfig);
   }
 
-  async setUseRemote(name: string, type: string, useRemoteFlag?: boolean, useLocalFlag?: boolean): Promise<void> {
-    const stateID: string = this.genStateID();
-    if (!this.existOnline) {
-      if (useRemoteFlag) {
-        // --use-remote 参数为真，且线上资源不存在，则报错
-        throw new Error(`${type}: ${name} dose not exist online, please make sure the ${type} exists or you have permission to access remote ${type} when use --use-remote flag.`);
-      }
-      // --use-remote 参数为假，且线上资源不存在，则默认使用线下配置，且之后不再询问
-      this.logger.info(`${capitalizeFirstLetter(type)}: ${name} dose not exist online, fc will use local config from now on.`);
+  async setUseRemote(name: string, type: string, useLocalFlag?: boolean): Promise<void> {
+    if (useLocalFlag || _.isEmpty(this.remoteConfig)) {
+      // 强制使用线下
       this.useRemote = false;
-    } else if (!useRemoteFlag && !useLocalFlag) {
-      /*
-        //   --use-remote 以及 --use-local 都为空
-        //    若用户之前未进行选择，则询问用户使用线上/线下配置，并保存用户选择
-        //    若用户之前已进行选择，则复用之前的选择
-        */
-      const state: any = await core.getState(stateID);
-
-      if (state && Object.prototype.hasOwnProperty.call(state, 'useRemote')) {
-        this.useRemote = state.useRemote;
-      } else {
-        const msg = `${type}: ${name} exists on line, do you want to use online config?`;
-        const details: any = _.cloneDeep(this.remoteConfig);
-        delete details.import;
-        delete details.protect;
-        this.useRemote = await promptForConfirmOrDetails(msg, details);
-        this.logger.log(`Using ${this.useRemote ? 'remote config' : 'local config'} from now on.\nYou can change it by setting --use-remote/--use-local flag in deploy command.`, 'yellow');
-      }
-    } else if (useRemoteFlag && !useLocalFlag) {
-      // 使用线上资源
-      this.useRemote = true;
-    } else if (!useRemoteFlag && useLocalFlag) {
-      // 使用线下资源
-      this.useRemote = false;
+      return;
     }
+    const clonedRemoteConfig: any = _.cloneDeep(this.remoteConfig);
 
-    await this.setKVInState(stateID, 'useRemote', this.useRemote);
+    delete clonedRemoteConfig.import;
+    delete clonedRemoteConfig.protect;
+    if (_.isEmpty(this.statefulConfig)) {
+      // 无状态
+      if (!this.existOnline) {
+        this.useRemote = false;
+        return;
+      }
+      const msg = `${type}: ${name} exists on line, overwrite it with local config?`;
+
+      this.useRemote = !await promptForConfirmOrDetails(msg, clonedRemoteConfig);
+    } else {
+      // 有状态
+      if (_.isEqual(clonedRemoteConfig, this.statefulConfig)) {
+        this.useRemote = false;
+        return;
+      }
+      const msg = `Online ${type}: ${name} is inconsistent with the config you deployed last time, overwrite it with local config?`;
+
+      this.useRemote = !await promptForConfirmOrDetails(msg, clonedRemoteConfig);
+    }
+  }
+
+  upgradeStatefulConfig(): void {
+    // @ts-ignore
+    if (_.has(this.statefulConfig, 'import')) { delete this.statefulConfig.import; }
+    // @ts-ignore
+    if (_.has(this.statefulConfig, 'protect')) { delete this.statefulConfig.protect; }
+    // @ts-ignore
+    if (_.has(this.statefulConfig, 'codeUri')) { delete this.statefulConfig.codeUri; }
+    // @ts-ignore
+    if (_.has(this.statefulConfig, 'ossBucket')) { delete this.statefulConfig.ossBucket; }
+    // @ts-ignore
+    if (_.has(this.statefulConfig, 'ossKey')) { delete this.statefulConfig.ossKey; }
+    // @ts-ignore
+    if (_.has(this.statefulConfig, 'qualifier') && _.isNil(this.statefulConfig.qualifier)) { delete this.statefulConfig.qualifier; }
+    if (_.has(this.statefulConfig, 'initializationTimeout') && !_.has(this.statefulConfig, 'initializer')) {
+      // @ts-ignore
+      delete this.statefulConfig.initializationTimeout;
+    }
   }
 
   abstract genStateID(): string;

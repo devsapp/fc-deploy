@@ -9,7 +9,6 @@ import { FC_NAS_SERVICE_PREFIX } from '../static';
 import { ServerlessProfile, ICredentials } from '../profile';
 import FcDeploy from './fc-deploy';
 import { isAutoConfig } from '../definition';
-import * as core from '@serverless-devs/core';
 import StdoutFormatter from '../component/stdout-formatter';
 import * as yaml from 'js-yaml';
 
@@ -22,6 +21,8 @@ export interface ServiceConfig {
   vpcConfig?: VpcConfig | 'auto' | 'Auto';
   nasConfig?: NasConfig | 'atuo' | 'Auto';
   tracingConfig?: 'Enable' | 'Disable';
+  import?: boolean;
+  protect?: boolean;
 }
 
 
@@ -57,19 +58,8 @@ export class FcService extends FcDeploy<ServiceConfig> {
   }
 
   async initLocalConfig(): Promise<void> {
-    const stateID = this.genStateID();
-    let state;
-    try {
-      state = await core.getState(stateID);
-    } catch (e) {
-      if (e.message !== 'The current file does not exist') {
-        throw e;
-      }
-    }
-
-    this.logger.debug(`state of key: ${stateID} is:\n${JSON.stringify(state, null, '  ')}`);
-    if (_.isEmpty(state)) { return; }
-    const resolvedConfigInState: any = state?.resolvedConfig || {};
+    if (_.isEmpty(this.statefulConfig)) { return; }
+    const resolvedConfigInState: any = this.statefulConfig || {};
     if (isAutoConfig(this.localConfig.logConfig) ||
       isAutoConfig(this.localConfig.nasConfig) ||
       isAutoConfig(this.localConfig.vpcConfig) ||
@@ -261,8 +251,15 @@ export class FcService extends FcDeploy<ServiceConfig> {
   }
 
   async makeService(assumeYes?: boolean): Promise<ServiceConfig> {
-    if (this.useRemote) { return this.remoteConfig; }
-    if (_.isEmpty(this.localConfig)) { return undefined; }
+    if (this.useRemote) {
+      this.statefulConfig = _.cloneDeep(this.remoteConfig);
+      this.upgradeStatefulConfig();
+      return this.remoteConfig;
+    }
+    if (_.isEmpty(this.localConfig)) {
+      this.statefulConfig = null;
+      return null;
+    }
     const resolvedServiceConf: ServiceConfig = {
       name: this.name,
     };
@@ -305,7 +302,10 @@ export class FcService extends FcDeploy<ServiceConfig> {
         protect: false,
       });
     }
-    await this.setResolvedConfig(this.name, resolvedServiceConf, this.hasAutoConfig);
+    // await this.setResolvedConfig(this.name, resolvedServiceConf, this.hasAutoConfig);
+    // update stateful config
+    this.statefulConfig = _.cloneDeep(resolvedServiceConf);
+    this.upgradeStatefulConfig();
     return resolvedServiceConf;
   }
 }
