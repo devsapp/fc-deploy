@@ -2,7 +2,6 @@ import * as _ from 'lodash';
 import { generateRamResourceName, CustomPolicyConfig, AlicloudRam } from '../resource/ram';
 import { DESCRIPTION } from '../static';
 import { ServerlessProfile, ICredentials } from '../profile';
-import * as core from '@serverless-devs/core';
 import FcDeploy from './fc-deploy';
 import StdoutFormatter from '../component/stdout-formatter';
 
@@ -156,19 +155,10 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
         protect: false,
       });
     }
-    const stateID = this.genStateID();
-    let state;
-    try {
-      state = await core.getState(stateID);
-    } catch (e) {
-      if (e.message !== 'The current file does not exist') {
-        throw e;
-      }
-    }
-    this.logger.debug(`state of key: ${stateID} is:\n${JSON.stringify(state, null, '  ')}`);
-    if (_.isEmpty(state)) { return; }
+
+    if (_.isEmpty(this.statefulConfig)) { return; }
     if (_.isEmpty(this.localConfig?.role) && !this.isHttpTrigger() && !this.isTimerTrigger()) {
-      this.localConfig.role = state?.resolvedConfig?.role;
+      this.localConfig.role = this.statefulConfig?.role;
     }
   }
 
@@ -339,8 +329,15 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
   }
 
   async makeTrigger(): Promise<TriggerConfig> {
-    if (this.useRemote) { return this.remoteConfig; }
-    if (_.isEmpty(this.localConfig)) { return undefined; }
+    if (this.useRemote) {
+      this.statefulConfig = _.cloneDeep(this.remoteConfig);
+      this.upgradeStatefulConfig();
+      return this.remoteConfig;
+    }
+    if (_.isEmpty(this.localConfig)) {
+      this.statefulConfig = null;
+      return null;
+    }
     const resolvedTriggerConf: TriggerConfig = { ...this.localConfig };
     if (this.existOnline) {
       Object.assign(resolvedTriggerConf, {
@@ -348,7 +345,11 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
         protect: false,
       });
     }
-    if (!_.isNil(this.localConfig.role) || this.isHttpTrigger() || this.isTimerTrigger()) { return resolvedTriggerConf; }
+    if (!_.isNil(this.localConfig.role) || this.isHttpTrigger() || this.isTimerTrigger()) {
+      this.statefulConfig = _.cloneDeep(resolvedTriggerConf);
+      this.upgradeStatefulConfig();
+      return resolvedTriggerConf;
+    }
     const role = await this.makeInvocationRole();
     Object.assign(resolvedTriggerConf, {
       role,
@@ -356,7 +357,9 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
     this.logger.debug(`after making invocation role: ${role} for trigger ${this.name}.`);
     this.isRoleAuto = true;
 
-    await this.setResolvedConfig(this.name, resolvedTriggerConf, this.isRoleAuto);
+    // await this.setResolvedConfig(this.name, resolvedTriggerConf, this.isRoleAuto);
+    this.statefulConfig = _.cloneDeep(resolvedTriggerConf);
+    this.upgradeStatefulConfig();
     return resolvedTriggerConf;
   }
 }

@@ -151,7 +151,7 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
     return `${this.credentials.AccountID}-${this.region}-${this.serviceName}-${this.name}`;
   }
   validateConfig() {
-    if (!_.isNil(this.localConfig.codeUri) && !_.isNil(this.localConfig.ossKey)) {
+    if (!_.isNil(this.localConfig?.codeUri) && !_.isNil(this.localConfig?.ossKey)) {
       throw new Error('\'codeUri\' and \'ossKey\' can not both exist in function config.');
     }
     if (_.isEmpty(this.localConfig) && _.isNil(this.localConfig.codeUri) && _.isNil(this.localConfig.ossKey)) {
@@ -315,7 +315,10 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
   }
 
   async makeFunction(baseDir: string, pushRegistry?: string): Promise<FunctionConfig> {
-    if (_.isEmpty(this.localConfig) && _.isEmpty(this.remoteConfig)) { return undefined; }
+    if (_.isEmpty(this.localConfig) && _.isEmpty(this.remoteConfig)) {
+      this.statefulConfig = null;
+      return null;
+    }
     const resolvedFunctionConf: any = this.makeFunctionConfig();
     const { codeZipPath, codeOssObject } = await this.makeFunctionCode(baseDir, pushRegistry);
 
@@ -328,7 +331,17 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
         ossKey: codeOssObject,
       });
     }
-
+    this.statefulConfig = _.cloneDeep(resolvedFunctionConf);
+    this.upgradeStatefulConfig();
+    // 环境变量中的 true 需要转换为字符串
+    if (!_.isEmpty(this.statefulConfig?.environmentVariables)) {
+      Object.keys(this.statefulConfig?.environmentVariables).forEach((key) => {
+        if (_.isBoolean(this.statefulConfig?.environmentVariables[key])) {
+          // @ts-ignore
+          this.statefulConfig?.environmentVariables[key] = _.toString(this.statefulConfig?.environmentVariables[key]);
+        }
+      });
+    }
     return resolvedFunctionConf;
   }
 }
