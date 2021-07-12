@@ -6,6 +6,7 @@ import FcDeploy from './fc-deploy';
 import StdoutFormatter from '../component/stdout-formatter';
 
 export interface TriggerConfig {
+  lastModifiedTime: any;
   name: string;
   type: 'oss' | 'log' | 'timer' | 'http' | 'mnsTopic' | 'cdnEvents' | 'tablestore';
   role?: string;
@@ -329,6 +330,7 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
   }
 
   async makeTrigger(): Promise<TriggerConfig> {
+
     if (this.useRemote) {
       this.statefulConfig = _.cloneDeep(this.remoteConfig);
       this.upgradeStatefulConfig();
@@ -345,9 +347,16 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
         protect: false,
       });
     }
+
+    const {remoteConfig} = await this.GetRemoteInfo('trigger', this.serviceName, this.functionName, this.name)
+    if(remoteConfig && remoteConfig.lastModifiedTime){
+      delete remoteConfig.lastModifiedTime
+    }
+
     if (!_.isNil(this.localConfig.role) || this.isHttpTrigger() || this.isTimerTrigger()) {
-      this.statefulConfig = _.cloneDeep(resolvedTriggerConf);
-      this.upgradeStatefulConfig();
+      // this.statefulConfig = _.cloneDeep(resolvedTriggerConf);
+      // this.statefulConfig = remoteConfig
+      // this.upgradeStatefulConfig();
       return resolvedTriggerConf;
     }
     const role = await this.makeInvocationRole();
@@ -358,8 +367,11 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
     this.isRoleAuto = true;
 
     // await this.setResolvedConfig(this.name, resolvedTriggerConf, this.isRoleAuto);
-    this.statefulConfig = _.cloneDeep(resolvedTriggerConf);
-    this.upgradeStatefulConfig();
+    // this.statefulConfig = _.cloneDeep(resolvedTriggerConf);
+
+    // this.statefulConfig = remoteConfig
+    // this.upgradeStatefulConfig();
+
     return resolvedTriggerConf;
   }
 }
