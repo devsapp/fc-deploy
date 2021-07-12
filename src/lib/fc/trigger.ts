@@ -330,7 +330,6 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
   }
 
   async makeTrigger(): Promise<TriggerConfig> {
-
     if (this.useRemote) {
       this.statefulConfig = _.cloneDeep(this.remoteConfig);
       this.upgradeStatefulConfig();
@@ -348,9 +347,9 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
       });
     }
 
-    const {remoteConfig} = await this.GetRemoteInfo('trigger', this.serviceName, this.functionName, this.name)
-    if(remoteConfig && remoteConfig.lastModifiedTime){
-      delete remoteConfig.lastModifiedTime
+    const { remoteConfig } = await this.GetRemoteInfo('trigger', this.serviceName, this.functionName, this.name);
+    if (remoteConfig && remoteConfig.lastModifiedTime) {
+      delete remoteConfig.lastModifiedTime;
     }
 
     if (!_.isNil(this.localConfig.role) || this.isHttpTrigger() || this.isTimerTrigger()) {

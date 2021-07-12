@@ -34,7 +34,7 @@ export default class FcInfoComponent extends Component {
       });
     }
 
-    prop['infoType'] = true
+    prop.infoType = true;
 
     return prop;
   }

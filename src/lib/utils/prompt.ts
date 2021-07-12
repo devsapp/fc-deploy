@@ -1,6 +1,6 @@
 import inquirer from 'inquirer';
 import { Logger } from '@serverless-devs/core';
-import yaml from 'js-yaml'
+import yaml from 'js-yaml';
 import diff from 'variable-diff';
 
 function isInteractiveEnvironment(): boolean {
@@ -24,28 +24,27 @@ export async function promptForConfirmContinue(message: string): Promise<boolean
 }
 
 
-export async function promptForConfirmOrDetails(message: string, details: any, source?:any): Promise<boolean> {
+export async function promptForConfirmOrDetails(message: string, details: any, source?: any): Promise<boolean> {
   if (!isInteractiveEnvironment()) {
     return true;
   }
 
 
-  let result = details
-  try{
-    result = yaml.dump(result)
-  }catch (e){console.log(e)}
+  let result = details;
+  try {
+    result = yaml.dump(result);
+  } catch (e) { console.log(e); }
 
-  let outputSentence = '\nDetail: '
-  if(JSON.stringify(source) == "{}"){
-    outputSentence = "Online status: "
-  }else{
-    if(source){
-      result = diff(source, details).text
-      try{
-        result = result.substring(2,result.length-1)
-      }catch (e){}
-      outputSentence = '\nLocal Last Deploy status => Online status'
-    }
+  let outputSentence = '\nDetail: ';
+  if (JSON.stringify(source) == '{}') {
+    outputSentence = 'Online status: ';
+  } else if (source) {
+    result = diff(source, details).text;
+    try {
+      result = result.substring(2, result.length - 1);
+    // eslint-disable-next-line no-empty
+    } catch (e) {}
+    outputSentence = '\nLocal Last Deploy status => Online status';
   }
 
   Logger.log(`

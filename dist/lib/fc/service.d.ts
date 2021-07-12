@@ -14,6 +14,8 @@ export interface ServiceConfig {
     vpcConfig?: VpcConfig | 'auto' | 'Auto';
     nasConfig?: NasConfig | 'atuo' | 'Auto';
     tracingConfig?: 'Enable' | 'Disable';
+    import?: boolean;
+    protect?: boolean;
 }
 export declare class FcService extends FcDeploy<ServiceConfig> {
     readonly hasFunctionAsyncConfig: boolean;

@@ -1,6 +1,7 @@
 import { ServerlessProfile, ICredentials } from '../profile';
 import FcDeploy from './fc-deploy';
 export interface TriggerConfig {
+    lastModifiedTime: any;
     name: string;
     type: 'oss' | 'log' | 'timer' | 'http' | 'mnsTopic' | 'cdnEvents' | 'tablestore';
     role?: string;

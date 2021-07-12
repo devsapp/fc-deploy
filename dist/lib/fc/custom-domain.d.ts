@@ -24,6 +24,7 @@ export declare class FcCustomDomain extends IInputsBase {
     readonly functionName: string;
     readonly hasHttpTrigger: boolean;
     readonly httpMethods?: string[];
+    readonly stateId: string;
     isDomainNameAuto: boolean;
     constructor(customDomainConf: CustomDomainConfig, serviceName: string, functionName: string, triggerConfs: TriggerConfig[], serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string, args?: string);
     initLocal(): Promise<void>;
@@ -31,6 +32,7 @@ export declare class FcCustomDomain extends IInputsBase {
     initLocalConfig(): Promise<void>;
     setStatedCustomDomainConf(resolvedCustomDomainConf: CustomDomainConfig): Promise<void>;
     delStatedCustomDomainConf(): Promise<void>;
+    getStatedCustomDomainConf(): Promise<string>;
     makeCustomDomain(): Promise<CustomDomainConfig>;
 }
 export {};

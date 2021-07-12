@@ -89,11 +89,11 @@ export default abstract class FcDeploy<T> extends IInputsBase {
         this.logger.warn(StdoutFormatter.stdoutFormatter.warn(`remote ${type}`, `error is: ${e.message}`, 'Fc will use local config.'));
       }
     }
-    return {remoteConfig, resourceName}
+    return { remoteConfig, resourceName };
   }
 
   async initRemote(type: string, serviceName: string, functionName?: string, triggerName?: string): Promise<void> {
-    let {remoteConfig, resourceName} = await this.GetRemoteInfo(type, serviceName, functionName, triggerName)
+    const { remoteConfig, resourceName } = await this.GetRemoteInfo(type, serviceName, functionName, triggerName);
     if (!_.isEmpty(remoteConfig)) {
       this.logger.info(`${capitalizeFirstLetter(type)}: ${resourceName} already exists online.`);
       this.logger.debug(`online config of ${type}: ${resourceName} is ${JSON.stringify(remoteConfig, null, '  ')}`);

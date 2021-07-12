@@ -108,32 +108,32 @@ export default class FcDeployComponent {
       }
     });
     // set stateful config
-    if(this.fcService){
-      const {remoteConfig} = await this.fcService.GetRemoteInfo('service', this.fcService.name, undefined, undefined)
+    if (this.fcService) {
+      const { remoteConfig } = await this.fcService.GetRemoteInfo('service', this.fcService.name, undefined, undefined);
       // this.statefulConfig = _.cloneDeep(resolvedServiceConf);
-      this.fcService.statefulConfig = remoteConfig
-      if(this.fcService.statefulConfig && this.fcService.statefulConfig.lastModifiedTime){
-        delete this.fcService.statefulConfig.lastModifiedTime
+      this.fcService.statefulConfig = remoteConfig;
+      if (this.fcService.statefulConfig && this.fcService.statefulConfig.lastModifiedTime) {
+        delete this.fcService.statefulConfig.lastModifiedTime;
       }
       this.fcService.upgradeStatefulConfig();
     }
-    if(this.fcFunction){
-      const {remoteConfig} = await this.fcService.GetRemoteInfo('function', this.fcFunction.serviceName, this.fcFunction.name, undefined)
+    if (this.fcFunction) {
+      const { remoteConfig } = await this.fcService.GetRemoteInfo('function', this.fcFunction.serviceName, this.fcFunction.name, undefined);
       // this.statefulConfig = _.cloneDeep(resolvedServiceConf);
-      this.fcFunction.statefulConfig = remoteConfig
-      if(this.fcFunction.statefulConfig && this.fcFunction.statefulConfig.lastModifiedTime){
-        delete this.fcFunction.statefulConfig.lastModifiedTime
+      this.fcFunction.statefulConfig = remoteConfig;
+      if (this.fcFunction.statefulConfig && this.fcFunction.statefulConfig.lastModifiedTime) {
+        delete this.fcFunction.statefulConfig.lastModifiedTime;
       }
       this.fcFunction.upgradeStatefulConfig();
     }
     // triggers
     if (!_.isEmpty(this.fcTriggers)) {
       for (let i = 0; i < this.fcTriggers.length; i++) {
-        const {remoteConfig} = await this.fcService.GetRemoteInfo('trigger', this.fcTriggers[i].serviceName, this.fcTriggers[i].functionName, this.fcTriggers[i].name)
+        const { remoteConfig } = await this.fcService.GetRemoteInfo('trigger', this.fcTriggers[i].serviceName, this.fcTriggers[i].functionName, this.fcTriggers[i].name);
         // this.statefulConfig = _.cloneDeep(resolvedServiceConf);
-        this.fcTriggers[i].statefulConfig = remoteConfig
-        if(this.fcTriggers[i].statefulConfig && this.fcTriggers[i].statefulConfig.lastModifiedTime){
-          delete this.fcTriggers[i].statefulConfig.lastModifiedTime
+        this.fcTriggers[i].statefulConfig = remoteConfig;
+        if (this.fcTriggers[i].statefulConfig && this.fcTriggers[i].statefulConfig.lastModifiedTime) {
+          delete this.fcTriggers[i].statefulConfig.lastModifiedTime;
         }
         this.fcTriggers[i].upgradeStatefulConfig();
       }

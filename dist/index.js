@@ -86,6 +86,406 @@ var stdout_formatter_1 = __importDefault(require("./lib/component/stdout-formatt
 var FcDeployComponent = /** @class */ (function () {
     function FcDeployComponent() {
     }
+    FcDeployComponent.prototype.deploy = function (inputs) {
+        var _a, _b, _c, _d, _e;
+        return __awaiter(this, void 0, void 0, function () {
+            var isHelp, parsedArgs, argsData, assumeYes, useLocal, resolvedServiceConf, resolvedFunctionConf, baseDir, pushRegistry, resolvedTriggerConfs, hasAutoTriggerRole, i, resolvedTriggerConf, _f, fcBaseComponentIns, componentName, BaseComponent, profileOfFcBase, fcBaseComponent, fcBaseComponentInputs, remoteConfig, remoteConfig, i, remoteConfig, hasAutoCustomDomainNameInDomains, resolvedCustomDomainConfs, i, resolvedCustomDomainConf, profileOfFcDomain, _i, resolvedCustomDomainConfs_1, resolvedCustomDomainConf, fcDomainComponent, fcDomainComponentInputs, fcDoaminComponentIns, i, res, returnedFunctionConf, _g, _h, fcTrigger, i;
+            var _this = this;
+            return __generator(this, function (_j) {
+                switch (_j.label) {
+                    case 0: return [4 /*yield*/, this.handlerInputs(inputs)];
+                    case 1:
+                        isHelp = (_j.sent()).isHelp;
+                        if (isHelp) {
+                            core.help(static_1.DEPLOY_HELP_INFO);
+                            return [2 /*return*/];
+                        }
+                        parsedArgs = core.commandParse({ args: this.args }, {
+                            boolean: ['help', 'assume-yes', 'use-local'],
+                            alias: { help: 'h', 'assume-yes': 'y' }
+                        });
+                        argsData = (parsedArgs === null || parsedArgs === void 0 ? void 0 : parsedArgs.data) || {};
+                        assumeYes = argsData.y || argsData.assumeYes || argsData['assume-yes'];
+                        useLocal = argsData['use-local'];
+                        // service
+                        return [4 /*yield*/, this.fcService.initStateful()];
+                    case 2:
+                        // service
+                        _j.sent();
+                        return [4 /*yield*/, this.fcService.initLocal()];
+                    case 3:
+                        _j.sent();
+                        return [4 /*yield*/, this.fcService.setUseRemote(this.fcService.name, 'service', useLocal)];
+                    case 4:
+                        _j.sent();
+                        return [4 /*yield*/, this.fcService.makeService(assumeYes)];
+                    case 5:
+                        resolvedServiceConf = _j.sent();
+                        this.logger.debug("Resolved serviceConf is:\n" + JSON.stringify(resolvedServiceConf, null, '  '));
+                        if (!!_.isNil(this.fcFunction)) return [3 /*break*/, 10];
+                        return [4 /*yield*/, this.fcFunction.initStateful()];
+                    case 6:
+                        _j.sent();
+                        return [4 /*yield*/, this.fcFunction.initLocal(assumeYes)];
+                    case 7:
+                        _j.sent();
+                        return [4 /*yield*/, this.fcFunction.setUseRemote(this.fcFunction.name, 'function', useLocal)];
+                    case 8:
+                        _j.sent();
+                        baseDir = path.dirname(this.curPath);
+                        pushRegistry = parsedArgs.data ? parsedArgs.data['push-registry'] : undefined;
+                        return [4 /*yield*/, this.fcFunction.makeFunction(baseDir, pushRegistry)];
+                    case 9:
+                        resolvedFunctionConf = _j.sent();
+                        this.logger.debug("Resolved functionConf is:\n" + JSON.stringify(resolvedFunctionConf, null, '  '));
+                        _j.label = 10;
+                    case 10:
+                        resolvedTriggerConfs = [];
+                        hasAutoTriggerRole = false;
+                        if (!!_.isEmpty(this.fcTriggers)) return [3 /*break*/, 17];
+                        i = 0;
+                        _j.label = 11;
+                    case 11:
+                        if (!(i < this.fcTriggers.length)) return [3 /*break*/, 17];
+                        return [4 /*yield*/, this.fcTriggers[i].initStateful()];
+                    case 12:
+                        _j.sent();
+                        return [4 /*yield*/, this.fcTriggers[i].initLocal()];
+                    case 13:
+                        _j.sent();
+                        return [4 /*yield*/, this.fcTriggers[i].setUseRemote(this.fcTriggers[i].name, 'trigger', useLocal)];
+                    case 14:
+                        _j.sent();
+                        return [4 /*yield*/, this.fcTriggers[i].makeTrigger()];
+                    case 15:
+                        resolvedTriggerConf = _j.sent();
+                        hasAutoTriggerRole = hasAutoTriggerRole || this.fcTriggers[i].isRoleAuto;
+                        resolvedTriggerConfs.push(resolvedTriggerConf);
+                        this.logger.debug("Resolved trigger: \n" + JSON.stringify(resolvedTriggerConf, null, '  '));
+                        _j.label = 16;
+                    case 16:
+                        i++;
+                        return [3 /*break*/, 11];
+                    case 17: return [4 /*yield*/, this.handlerBase()];
+                    case 18:
+                        _f = _j.sent(), fcBaseComponentIns = _f.fcBaseComponentIns, componentName = _f.componentName, BaseComponent = _f.BaseComponent;
+                        profileOfFcBase = profile_1.replaceProjectName(this.serverlessProfile, ((_a = this.serverlessProfile) === null || _a === void 0 ? void 0 : _a.project.projectName) + "-fc-base-project");
+                        fcBaseComponent = new BaseComponent(profileOfFcBase, resolvedServiceConf, this.region, this.credentials, this.curPath, this.args, resolvedFunctionConf, resolvedTriggerConfs);
+                        fcBaseComponentInputs = fcBaseComponent.genComponentInputs(componentName);
+                        this.logger.info(stdout_formatter_1.default.stdoutFormatter.create('service', resolvedServiceConf.name));
+                        if (!_.isEmpty(resolvedFunctionConf)) {
+                            this.logger.info(stdout_formatter_1.default.stdoutFormatter.create('function', resolvedFunctionConf.name));
+                        }
+                        if (!_.isEmpty(resolvedTriggerConfs)) {
+                            this.logger.info(stdout_formatter_1.default.stdoutFormatter.create('triggers', JSON.stringify(resolvedTriggerConfs.map(function (t) { return t.name; }))));
+                        }
+                        return [4 /*yield*/, retry_1.promiseRetry(function (retry, times) { return __awaiter(_this, void 0, void 0, function () {
+                                var ex_1;
+                                return __generator(this, function (_a) {
+                                    switch (_a.label) {
+                                        case 0:
+                                            _a.trys.push([0, 2, , 3]);
+                                            return [4 /*yield*/, retry_1.retryDeployUntilSlsCreated(fcBaseComponentIns, fcBaseComponentInputs)];
+                                        case 1:
+                                            _a.sent();
+                                            return [2 /*return*/];
+                                        case 2:
+                                            ex_1 = _a.sent();
+                                            if (ex_1.code === 'AccessDenied' || error_1.isSlsNotExistException(ex_1)) {
+                                                throw ex_1;
+                                            }
+                                            this.logger.debug("error when createService or updateService, serviceName is " + this.fcService.name + ", error is: \n" + ex_1);
+                                            this.logger.info(stdout_formatter_1.default.stdoutFormatter.retry('service', "create " + resolvedServiceConf.name, '', times));
+                                            retry(ex_1);
+                                            return [3 /*break*/, 3];
+                                        case 3: return [2 /*return*/];
+                                    }
+                                });
+                            }); })];
+                    case 19:
+                        _j.sent();
+                        if (!this.fcService) return [3 /*break*/, 21];
+                        return [4 /*yield*/, this.fcService.GetRemoteInfo('service', this.fcService.name, undefined, undefined)];
+                    case 20:
+                        remoteConfig = (_j.sent()).remoteConfig;
+                        // this.statefulConfig = _.cloneDeep(resolvedServiceConf);
+                        this.fcService.statefulConfig = remoteConfig;
+                        if (this.fcService.statefulConfig && this.fcService.statefulConfig.lastModifiedTime) {
+                            delete this.fcService.statefulConfig.lastModifiedTime;
+                        }
+                        this.fcService.upgradeStatefulConfig();
+                        _j.label = 21;
+                    case 21:
+                        if (!this.fcFunction) return [3 /*break*/, 23];
+                        return [4 /*yield*/, this.fcService.GetRemoteInfo('function', this.fcFunction.serviceName, this.fcFunction.name, undefined)];
+                    case 22:
+                        remoteConfig = (_j.sent()).remoteConfig;
+                        // this.statefulConfig = _.cloneDeep(resolvedServiceConf);
+                        this.fcFunction.statefulConfig = remoteConfig;
+                        if (this.fcFunction.statefulConfig && this.fcFunction.statefulConfig.lastModifiedTime) {
+                            delete this.fcFunction.statefulConfig.lastModifiedTime;
+                        }
+                        this.fcFunction.upgradeStatefulConfig();
+                        _j.label = 23;
+                    case 23:
+                        if (!!_.isEmpty(this.fcTriggers)) return [3 /*break*/, 27];
+                        i = 0;
+                        _j.label = 24;
+                    case 24:
+                        if (!(i < this.fcTriggers.length)) return [3 /*break*/, 27];
+                        return [4 /*yield*/, this.fcService.GetRemoteInfo('trigger', this.fcTriggers[i].serviceName, this.fcTriggers[i].functionName, this.fcTriggers[i].name)];
+                    case 25:
+                        remoteConfig = (_j.sent()).remoteConfig;
+                        // this.statefulConfig = _.cloneDeep(resolvedServiceConf);
+                        this.fcTriggers[i].statefulConfig = remoteConfig;
+                        if (this.fcTriggers[i].statefulConfig && this.fcTriggers[i].statefulConfig.lastModifiedTime) {
+                            delete this.fcTriggers[i].statefulConfig.lastModifiedTime;
+                        }
+                        this.fcTriggers[i].upgradeStatefulConfig();
+                        _j.label = 26;
+                    case 26:
+                        i++;
+                        return [3 /*break*/, 24];
+                    case 27: return [4 /*yield*/, this.setStatefulConfig()];
+                    case 28:
+                        _j.sent();
+                        hasAutoCustomDomainNameInDomains = false;
+                        resolvedCustomDomainConfs = [];
+                        if (!!_.isEmpty(this.fcCustomDomains)) return [3 /*break*/, 33];
+                        i = 0;
+                        _j.label = 29;
+                    case 29:
+                        if (!(i < this.fcCustomDomains.length)) return [3 /*break*/, 33];
+                        return [4 /*yield*/, this.fcCustomDomains[i].initLocal()];
+                    case 30:
+                        _j.sent();
+                        return [4 /*yield*/, this.fcCustomDomains[i].makeCustomDomain()];
+                    case 31:
+                        resolvedCustomDomainConf = _j.sent();
+                        hasAutoCustomDomainNameInDomains = hasAutoCustomDomainNameInDomains || this.fcCustomDomains[i].isDomainNameAuto;
+                        resolvedCustomDomainConfs.push(resolvedCustomDomainConf);
+                        this.logger.debug("resolved custom domain: \n" + JSON.stringify(resolvedCustomDomainConf, null, '  '));
+                        _j.label = 32;
+                    case 32:
+                        i++;
+                        return [3 /*break*/, 29];
+                    case 33:
+                        if (!!_.isEmpty(resolvedCustomDomainConfs)) return [3 /*break*/, 38];
+                        profileOfFcDomain = profile_1.replaceProjectName(this.serverlessProfile, ((_b = this.serverlessProfile) === null || _b === void 0 ? void 0 : _b.project.projectName) + "-fc-domain-project");
+                        _i = 0, resolvedCustomDomainConfs_1 = resolvedCustomDomainConfs;
+                        _j.label = 34;
+                    case 34:
+                        if (!(_i < resolvedCustomDomainConfs_1.length)) return [3 /*break*/, 38];
+                        resolvedCustomDomainConf = resolvedCustomDomainConfs_1[_i];
+                        this.logger.info(stdout_formatter_1.default.stdoutFormatter.create('custom domain', resolvedCustomDomainConf.domainName));
+                        fcDomainComponent = new fc_domain_1.FcDomainComponent(profileOfFcDomain, resolvedCustomDomainConf, this.region, this.credentials, this.curPath, this.args);
+                        fcDomainComponentInputs = fcDomainComponent.genComponentInputs();
+                        return [4 /*yield*/, core.load('devsapp/fc-domain')];
+                    case 35:
+                        fcDoaminComponentIns = _j.sent();
+                        return [4 /*yield*/, fcDoaminComponentIns.deploy(fcDomainComponentInputs)];
+                    case 36:
+                        _j.sent();
+                        _j.label = 37;
+                    case 37:
+                        _i++;
+                        return [3 /*break*/, 34];
+                    case 38:
+                        if (!!_.isEmpty(resolvedFunctionConf)) return [3 /*break*/, 40];
+                        return [4 /*yield*/, this.fcFunction.removeZipCode(resolvedFunctionConf === null || resolvedFunctionConf === void 0 ? void 0 : resolvedFunctionConf.codeUri)];
+                    case 39:
+                        _j.sent();
+                        _j.label = 40;
+                    case 40:
+                        if (hasAutoCustomDomainNameInDomains) {
+                            for (i = 0; i < this.fcCustomDomains.length; i++) {
+                                this.fcCustomDomains[i].setStatedCustomDomainConf(resolvedCustomDomainConfs[i]);
+                            }
+                        }
+                        res = {
+                            region: this.region,
+                            service: resolvedServiceConf,
+                        };
+                        returnedFunctionConf = _.cloneDeep(resolvedFunctionConf);
+                        if (!_.isEmpty(resolvedFunctionConf === null || resolvedFunctionConf === void 0 ? void 0 : resolvedFunctionConf.codeUri)) {
+                            returnedFunctionConf.codeUri = this.fcFunction.useRemote ? (_c = this.fcFunction.remoteConfig) === null || _c === void 0 ? void 0 : _c.codeUri : (_d = this.fcFunction.localConfig) === null || _d === void 0 ? void 0 : _d.codeUri;
+                        }
+                        // const returnedFunctionConf = Object.assign({}, resolvedFunctionConf, {  });
+                        if (!_.isEmpty(resolvedFunctionConf)) {
+                            delete returnedFunctionConf.import;
+                            delete returnedFunctionConf.protect;
+                            Object.assign(res, { function: returnedFunctionConf });
+                        }
+                        if (!_.isEmpty(resolvedTriggerConfs)) {
+                            for (_g = 0, _h = this.fcTriggers; _g < _h.length; _g++) {
+                                fcTrigger = _h[_g];
+                                // 只能同时部署一个 http trigger
+                                if (fcTrigger.isHttpTrigger()) {
+                                    Object.assign(res, { systemDomain: fcTrigger.generateSystemDomain() });
+                                }
+                            }
+                            Object.assign(res, { triggers: resolvedTriggerConfs.map(function (t) {
+                                    delete t.import;
+                                    delete t.protect;
+                                    return t;
+                                }) });
+                        }
+                        if (!_.isEmpty(resolvedCustomDomainConfs)) {
+                            for (i = 0; i < resolvedCustomDomainConfs.length; i++) {
+                                if (!utils_1.hasHttpPrefix(resolvedCustomDomainConfs[i].domainName)) {
+                                    resolvedCustomDomainConfs[i].domainName = "http://" + resolvedCustomDomainConfs[i].domainName;
+                                }
+                            }
+                            Object.assign(res, { customDomains: resolvedCustomDomainConfs });
+                        }
+                        if (this.fcService.hasAutoConfig || hasAutoTriggerRole) {
+                            if (this.fcService.hasAutoConfig) {
+                                this.logger.log("\nThere is auto config in the service: " + ((_e = this.fcService) === null || _e === void 0 ? void 0 : _e.name), 'yellow');
+                            }
+                            else {
+                                this.logger.log('\nThere is generated role config in the triggers config', 'yellow');
+                            }
+                        }
+                        return [2 /*return*/, res];
+                }
+            });
+        });
+    };
+    FcDeployComponent.prototype.help = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, this.report('fc-deploy', 'help', null, null)];
+                    case 1:
+                        _a.sent();
+                        core.help(static_1.COMPONENT_HELP_INFO);
+                        return [2 /*return*/];
+                }
+            });
+        });
+    };
+    FcDeployComponent.prototype.remove = function (inputs) {
+        var _a, _b, _c, _d, _e;
+        return __awaiter(this, void 0, void 0, function () {
+            var isHelp, parsedArgs, nonOptionsArgs, nonOptionsArg, profileOfFcBase, _f, fcBaseComponentIns, BaseComponent, componentName, fcBaseComponent_1, fcBaseComponentInputs_1, targetTriggerName, argsData, fcBaseComponent, fcBaseComponentInputs, removeRes, i, profileOfFcDomain, removedCustomDomains, _i, _g, fcCustomDomain, resolvedCustomDomainConf, fcDomainComponent, fcDomainComponentInputs, fcDoaminComponentIns;
+            return __generator(this, function (_h) {
+                switch (_h.label) {
+                    case 0: return [4 /*yield*/, this.handlerInputs(inputs)];
+                    case 1:
+                        isHelp = (_h.sent()).isHelp;
+                        if (isHelp) {
+                            core.help(static_1.REMOVE_HELP_INFO);
+                            return [2 /*return*/];
+                        }
+                        parsedArgs = core.commandParse({ args: this.args }, {
+                            boolean: ['help', 'assume-yes', 'use-local'],
+                            alias: { help: 'h', 'assume-yes': 'y' }
+                        });
+                        nonOptionsArgs = ((_a = parsedArgs.data) === null || _a === void 0 ? void 0 : _a._) || [];
+                        if (nonOptionsArgs.length > 1) {
+                            this.logger.error(" Error: unexpected argument: " + nonOptionsArgs[1]);
+                            // help info
+                            core.help(static_1.REMOVE_HELP_INFO);
+                            return [2 /*return*/];
+                        }
+                        nonOptionsArg = nonOptionsArgs[0] || 'service';
+                        if (!static_1.SUPPORTED_REMOVE_ARGS.includes(nonOptionsArg)) {
+                            this.logger.error(" Remove " + nonOptionsArg + " is not supported now.");
+                            // help info
+                            core.help(static_1.REMOVE_HELP_INFO);
+                            return [2 /*return*/];
+                        }
+                        if (!(nonOptionsArg !== 'domain')) return [3 /*break*/, 15];
+                        profileOfFcBase = profile_1.replaceProjectName(this.serverlessProfile, ((_b = this.serverlessProfile) === null || _b === void 0 ? void 0 : _b.project.projectName) + "-fc-base-project");
+                        return [4 /*yield*/, this.handlerBase()];
+                    case 2:
+                        _f = _h.sent(), fcBaseComponentIns = _f.fcBaseComponentIns, BaseComponent = _f.BaseComponent, componentName = _f.componentName;
+                        if (!(componentName === 'fc-base-sdk')) return [3 /*break*/, 4];
+                        fcBaseComponent_1 = new BaseComponent(profileOfFcBase, this.fcService.remoteConfig, this.region, this.credentials, this.curPath, this.args, (_c = this.fcFunction) === null || _c === void 0 ? void 0 : _c.remoteConfig, this.fcTriggers.filter(function (t) { return (t === null || t === void 0 ? void 0 : t.remoteConfig); }).map(function (t) { return (t === null || t === void 0 ? void 0 : t.remoteConfig); }));
+                        fcBaseComponentInputs_1 = fcBaseComponent_1.genComponentInputs();
+                        return [4 /*yield*/, fcBaseComponentIns.remove(fcBaseComponentInputs_1)];
+                    case 3: return [2 /*return*/, _h.sent()];
+                    case 4:
+                        targetTriggerName = void 0;
+                        if (nonOptionsArg === 'trigger') {
+                            argsData = (parsedArgs === null || parsedArgs === void 0 ? void 0 : parsedArgs.data) || {};
+                            targetTriggerName = (argsData === null || argsData === void 0 ? void 0 : argsData.n) || (argsData === null || argsData === void 0 ? void 0 : argsData.name);
+                        }
+                        return [4 /*yield*/, this.checkIfResourceExistOnline(nonOptionsArg, targetTriggerName)];
+                    case 5:
+                        if (!(_h.sent())) {
+                            return [2 /*return*/];
+                        }
+                        fcBaseComponent = new BaseComponent(profileOfFcBase, this.fcService.remoteConfig, this.region, this.credentials, this.curPath, this.args, (_d = this.fcFunction) === null || _d === void 0 ? void 0 : _d.remoteConfig, this.fcTriggers.filter(function (t) { return (t === null || t === void 0 ? void 0 : t.remoteConfig); }).map(function (t) { return (t === null || t === void 0 ? void 0 : t.remoteConfig); }));
+                        fcBaseComponentInputs = fcBaseComponent.genComponentInputs();
+                        return [4 /*yield*/, fcBaseComponentIns.remove(fcBaseComponentInputs)];
+                    case 6:
+                        removeRes = _h.sent();
+                        if (!!_.isEmpty(this.fcTriggers)) return [3 /*break*/, 10];
+                        i = 0;
+                        _h.label = 7;
+                    case 7:
+                        if (!(i < this.fcTriggers.length)) return [3 /*break*/, 10];
+                        if (!(_.isNil(targetTriggerName) || targetTriggerName === this.fcTriggers[i].name)) return [3 /*break*/, 9];
+                        return [4 /*yield*/, this.fcTriggers[i].unsetState()];
+                    case 8:
+                        _h.sent();
+                        _h.label = 9;
+                    case 9:
+                        i++;
+                        return [3 /*break*/, 7];
+                    case 10:
+                        if (!(nonOptionsArg !== 'trigger')) return [3 /*break*/, 12];
+                        if (!!_.isEmpty(this.fcFunction)) return [3 /*break*/, 12];
+                        return [4 /*yield*/, this.fcFunction.unsetState()];
+                    case 11:
+                        _h.sent();
+                        _h.label = 12;
+                    case 12:
+                        if (!(nonOptionsArg === 'service')) return [3 /*break*/, 14];
+                        if (!!_.isEmpty(this.fcService)) return [3 /*break*/, 14];
+                        return [4 /*yield*/, this.fcService.unsetState()];
+                    case 13:
+                        _h.sent();
+                        _h.label = 14;
+                    case 14: return [2 /*return*/, removeRes];
+                    case 15:
+                        // remove domain
+                        if (_.isEmpty(this.fcCustomDomains)) {
+                            throw new Error('Please add custom domain config in s.yml/yaml');
+                        }
+                        profileOfFcDomain = profile_1.replaceProjectName(this.serverlessProfile, ((_e = this.serverlessProfile) === null || _e === void 0 ? void 0 : _e.project.projectName) + "-fc-domain-project");
+                        removedCustomDomains = [];
+                        _i = 0, _g = this.fcCustomDomains;
+                        _h.label = 16;
+                    case 16:
+                        if (!(_i < _g.length)) return [3 /*break*/, 22];
+                        fcCustomDomain = _g[_i];
+                        return [4 /*yield*/, fcCustomDomain.makeCustomDomain()];
+                    case 17:
+                        resolvedCustomDomainConf = _h.sent();
+                        this.logger.debug("waiting for custom domain: " + resolvedCustomDomainConf.domainName + " to be removed.");
+                        fcDomainComponent = new fc_domain_1.FcDomainComponent(profileOfFcDomain, resolvedCustomDomainConf, this.region, this.credentials, this.curPath, this.args);
+                        fcDomainComponentInputs = fcDomainComponent.genComponentInputs();
+                        return [4 /*yield*/, core.load('devsapp/fc-domain')];
+                    case 18:
+                        fcDoaminComponentIns = _h.sent();
+                        return [4 /*yield*/, fcDoaminComponentIns.remove(fcDomainComponentInputs)];
+                    case 19:
+                        _h.sent();
+                        removedCustomDomains.push(resolvedCustomDomainConf.domainName);
+                        return [4 /*yield*/, fcCustomDomain.delStatedCustomDomainConf()];
+                    case 20:
+                        _h.sent();
+                        _h.label = 21;
+                    case 21:
+                        _i++;
+                        return [3 /*break*/, 16];
+                    case 22: return [2 /*return*/, "Remove custom domain: " + removedCustomDomains.map(function (t) { return t; })];
+                }
+            });
+        });
+    };
     FcDeployComponent.prototype.report = function (componentName, command, accountID, access) {
         return __awaiter(this, void 0, void 0, function () {
             var uid, credentials;
@@ -94,7 +494,7 @@ var FcDeployComponent = /** @class */ (function () {
                 switch (_a.label) {
                     case 0:
                         uid = accountID;
-                        if (!_.isEmpty(accountID)) return [3 /*break*/, 2];
+                        if (!(!accountID && !access)) return [3 /*break*/, 2];
                         return [4 /*yield*/, core.getCredential(access)];
                     case 1:
                         credentials = _a.sent();
@@ -141,52 +541,124 @@ var FcDeployComponent = /** @class */ (function () {
             });
         });
     };
+    FcDeployComponent.prototype.setStatefulConfig = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var _i, _a, fcTrigger;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0:
+                        if (!this.fcService) return [3 /*break*/, 2];
+                        return [4 /*yield*/, this.fcService.setStatefulConfig()];
+                    case 1:
+                        _b.sent();
+                        _b.label = 2;
+                    case 2:
+                        if (!this.fcFunction) return [3 /*break*/, 4];
+                        return [4 /*yield*/, this.fcFunction.setStatefulConfig()];
+                    case 3:
+                        _b.sent();
+                        _b.label = 4;
+                    case 4:
+                        if (!!_.isEmpty(this.fcTriggers)) return [3 /*break*/, 8];
+                        _i = 0, _a = this.fcTriggers;
+                        _b.label = 5;
+                    case 5:
+                        if (!(_i < _a.length)) return [3 /*break*/, 8];
+                        fcTrigger = _a[_i];
+                        return [4 /*yield*/, fcTrigger.setStatefulConfig()];
+                    case 6:
+                        _b.sent();
+                        _b.label = 7;
+                    case 7:
+                        _i++;
+                        return [3 /*break*/, 5];
+                    case 8: return [2 /*return*/];
+                }
+            });
+        });
+    };
+    FcDeployComponent.prototype.checkIfResourceExistOnline = function (resourceType, resourceName) {
+        var _a, _b, _c, _d;
+        return __awaiter(this, void 0, void 0, function () {
+            var _i, _e, fcTrigger, triggersExistOnline, _f, _g, fcTrigger;
+            return __generator(this, function (_h) {
+                if (resourceType === 'service' && _.isEmpty((_a = this.fcService) === null || _a === void 0 ? void 0 : _a.remoteConfig)) {
+                    this.logger.error("Service " + ((_b = this.fcService) === null || _b === void 0 ? void 0 : _b.name) + " dose not exist online.");
+                    return [2 /*return*/, false];
+                }
+                if (resourceType === 'function' && _.isEmpty((_c = this.fcFunction) === null || _c === void 0 ? void 0 : _c.remoteConfig)) {
+                    this.logger.error("Function " + ((_d = this.fcFunction) === null || _d === void 0 ? void 0 : _d.name) + " dose not exist online.");
+                    return [2 /*return*/, false];
+                }
+                if (resourceType === 'trigger' && resourceName) {
+                    for (_i = 0, _e = this.fcTriggers; _i < _e.length; _i++) {
+                        fcTrigger = _e[_i];
+                        if ((fcTrigger === null || fcTrigger === void 0 ? void 0 : fcTrigger.name) === resourceName && _.isEmpty(fcTrigger === null || fcTrigger === void 0 ? void 0 : fcTrigger.remoteConfig)) {
+                            this.logger.error("Trigger " + resourceName + " dose not exist online.");
+                            return [2 /*return*/, false];
+                        }
+                    }
+                }
+                else if (resourceType === 'trigger' && !resourceName) {
+                    triggersExistOnline = false;
+                    for (_f = 0, _g = this.fcTriggers; _f < _g.length; _f++) {
+                        fcTrigger = _g[_f];
+                        if (_.isEmpty(fcTrigger === null || fcTrigger === void 0 ? void 0 : fcTrigger.remoteConfig)) {
+                            this.logger.error("Trigger " + resourceName + " dose not exist online.");
+                        }
+                        else {
+                            triggersExistOnline = true;
+                        }
+                    }
+                    return [2 /*return*/, triggersExistOnline];
+                }
+                return [2 /*return*/, true];
+            });
+        });
+    };
     // 解析入参
     FcDeployComponent.prototype.handlerInputs = function (inputs) {
         var _a, _b;
         return __awaiter(this, void 0, void 0, function () {
-            var project, access, credentials, properties, appName, args, curPath, projectName, region, parsedArgs, argsData, serverlessProfile, serviceConf, functionConf, triggerConfs, customDomainConfs, fcFunction, fcTriggers, fcCustomDomains, fcService, _i, triggerConfs_1, triggerConf, fcTrigger, _c, customDomainConfs_1, customDomainConf, fcCustomDomain;
-            return __generator(this, function (_d) {
-                switch (_d.label) {
+            var project, _c, properties, appName, projectName, parsedArgs, argsData, serviceConf, functionConf, triggerConfs, customDomainConfs, _i, triggerConfs_1, triggerConf, fcTrigger, _d, customDomainConfs_1, customDomainConf, fcCustomDomain;
+            return __generator(this, function (_e) {
+                switch (_e.label) {
                     case 0: return [4 /*yield*/, stdout_formatter_1.default.initStdout()];
                     case 1:
-                        _d.sent();
+                        _e.sent();
                         project = inputs === null || inputs === void 0 ? void 0 : inputs.project;
-                        access = project === null || project === void 0 ? void 0 : project.access;
-                        return [4 /*yield*/, core.getCredential(access)];
+                        this.access = project === null || project === void 0 ? void 0 : project.access;
+                        _c = this;
+                        return [4 /*yield*/, core.getCredential(this.access)];
                     case 2:
-                        credentials = _d.sent();
-                        return [4 /*yield*/, this.report('fc-deploy', inputs === null || inputs === void 0 ? void 0 : inputs.command, credentials.AccountID, (_a = inputs === null || inputs === void 0 ? void 0 : inputs.project) === null || _a === void 0 ? void 0 : _a.access)];
+                        _c.credentials = _e.sent();
+                        return [4 /*yield*/, this.report('fc-deploy', inputs === null || inputs === void 0 ? void 0 : inputs.command, this.credentials.AccountID, (_a = inputs === null || inputs === void 0 ? void 0 : inputs.project) === null || _a === void 0 ? void 0 : _a.access)];
                     case 3:
-                        _d.sent();
+                        _e.sent();
                         properties = inputs === null || inputs === void 0 ? void 0 : inputs.props;
                         appName = inputs === null || inputs === void 0 ? void 0 : inputs.appName;
-                        args = inputs === null || inputs === void 0 ? void 0 : inputs.args.replace(/(^\s*)|(\s*$)/g, '');
-                        curPath = (_b = inputs === null || inputs === void 0 ? void 0 : inputs.path) === null || _b === void 0 ? void 0 : _b.configPath;
+                        // 去除 args 的行首以及行尾的空格
+                        this.args = inputs === null || inputs === void 0 ? void 0 : inputs.args.replace(/(^\s*)|(\s*$)/g, '');
+                        this.curPath = (_b = inputs === null || inputs === void 0 ? void 0 : inputs.path) === null || _b === void 0 ? void 0 : _b.configPath;
                         projectName = project === null || project === void 0 ? void 0 : project.projectName;
-                        region = properties.region;
-                        parsedArgs = core.commandParse({ args: args }, {
+                        this.region = properties === null || properties === void 0 ? void 0 : properties.region;
+                        parsedArgs = core.commandParse({ args: this.args }, {
                             boolean: ['help'],
                             alias: { help: 'h' }
                         });
                         argsData = (parsedArgs === null || parsedArgs === void 0 ? void 0 : parsedArgs.data) || {};
                         if (argsData === null || argsData === void 0 ? void 0 : argsData.help) {
                             return [2 /*return*/, {
-                                    region: region,
-                                    credentials: credentials,
-                                    curPath: curPath,
-                                    args: args,
-                                    access: access,
                                     isHelp: true,
                                 }];
                         }
-                        this.logger.info(stdout_formatter_1.default.stdoutFormatter.using('region', region));
-                        this.logger.info(stdout_formatter_1.default.stdoutFormatter.using('access alias', access));
-                        this.logger.info(stdout_formatter_1.default.stdoutFormatter.using('accountID', profile_1.mark(String(credentials.AccountID))));
-                        this.logger.info(stdout_formatter_1.default.stdoutFormatter.using('accountID', profile_1.mark(String(credentials.AccessKeyID))));
-                        serverlessProfile = {
+                        this.logger.info(stdout_formatter_1.default.stdoutFormatter.using('region', this.region));
+                        this.logger.info(stdout_formatter_1.default.stdoutFormatter.using('access alias', this.access));
+                        this.logger.info(stdout_formatter_1.default.stdoutFormatter.using('accessKeyID', profile_1.mark(String(this.credentials.AccountID))));
+                        this.logger.info(stdout_formatter_1.default.stdoutFormatter.using('accessKeySecret', profile_1.mark(String(this.credentials.AccessKeyID))));
+                        this.serverlessProfile = {
                             project: {
-                                access: access,
+                                access: this.access,
                                 projectName: projectName,
                             },
                             appName: appName,
@@ -195,410 +667,49 @@ var FcDeployComponent = /** @class */ (function () {
                         functionConf = properties === null || properties === void 0 ? void 0 : properties.function;
                         triggerConfs = properties === null || properties === void 0 ? void 0 : properties.triggers;
                         customDomainConfs = properties === null || properties === void 0 ? void 0 : properties.customDomains;
-                        fcTriggers = [];
-                        fcCustomDomains = [];
+                        this.fcTriggers = [];
+                        this.fcCustomDomains = [];
                         this.logger.debug("instantiate serviceConfig with : \n" + JSON.stringify(serviceConf, null, '  '));
-                        fcService = new service_1.FcService(serviceConf, functionConf, serverlessProfile, region, credentials, curPath, args);
-                        return [4 /*yield*/, fcService.initRemote('service', fcService.name)];
+                        this.fcService = new service_1.FcService(serviceConf, functionConf, this.serverlessProfile, this.region, this.credentials, this.curPath, this.args);
+                        return [4 /*yield*/, this.fcService.initRemote('service', this.fcService.name)];
                     case 4:
-                        _d.sent();
+                        _e.sent();
                         if (!!_.isEmpty(functionConf)) return [3 /*break*/, 6];
                         this.logger.debug("functionConfig not empty: \n" + JSON.stringify(functionConf, null, '  ') + ", instantiate it.");
-                        fcFunction = new function_1.FcFunction(functionConf, serviceConf === null || serviceConf === void 0 ? void 0 : serviceConf.name, serverlessProfile, region, credentials, curPath, args);
-                        return [4 /*yield*/, fcFunction.initRemote('function', fcFunction.serviceName, fcFunction.name)];
+                        this.fcFunction = new function_1.FcFunction(functionConf, serviceConf === null || serviceConf === void 0 ? void 0 : serviceConf.name, this.serverlessProfile, this.region, this.credentials, this.curPath, this.args);
+                        return [4 /*yield*/, this.fcFunction.initRemote('function', this.fcFunction.serviceName, this.fcFunction.name)];
                     case 5:
-                        _d.sent();
-                        _d.label = 6;
+                        _e.sent();
+                        _e.label = 6;
                     case 6:
                         if (!!_.isEmpty(triggerConfs)) return [3 /*break*/, 10];
                         this.logger.debug("triggersConfig not empty: \n" + JSON.stringify(triggerConfs, null, '  ') + ", instantiate them.");
                         _i = 0, triggerConfs_1 = triggerConfs;
-                        _d.label = 7;
+                        _e.label = 7;
                     case 7:
                         if (!(_i < triggerConfs_1.length)) return [3 /*break*/, 10];
                         triggerConf = triggerConfs_1[_i];
-                        fcTrigger = new trigger_1.FcTrigger(triggerConf, serviceConf === null || serviceConf === void 0 ? void 0 : serviceConf.name, functionConf === null || functionConf === void 0 ? void 0 : functionConf.name, serverlessProfile, region, credentials, curPath, args);
+                        fcTrigger = new trigger_1.FcTrigger(triggerConf, serviceConf === null || serviceConf === void 0 ? void 0 : serviceConf.name, functionConf === null || functionConf === void 0 ? void 0 : functionConf.name, this.serverlessProfile, this.region, this.credentials, this.curPath, this.args);
                         return [4 /*yield*/, fcTrigger.initRemote('trigger', fcTrigger.serviceName, fcTrigger.functionName, fcTrigger.name)];
                     case 8:
-                        _d.sent();
-                        fcTriggers.push(fcTrigger);
-                        _d.label = 9;
+                        _e.sent();
+                        this.fcTriggers.push(fcTrigger);
+                        _e.label = 9;
                     case 9:
                         _i++;
                         return [3 /*break*/, 7];
                     case 10:
                         if (!_.isEmpty(customDomainConfs)) {
                             this.logger.debug("customDomains not empty: \n" + JSON.stringify(customDomainConfs, null, '  ') + ", instantiate them.");
-                            for (_c = 0, customDomainConfs_1 = customDomainConfs; _c < customDomainConfs_1.length; _c++) {
-                                customDomainConf = customDomainConfs_1[_c];
-                                fcCustomDomain = new custom_domain_1.FcCustomDomain(customDomainConf, serviceConf === null || serviceConf === void 0 ? void 0 : serviceConf.name, functionConf === null || functionConf === void 0 ? void 0 : functionConf.name, triggerConfs, serverlessProfile, region, credentials, curPath, args);
-                                fcCustomDomains.push(fcCustomDomain);
+                            for (_d = 0, customDomainConfs_1 = customDomainConfs; _d < customDomainConfs_1.length; _d++) {
+                                customDomainConf = customDomainConfs_1[_d];
+                                fcCustomDomain = new custom_domain_1.FcCustomDomain(customDomainConf, serviceConf === null || serviceConf === void 0 ? void 0 : serviceConf.name, functionConf === null || functionConf === void 0 ? void 0 : functionConf.name, triggerConfs, this.serverlessProfile, this.region, this.credentials, this.curPath, this.args);
+                                this.fcCustomDomains.push(fcCustomDomain);
                             }
                         }
                         return [2 /*return*/, {
-                                serverlessProfile: serverlessProfile,
-                                fcService: fcService,
-                                fcFunction: fcFunction,
-                                fcTriggers: fcTriggers,
-                                fcCustomDomains: fcCustomDomains,
-                                region: region,
-                                credentials: credentials,
-                                curPath: curPath,
-                                args: args,
+                                isHelp: false,
                             }];
-                }
-            });
-        });
-    };
-    FcDeployComponent.prototype.deploy = function (inputs) {
-        var _a, _b;
-        return __awaiter(this, void 0, void 0, function () {
-            var _c, serverlessProfile, fcService, fcFunction, fcTriggers, fcCustomDomains, region, credentials, curPath, args, isHelp, parsedArgs, argsData, assumeYes, useRemote, useLocal, resolvedServiceConf, resolvedFunctionConf, baseDir, pushRegistry, resolvedTriggerConfs, hasAutoTriggerRole, i, resolvedTriggerConf, _d, fcBaseComponentIns, componentName, BaseComponent, profileOfFcBase, fcBaseComponent, fcBaseComponentInputs, hasAutoCustomDomainNameInDomains, resolvedCustomDomainConfs, i, resolvedCustomDomainConf, profileOfFcDomain, _i, resolvedCustomDomainConfs_1, resolvedCustomDomainConf, fcDomainComponent, fcDomainComponentInputs, fcDoaminComponentIns, i, res, returnedFunctionConf, _e, fcTriggers_1, fcTrigger, i;
-            var _this = this;
-            return __generator(this, function (_f) {
-                switch (_f.label) {
-                    case 0: return [4 /*yield*/, this.handlerInputs(inputs)];
-                    case 1:
-                        _c = _f.sent(), serverlessProfile = _c.serverlessProfile, fcService = _c.fcService, fcFunction = _c.fcFunction, fcTriggers = _c.fcTriggers, fcCustomDomains = _c.fcCustomDomains, region = _c.region, credentials = _c.credentials, curPath = _c.curPath, args = _c.args, isHelp = _c.isHelp;
-                        if (isHelp) {
-                            core.help(static_1.DEPLOY_HELP_INFO);
-                            return [2 /*return*/];
-                        }
-                        parsedArgs = core.commandParse({ args: args }, {
-                            boolean: ['help', 'assume-yes', 'use-remote', 'use-local'],
-                            alias: { help: 'h', 'assume-yes': 'y' }
-                        });
-                        argsData = (parsedArgs === null || parsedArgs === void 0 ? void 0 : parsedArgs.data) || {};
-                        assumeYes = argsData.y || argsData.assumeYes || argsData['assume-yes'];
-                        useRemote = argsData['use-remote'];
-                        useLocal = argsData['use-local'];
-                        if (useLocal && useRemote) {
-                            throw new Error('You can not set --use-remote and --use-local flag simultaneously');
-                        }
-                        // service
-                        return [4 /*yield*/, fcService.initLocal()];
-                    case 2:
-                        // service
-                        _f.sent();
-                        return [4 /*yield*/, fcService.setUseRemote(fcService.name, 'service', useRemote, useLocal)];
-                    case 3:
-                        _f.sent();
-                        return [4 /*yield*/, fcService.makeService(assumeYes)];
-                    case 4:
-                        resolvedServiceConf = _f.sent();
-                        this.logger.debug("Resolved serviceConf is:\n" + JSON.stringify(resolvedServiceConf, null, '  '));
-                        if (!!_.isNil(fcFunction)) return [3 /*break*/, 8];
-                        return [4 /*yield*/, fcFunction.initLocal(assumeYes)];
-                    case 5:
-                        _f.sent();
-                        return [4 /*yield*/, fcFunction.setUseRemote(fcFunction.name, 'function', useRemote, useLocal)];
-                    case 6:
-                        _f.sent();
-                        baseDir = path.dirname(curPath);
-                        pushRegistry = parsedArgs.data ? parsedArgs.data['push-registry'] : undefined;
-                        return [4 /*yield*/, fcFunction.makeFunction(baseDir, pushRegistry)];
-                    case 7:
-                        resolvedFunctionConf = _f.sent();
-                        this.logger.debug("Resolved functionConf is:\n" + JSON.stringify(resolvedFunctionConf, null, '  '));
-                        _f.label = 8;
-                    case 8:
-                        resolvedTriggerConfs = [];
-                        hasAutoTriggerRole = false;
-                        if (!!_.isEmpty(fcTriggers)) return [3 /*break*/, 14];
-                        i = 0;
-                        _f.label = 9;
-                    case 9:
-                        if (!(i < fcTriggers.length)) return [3 /*break*/, 14];
-                        return [4 /*yield*/, fcTriggers[i].initLocal()];
-                    case 10:
-                        _f.sent();
-                        return [4 /*yield*/, fcTriggers[i].setUseRemote(fcTriggers[i].name, 'trigger', useRemote, useLocal)];
-                    case 11:
-                        _f.sent();
-                        return [4 /*yield*/, fcTriggers[i].makeTrigger()];
-                    case 12:
-                        resolvedTriggerConf = _f.sent();
-                        hasAutoTriggerRole = hasAutoTriggerRole || fcTriggers[i].isRoleAuto;
-                        resolvedTriggerConfs.push(resolvedTriggerConf);
-                        this.logger.debug("Resolved trigger: \n" + JSON.stringify(resolvedTriggerConf, null, '  '));
-                        _f.label = 13;
-                    case 13:
-                        i++;
-                        return [3 /*break*/, 9];
-                    case 14: return [4 /*yield*/, this.handlerBase()];
-                    case 15:
-                        _d = _f.sent(), fcBaseComponentIns = _d.fcBaseComponentIns, componentName = _d.componentName, BaseComponent = _d.BaseComponent;
-                        profileOfFcBase = profile_1.replaceProjectName(serverlessProfile, (serverlessProfile === null || serverlessProfile === void 0 ? void 0 : serverlessProfile.project.projectName) + "-fc-base-project");
-                        fcBaseComponent = new BaseComponent(profileOfFcBase, resolvedServiceConf, region, credentials, curPath, args, resolvedFunctionConf, resolvedTriggerConfs);
-                        fcBaseComponentInputs = fcBaseComponent.genComponentInputs(componentName);
-                        this.logger.info(stdout_formatter_1.default.stdoutFormatter.create('service', resolvedServiceConf.name));
-                        if (!_.isEmpty(resolvedFunctionConf)) {
-                            this.logger.info(stdout_formatter_1.default.stdoutFormatter.create('function', resolvedFunctionConf.name));
-                        }
-                        if (!_.isEmpty(resolvedTriggerConfs)) {
-                            this.logger.info(stdout_formatter_1.default.stdoutFormatter.create('triggers', JSON.stringify(resolvedTriggerConfs.map(function (t) { return t.name; }))));
-                        }
-                        return [4 /*yield*/, retry_1.promiseRetry(function (retry, times) { return __awaiter(_this, void 0, void 0, function () {
-                                var ex_1;
-                                return __generator(this, function (_a) {
-                                    switch (_a.label) {
-                                        case 0:
-                                            _a.trys.push([0, 2, , 3]);
-                                            return [4 /*yield*/, retry_1.retryDeployUntilSlsCreated(fcBaseComponentIns, fcBaseComponentInputs)];
-                                        case 1:
-                                            _a.sent();
-                                            return [2 /*return*/];
-                                        case 2:
-                                            ex_1 = _a.sent();
-                                            if (ex_1.code === 'AccessDenied' || error_1.isSlsNotExistException(ex_1)) {
-                                                throw ex_1;
-                                            }
-                                            this.logger.debug("error when createService or updateService, serviceName is " + fcService.name + ", error is: \n" + ex_1);
-                                            this.logger.info(stdout_formatter_1.default.stdoutFormatter.retry('service', "create " + resolvedServiceConf.name, '', times));
-                                            retry(ex_1);
-                                            return [3 /*break*/, 3];
-                                        case 3: return [2 /*return*/];
-                                    }
-                                });
-                            }); })];
-                    case 16:
-                        _f.sent();
-                        hasAutoCustomDomainNameInDomains = false;
-                        resolvedCustomDomainConfs = [];
-                        if (!!_.isEmpty(fcCustomDomains)) return [3 /*break*/, 21];
-                        i = 0;
-                        _f.label = 17;
-                    case 17:
-                        if (!(i < fcCustomDomains.length)) return [3 /*break*/, 21];
-                        return [4 /*yield*/, fcCustomDomains[i].initLocal()];
-                    case 18:
-                        _f.sent();
-                        return [4 /*yield*/, fcCustomDomains[i].makeCustomDomain()];
-                    case 19:
-                        resolvedCustomDomainConf = _f.sent();
-                        hasAutoCustomDomainNameInDomains = hasAutoCustomDomainNameInDomains || fcCustomDomains[i].isDomainNameAuto;
-                        resolvedCustomDomainConfs.push(resolvedCustomDomainConf);
-                        this.logger.debug("resolved custom domain: \n" + JSON.stringify(resolvedCustomDomainConf, null, '  '));
-                        _f.label = 20;
-                    case 20:
-                        i++;
-                        return [3 /*break*/, 17];
-                    case 21:
-                        if (!!_.isEmpty(resolvedCustomDomainConfs)) return [3 /*break*/, 26];
-                        profileOfFcDomain = profile_1.replaceProjectName(serverlessProfile, (serverlessProfile === null || serverlessProfile === void 0 ? void 0 : serverlessProfile.project.projectName) + "-fc-domain-project");
-                        _i = 0, resolvedCustomDomainConfs_1 = resolvedCustomDomainConfs;
-                        _f.label = 22;
-                    case 22:
-                        if (!(_i < resolvedCustomDomainConfs_1.length)) return [3 /*break*/, 26];
-                        resolvedCustomDomainConf = resolvedCustomDomainConfs_1[_i];
-                        this.logger.info(stdout_formatter_1.default.stdoutFormatter.create('custom domain', resolvedCustomDomainConf.domainName));
-                        fcDomainComponent = new fc_domain_1.FcDomainComponent(profileOfFcDomain, resolvedCustomDomainConf, region, credentials, curPath, args);
-                        fcDomainComponentInputs = fcDomainComponent.genComponentInputs();
-                        return [4 /*yield*/, core.load('devsapp/fc-domain')];
-                    case 23:
-                        fcDoaminComponentIns = _f.sent();
-                        return [4 /*yield*/, fcDoaminComponentIns.deploy(fcDomainComponentInputs)];
-                    case 24:
-                        _f.sent();
-                        _f.label = 25;
-                    case 25:
-                        _i++;
-                        return [3 /*break*/, 22];
-                    case 26:
-                        if (!!_.isEmpty(resolvedFunctionConf)) return [3 /*break*/, 28];
-                        return [4 /*yield*/, fcFunction.removeZipCode(resolvedFunctionConf === null || resolvedFunctionConf === void 0 ? void 0 : resolvedFunctionConf.codeUri)];
-                    case 27:
-                        _f.sent();
-                        _f.label = 28;
-                    case 28:
-                        if (hasAutoCustomDomainNameInDomains) {
-                            for (i = 0; i < fcCustomDomains.length; i++) {
-                                fcCustomDomains[i].setStatedCustomDomainConf(resolvedCustomDomainConfs[i]);
-                            }
-                        }
-                        res = {
-                            region: region,
-                            service: resolvedServiceConf,
-                        };
-                        returnedFunctionConf = _.cloneDeep(resolvedFunctionConf);
-                        if (!_.isEmpty(resolvedFunctionConf === null || resolvedFunctionConf === void 0 ? void 0 : resolvedFunctionConf.codeUri)) {
-                            returnedFunctionConf.codeUri = fcFunction.useRemote ? (_a = fcFunction.remoteConfig) === null || _a === void 0 ? void 0 : _a.codeUri : (_b = fcFunction.localConfig) === null || _b === void 0 ? void 0 : _b.codeUri;
-                        }
-                        // const returnedFunctionConf = Object.assign({}, resolvedFunctionConf, {  });
-                        if (!_.isEmpty(resolvedFunctionConf)) {
-                            delete returnedFunctionConf.import;
-                            delete returnedFunctionConf.protect;
-                            Object.assign(res, { function: returnedFunctionConf });
-                        }
-                        if (!_.isEmpty(resolvedTriggerConfs)) {
-                            for (_e = 0, fcTriggers_1 = fcTriggers; _e < fcTriggers_1.length; _e++) {
-                                fcTrigger = fcTriggers_1[_e];
-                                // 只能同时部署一个 http trigger
-                                if (fcTrigger.isHttpTrigger()) {
-                                    Object.assign(res, { systemDomain: fcTrigger.generateSystemDomain() });
-                                }
-                            }
-                            Object.assign(res, { triggers: resolvedTriggerConfs.map(function (t) {
-                                    delete t.import;
-                                    delete t.protect;
-                                    return t;
-                                }) });
-                        }
-                        if (!_.isEmpty(resolvedCustomDomainConfs)) {
-                            for (i = 0; i < resolvedCustomDomainConfs.length; i++) {
-                                if (!utils_1.hasHttpPrefix(resolvedCustomDomainConfs[i].domainName)) {
-                                    resolvedCustomDomainConfs[i].domainName = "http://" + resolvedCustomDomainConfs[i].domainName;
-                                }
-                            }
-                            Object.assign(res, { customDomains: resolvedCustomDomainConfs });
-                        }
-                        if (fcService.hasAutoConfig || hasAutoTriggerRole) {
-                            if (fcService.hasAutoConfig) {
-                                this.logger.log("\nThere is auto config in the service: " + (fcService === null || fcService === void 0 ? void 0 : fcService.name), 'yellow');
-                            }
-                            else {
-                                this.logger.log('\nThere is generated role config in the triggers config', 'yellow');
-                            }
-                        }
-                        return [2 /*return*/, res];
-                }
-            });
-        });
-    };
-    FcDeployComponent.prototype.help = function (inputs) {
-        var _a;
-        return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_b) {
-                switch (_b.label) {
-                    case 0: return [4 /*yield*/, this.report('fc-deploy', 'help', null, (_a = inputs === null || inputs === void 0 ? void 0 : inputs.project) === null || _a === void 0 ? void 0 : _a.access)];
-                    case 1:
-                        _b.sent();
-                        core.help(static_1.COMPONENT_HELP_INFO);
-                        return [2 /*return*/];
-                }
-            });
-        });
-    };
-    FcDeployComponent.prototype.remove = function (inputs) {
-        var _a;
-        return __awaiter(this, void 0, void 0, function () {
-            var _b, serverlessProfile, fcService, fcFunction, fcTriggers, fcCustomDomains, region, credentials, curPath, args, isHelp, parsedArgs, nonOptionsArgs, nonOptionsArg, _c, fcBaseComponentIns, BaseComponent, profileOfFcBase, fcBaseComponent, fcBaseComponentInputs, removeRes, targetTriggerName, argsData, i, profileOfFcDomain, removedCustomDomains, _i, fcCustomDomains_1, fcCustomDomain, resolvedCustomDomainConf, fcDomainComponent, fcDomainComponentInputs, fcDoaminComponentIns;
-            return __generator(this, function (_d) {
-                switch (_d.label) {
-                    case 0: return [4 /*yield*/, this.handlerInputs(inputs)];
-                    case 1:
-                        _b = _d.sent(), serverlessProfile = _b.serverlessProfile, fcService = _b.fcService, fcFunction = _b.fcFunction, fcTriggers = _b.fcTriggers, fcCustomDomains = _b.fcCustomDomains, region = _b.region, credentials = _b.credentials, curPath = _b.curPath, args = _b.args, isHelp = _b.isHelp;
-                        if (isHelp) {
-                            core.help(static_1.REMOVE_HELP_INFO);
-                            return [2 /*return*/];
-                        }
-                        parsedArgs = core.commandParse({ args: args }, {
-                            boolean: ['help', 'assume-yes', 'use-remote', 'use-local'],
-                            alias: { help: 'h', 'assume-yes': 'y' }
-                        });
-                        nonOptionsArgs = (_a = parsedArgs.data) === null || _a === void 0 ? void 0 : _a._;
-                        // const assumeYes = parsedArgs.data?.y || parsedArgs.data?.assumeYes;
-                        if (!nonOptionsArgs || nonOptionsArgs.length === 0) {
-                            this.logger.error(' Error: expects argument.');
-                            // help info
-                            core.help(static_1.REMOVE_HELP_INFO);
-                            return [2 /*return*/];
-                        }
-                        if (nonOptionsArgs.length > 1) {
-                            this.logger.error(" Error: unexpected argument: " + nonOptionsArgs[1]);
-                            // help info
-                            core.help(static_1.REMOVE_HELP_INFO);
-                            return [2 /*return*/];
-                        }
-                        nonOptionsArg = nonOptionsArgs[0];
-                        if (!static_1.SUPPORTED_REMOVE_ARGS.includes(nonOptionsArg)) {
-                            this.logger.error(" Remove " + nonOptionsArg + " is not supported now.");
-                            // help info
-                            core.help(static_1.REMOVE_HELP_INFO);
-                            return [2 /*return*/];
-                        }
-                        if (!(nonOptionsArg !== 'domain')) return [3 /*break*/, 12];
-                        if (nonOptionsArg === 'function' && _.isEmpty(fcFunction)) {
-                            throw new Error('Please add function config in s.yml/yaml');
-                        }
-                        if (nonOptionsArg === 'trigger' && _.isEmpty(fcTriggers)) {
-                            throw new Error('Please add triggers config in s.yml/yaml');
-                        }
-                        return [4 /*yield*/, this.handlerBase()];
-                    case 2:
-                        _c = _d.sent(), fcBaseComponentIns = _c.fcBaseComponentIns, BaseComponent = _c.BaseComponent;
-                        profileOfFcBase = profile_1.replaceProjectName(serverlessProfile, (serverlessProfile === null || serverlessProfile === void 0 ? void 0 : serverlessProfile.project.projectName) + "-fc-base-project");
-                        fcBaseComponent = new BaseComponent(profileOfFcBase, fcService.useRemote ? fcService.remoteConfig : fcService.localConfig, region, credentials, curPath, args, (fcFunction === null || fcFunction === void 0 ? void 0 : fcFunction.useRemote) ? fcFunction === null || fcFunction === void 0 ? void 0 : fcFunction.remoteConfig : fcFunction === null || fcFunction === void 0 ? void 0 : fcFunction.localConfig, fcTriggers.map(function (t) { return ((t === null || t === void 0 ? void 0 : t.useRemote) ? t === null || t === void 0 ? void 0 : t.remoteConfig : t === null || t === void 0 ? void 0 : t.localConfig); }));
-                        fcBaseComponentInputs = fcBaseComponent.genComponentInputs();
-                        return [4 /*yield*/, fcBaseComponentIns.remove(fcBaseComponentInputs)];
-                    case 3:
-                        removeRes = _d.sent();
-                        targetTriggerName = void 0;
-                        if (nonOptionsArg === 'trigger') {
-                            argsData = (parsedArgs === null || parsedArgs === void 0 ? void 0 : parsedArgs.data) || {};
-                            targetTriggerName = (argsData === null || argsData === void 0 ? void 0 : argsData.n) || (argsData === null || argsData === void 0 ? void 0 : argsData.name);
-                        }
-                        if (!!_.isEmpty(fcTriggers)) return [3 /*break*/, 7];
-                        i = 0;
-                        _d.label = 4;
-                    case 4:
-                        if (!(i < fcTriggers.length)) return [3 /*break*/, 7];
-                        if (!(_.isNil(targetTriggerName) || targetTriggerName === fcTriggers[i].name)) return [3 /*break*/, 6];
-                        return [4 /*yield*/, fcTriggers[i].unsetState()];
-                    case 5:
-                        _d.sent();
-                        _d.label = 6;
-                    case 6:
-                        i++;
-                        return [3 /*break*/, 4];
-                    case 7:
-                        if (!(nonOptionsArg !== 'trigger')) return [3 /*break*/, 9];
-                        if (!!_.isEmpty(fcFunction)) return [3 /*break*/, 9];
-                        return [4 /*yield*/, fcFunction.unsetState()];
-                    case 8:
-                        _d.sent();
-                        _d.label = 9;
-                    case 9:
-                        if (!(nonOptionsArg === 'service')) return [3 /*break*/, 11];
-                        if (!!_.isEmpty(fcService)) return [3 /*break*/, 11];
-                        return [4 /*yield*/, fcService.unsetState()];
-                    case 10:
-                        _d.sent();
-                        _d.label = 11;
-                    case 11: return [2 /*return*/, removeRes];
-                    case 12:
-                        // remove domain
-                        if (_.isEmpty(fcCustomDomains)) {
-                            throw new Error('Please add custom domain config in s.yml/yaml');
-                        }
-                        profileOfFcDomain = profile_1.replaceProjectName(serverlessProfile, (serverlessProfile === null || serverlessProfile === void 0 ? void 0 : serverlessProfile.project.projectName) + "-fc-domain-project");
-                        removedCustomDomains = [];
-                        _i = 0, fcCustomDomains_1 = fcCustomDomains;
-                        _d.label = 13;
-                    case 13:
-                        if (!(_i < fcCustomDomains_1.length)) return [3 /*break*/, 19];
-                        fcCustomDomain = fcCustomDomains_1[_i];
-                        return [4 /*yield*/, fcCustomDomain.makeCustomDomain()];
-                    case 14:
-                        resolvedCustomDomainConf = _d.sent();
-                        this.logger.debug("waiting for custom domain: " + resolvedCustomDomainConf.domainName + " to be removed.");
-                        fcDomainComponent = new fc_domain_1.FcDomainComponent(profileOfFcDomain, resolvedCustomDomainConf, region, credentials, curPath, args);
-                        fcDomainComponentInputs = fcDomainComponent.genComponentInputs();
-                        return [4 /*yield*/, core.load('devsapp/fc-domain')];
-                    case 15:
-                        fcDoaminComponentIns = _d.sent();
-                        return [4 /*yield*/, fcDoaminComponentIns.remove(fcDomainComponentInputs)];
-                    case 16:
-                        _d.sent();
-                        removedCustomDomains.push(resolvedCustomDomainConf.domainName);
-                        return [4 /*yield*/, fcCustomDomain.delStatedCustomDomainConf()];
-                    case 17:
-                        _d.sent();
-                        _d.label = 18;
-                    case 18:
-                        _i++;
-                        return [3 /*break*/, 13];
-                    case 19: return [2 /*return*/, "Remove custom domain: " + removedCustomDomains.map(function (t) { return t; })];
                 }
             });
         });
@@ -610,4 +721,4 @@ var FcDeployComponent = /** @class */ (function () {
     return FcDeployComponent;
 }());
 exports.default = FcDeployComponent;
-//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiaW5kZXguanMiLCJzb3VyY2VSb290IjoiIiwic291cmNlcyI6WyIuLi9zcmMvaW5kZXgudHMiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7O0FBQUEsMERBQThDO0FBQzlDLDRDQUE0RDtBQUM1RCw4Q0FBK0Q7QUFDL0QsNENBQTREO0FBQzVELHdEQUE0RTtBQUM1RSxtREFBMEQ7QUFDMUQsdURBQThEO0FBQzlELDJEQUFpRTtBQUNqRSx1Q0FBOEc7QUFDOUcsd0NBQTRCO0FBQzVCLHlDQUEwRjtBQUUxRix5Q0FBNkI7QUFDN0IsMkNBQWtEO0FBQ2xELHFDQUF1RTtBQUN2RSxxQ0FBcUQ7QUFDckQsc0ZBQStEO0FBRS9EO0lBQUE7SUF5WUEsQ0FBQztJQXRZTyxrQ0FBTSxHQUFaLFVBQWEsYUFBcUIsRUFBRSxPQUFlLEVBQUUsU0FBa0IsRUFBRSxNQUFlOzs7Ozs7O3dCQUNsRixHQUFHLEdBQVcsU0FBUyxDQUFDOzZCQUN4QixDQUFDLENBQUMsT0FBTyxDQUFDLFNBQVMsQ0FBQyxFQUFwQix3QkFBb0I7d0JBQ1kscUJBQU0sSUFBSSxDQUFDLGFBQWEsQ0FBQyxNQUFNLENBQUMsRUFBQTs7d0JBQTVELFdBQVcsR0FBaUIsU0FBZ0M7d0JBQ2xFLEdBQUcsR0FBRyxXQUFXLENBQUMsU0FBUyxDQUFDOzs7d0JBRTlCLElBQUksQ0FBQyxlQUFlLENBQUMsYUFBYSxFQUFFOzRCQUNsQyxPQUFPLFNBQUE7NEJBQ1AsR0FBRyxLQUFBO3lCQUNKLENBQUMsQ0FBQyxLQUFLLENBQUMsVUFBQyxDQUFDOzRCQUNULEtBQUksQ0FBQyxNQUFNLENBQUMsSUFBSSxDQUFDLDBCQUFlLENBQUMsZUFBZSxDQUFDLElBQUksQ0FBQyxrQkFBa0IsRUFBRSxxQkFBbUIsYUFBYSxrQkFBYSxPQUFTLEVBQUUsQ0FBQyxDQUFDLE9BQU8sQ0FBQyxDQUFDLENBQUM7d0JBQ2hK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
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiaW5kZXguanMiLCJzb3VyY2VSb290IjoiIiwic291cmNlcyI6WyIuLi9zcmMvaW5kZXgudHMiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7O0FBQUEsMERBQThDO0FBQzlDLDRDQUE0RDtBQUM1RCw4Q0FBK0Q7QUFDL0QsNENBQTREO0FBQzVELHdEQUE0RTtBQUM1RSxtREFBMEQ7QUFDMUQsdURBQThEO0FBQzlELDJEQUFpRTtBQUNqRSx1Q0FBOEc7QUFDOUcsd0NBQTRCO0FBQzVCLHlDQUEwRjtBQUUxRix5Q0FBNkI7QUFDN0IsMkNBQWtEO0FBQ2xELHFDQUF1RTtBQUN2RSxxQ0FBcUQ7QUFDckQsc0ZBQStEO0FBRS9EO0lBQUE7SUF1YkEsQ0FBQztJQTFhTyxrQ0FBTSxHQUFaLFVBQWEsTUFBZTs7Ozs7Ozs0QkFHdEIscUJBQU0sSUFBSSxDQUFDLGFBQWEsQ0FBQyxNQUFNLENBQUMsRUFBQTs7d0JBRGxDLE1BQU0sR0FDSixDQUFBLFNBQWdDLENBQUEsT0FENUI7d0JBRVIsSUFBSSxNQUFNLEVBQUU7NEJBQ1YsSUFBSSxDQUFDLElBQUksQ0FBQyx5QkFBZ0IsQ0FBQyxDQUFDOzRCQUM1QixzQkFBTzt5QkFDUjt3QkFDSyxVQUFVLEdBQXlCLElBQUksQ0FBQyxZQUFZLENBQUMsRUFBRSxJQUFJLEVBQUUsSUFBSSxDQUFDLElBQUksRUFBRSxFQUFFOzRCQUM5RSxPQUFPLEVBQUUsQ0FBQyxNQUFNLEVBQUUsWUFBWSxFQUFFLFdBQVcsQ0FBQzs0QkFDNUMsS0FBSyxFQUFFLEVBQUUsSUFBSSxFQUFFLEdBQUcsRUFBRSxZQUFZLEVBQUUsR0FBRyxFQUFFO3lCQUFFLENBQUMsQ0FBQzt3QkFDdkMsUUFBUSxHQUFRLENBQUEsVUFBVSxhQUFWLFVBQVUsdUJBQVYsVUFBVSxDQUFFLElBQUksS0FBSSxFQUFFLENBQUM7d0JBRXZDLFNBQVMsR0FBWSxR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
