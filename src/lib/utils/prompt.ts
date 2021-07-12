@@ -1,6 +1,6 @@
 import inquirer from 'inquirer';
 import { Logger } from '@serverless-devs/core';
-
+import yaml from 'js-yaml'
 import diff from 'variable-diff';
 
 function isInteractiveEnvironment(): boolean {
@@ -29,15 +29,28 @@ export async function promptForConfirmOrDetails(message: string, details: any, s
     return true;
   }
 
+
   let result = details
-  if(source){
-    result = diff(source, details).text
-    try{
-      result = result.substring(2,result.length-1)
-    }catch (e){}
+  try{
+    result = yaml.dump(result)
+  }catch (e){console.log(e)}
+
+  let outputSentence = '\nDetail: '
+  if(JSON.stringify(source) == "{}"){
+    outputSentence = "Online status: "
+  }else{
+    if(source){
+      result = diff(source, details).text
+      try{
+        result = result.substring(2,result.length-1)
+      }catch (e){}
+      outputSentence = '\nLocal Last Deploy status => Online status'
+    }
   }
 
   Logger.log(`
+${outputSentence}
+
 ${result}`);
 
   const answers: any = await inquirer.prompt([{
