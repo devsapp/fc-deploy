@@ -13,6 +13,8 @@ import StdoutFormatter from '../component/stdout-formatter';
 import * as yaml from 'js-yaml';
 
 export interface ServiceConfig {
+  triggerName?: string;
+  serviceName?: string;
   name: string;
   description?: string;
   internetAccess?: boolean;

@@ -16,6 +16,8 @@ import { promptForConfirmOrDetails } from '../utils/prompt';
 import StdoutFormatter from '../component/stdout-formatter';
 
 export interface FunctionConfig {
+  serviceName?: string;
+  functionName?: string;
   name: string;
   description?: string;
   codeUri?: string;
