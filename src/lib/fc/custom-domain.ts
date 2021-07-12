@@ -167,7 +167,7 @@ export class FcCustomDomain extends IInputsBase {
 
     if (this.isDomainNameAuto) {
       let generatedDomain = await this.getStatedCustomDomainConf();
-      if (!_.isEmpty(generatedDomain)) {
+      if (_.isEmpty(generatedDomain)) {
         // generate domain via domain component
         this.logger.debug('Auto domain name');
         this.logger.info(StdoutFormatter.stdoutFormatter.using('customDomain: auto', 'fc will try to generate related custom domain resources automatically'));
