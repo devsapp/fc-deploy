@@ -1,6 +1,7 @@
 import inquirer from 'inquirer';
-import * as yaml from 'js-yaml';
 import { Logger } from '@serverless-devs/core';
+
+import diff from 'variable-diff';
 
 function isInteractiveEnvironment(): boolean {
   return process.stdin.isTTY;
@@ -22,13 +23,22 @@ export async function promptForConfirmContinue(message: string): Promise<boolean
   return false;
 }
 
-export async function promptForConfirmOrDetails(message: string, details: any): Promise<boolean> {
+
+export async function promptForConfirmOrDetails(message: string, details: any, source?:any): Promise<boolean> {
   if (!isInteractiveEnvironment()) {
     return true;
   }
 
+  let result = details
+  if(source){
+    result = diff(source, details).text
+    try{
+      result = result.substring(2,result.length-1)
+    }catch (e){}
+  }
+
   Logger.log(`
-  ${yaml.dump({ detail: details })}`);
+${result}`);
 
   const answers: any = await inquirer.prompt([{
     type: 'list',
