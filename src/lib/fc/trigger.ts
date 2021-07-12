@@ -355,8 +355,8 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
 
     if (!_.isNil(this.localConfig.role) || this.isHttpTrigger() || this.isTimerTrigger()) {
       // this.statefulConfig = _.cloneDeep(resolvedTriggerConf);
-      this.statefulConfig = remoteConfig
-      this.upgradeStatefulConfig();
+      // this.statefulConfig = remoteConfig
+      // this.upgradeStatefulConfig();
       return resolvedTriggerConf;
     }
     const role = await this.makeInvocationRole();
@@ -369,8 +369,8 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
     // await this.setResolvedConfig(this.name, resolvedTriggerConf, this.isRoleAuto);
     // this.statefulConfig = _.cloneDeep(resolvedTriggerConf);
 
-    this.statefulConfig = remoteConfig
-    this.upgradeStatefulConfig();
+    // this.statefulConfig = remoteConfig
+    // this.upgradeStatefulConfig();
 
     return resolvedTriggerConf;
   }

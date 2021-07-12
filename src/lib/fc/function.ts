@@ -343,13 +343,13 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
       });
     }
 
-    const {remoteConfig} = await this.GetRemoteInfo('function', this.serviceName, this.name, undefined)
-    // this.statefulConfig = _.cloneDeep(resolvedServiceConf);
-    this.statefulConfig = remoteConfig
-    if(this.statefulConfig && this.statefulConfig.lastModifiedTime){
-      delete this.statefulConfig.lastModifiedTime
-    }
-    this.upgradeStatefulConfig();
+    // const {remoteConfig} = await this.GetRemoteInfo('function', this.serviceName, this.name, undefined)
+    // // this.statefulConfig = _.cloneDeep(resolvedServiceConf);
+    // this.statefulConfig = remoteConfig
+    // if(this.statefulConfig && this.statefulConfig.lastModifiedTime){
+    //   delete this.statefulConfig.lastModifiedTime
+    // }
+    // this.upgradeStatefulConfig();
 
     return resolvedFunctionConf;
   }

@@ -303,13 +303,13 @@ export class FcService extends FcDeploy<ServiceConfig> {
     }
     // await this.setResolvedConfig(this.name, resolvedServiceConf, this.hasAutoConfig);
     // update stateful config
-    const {remoteConfig} = await this.GetRemoteInfo('service', this.name, undefined, undefined)
-    // this.statefulConfig = _.cloneDeep(resolvedServiceConf);
-    this.statefulConfig = remoteConfig
-    if(this.statefulConfig && this.statefulConfig.lastModifiedTime){
-      delete this.statefulConfig.lastModifiedTime
-    }
-    this.upgradeStatefulConfig();
+    // const {remoteConfig} = await this.GetRemoteInfo('service', this.name, undefined, undefined)
+    // // this.statefulConfig = _.cloneDeep(resolvedServiceConf);
+    // this.statefulConfig = remoteConfig
+    // if(this.statefulConfig && this.statefulConfig.lastModifiedTime){
+    //   delete this.statefulConfig.lastModifiedTime
+    // }
+    // this.upgradeStatefulConfig();
     return resolvedServiceConf;
   }
 }
