@@ -29,124 +29,6 @@ export default class FcDeployComponent {
   private args: string;
   private access: string;
 
-  async report(componentName: string, command: string, accountID?: string, access?: string): Promise<void> {
-    let uid: string = accountID;
-    if (!accountID && !access) {
-      const credentials: ICredentials = await core.getCredential(access);
-      uid = credentials.AccountID;
-    }
-    core.reportComponent(componentName, {
-      command,
-      uid,
-    }).catch((e) => {
-      this.logger.warn(StdoutFormatter.stdoutFormatter.warn('component report', `component name: ${componentName}, method: ${command}`, e.message));
-    });
-  }
-
-  async handlerBase() {
-    const fcDefault = await core.loadComponent('devsapp/fc-default');
-    const res = await fcDefault.get({ args: 'deploy-type' });
-    if (res === 'pulumi') {
-      return {
-        fcBaseComponentIns: await core.loadComponent('devsapp/fc-base'),
-        BaseComponent: FcBaseComponent,
-        componentName: 'fc-base',
-      };
-    }
-
-    return {
-      fcBaseComponentIns: await core.loadComponent('devsapp/fc-base-sdk'),
-      BaseComponent: FcBaseSdkComponent,
-      componentName: 'fc-base-sdk',
-    };
-  }
-  private async setStatefulConfig(): Promise<void> {
-    if (this.fcService) { await this.fcService.setStatefulConfig(); }
-    if (this.fcFunction) { await this.fcFunction.setStatefulConfig(); }
-    if (!_.isEmpty(this.fcTriggers)) {
-      for (const fcTrigger of this.fcTriggers) {
-        await fcTrigger.setStatefulConfig();
-      }
-    }
-  }
-
-  // 解析入参
-  private async handlerInputs(inputs: IInputs): Promise<{[key: string]: any}> {
-    await StdoutFormatter.initStdout();
-    const project = inputs?.project;
-    this.access = project?.access;
-    this.credentials = await core.getCredential(this.access);
-    await this.report('fc-deploy', inputs?.command, this.credentials.AccountID, inputs?.project?.access);
-
-    const properties: IProperties = inputs?.props;
-
-    const appName: string = inputs?.appName;
-    // 去除 args 的行首以及行尾的空格
-    this.args = inputs?.args.replace(/(^\s*)|(\s*$)/g, '');
-    this.curPath = inputs?.path?.configPath;
-    const projectName: string = project?.projectName;
-    this.region = properties?.region;
-    const parsedArgs: {[key: string]: any} = core.commandParse({ args: this.args }, {
-      boolean: ['help'],
-      alias: { help: 'h' } });
-    const argsData: any = parsedArgs?.data || {};
-    if (argsData?.help) {
-      return {
-        isHelp: true,
-      };
-    }
-
-    this.logger.info(StdoutFormatter.stdoutFormatter.using('region', this.region));
-    this.logger.info(StdoutFormatter.stdoutFormatter.using('access alias', this.access));
-    this.logger.info(StdoutFormatter.stdoutFormatter.using('accessKeyID', mark(String(this.credentials.AccountID))));
-    this.logger.info(StdoutFormatter.stdoutFormatter.using('accessKeySecret', mark(String(this.credentials.AccessKeyID))));
-
-    this.serverlessProfile = {
-      project: {
-        access: this.access,
-        projectName,
-      },
-      appName,
-    };
-
-    const serviceConf: ServiceConfig = properties?.service;
-    const functionConf: FunctionConfig = properties?.function;
-    const triggerConfs: TriggerConfig[] = properties?.triggers;
-    const customDomainConfs: CustomDomainConfig[] = properties?.customDomains;
-
-    this.fcTriggers = [];
-    this.fcCustomDomains = [];
-
-    this.logger.debug(`instantiate serviceConfig with : \n${JSON.stringify(serviceConf, null, '  ')}`);
-    this.fcService = new FcService(serviceConf, functionConf, this.serverlessProfile, this.region, this.credentials, this.curPath, this.args);
-    await this.fcService.initRemote('service', this.fcService.name);
-    if (!_.isEmpty(functionConf)) {
-      this.logger.debug(`functionConfig not empty: \n${JSON.stringify(functionConf, null, '  ')}, instantiate it.`);
-      this.fcFunction = new FcFunction(functionConf, serviceConf?.name, this.serverlessProfile, this.region, this.credentials, this.curPath, this.args);
-      await this.fcFunction.initRemote('function', this.fcFunction.serviceName, this.fcFunction.name);
-    }
-
-    if (!_.isEmpty(triggerConfs)) {
-      this.logger.debug(`triggersConfig not empty: \n${JSON.stringify(triggerConfs, null, '  ')}, instantiate them.`);
-      for (const triggerConf of triggerConfs) {
-        const fcTrigger = new FcTrigger(triggerConf, serviceConf?.name, functionConf?.name, this.serverlessProfile, this.region, this.credentials, this.curPath, this.args);
-        await fcTrigger.initRemote('trigger', fcTrigger.serviceName, fcTrigger.functionName, fcTrigger.name);
-        this.fcTriggers.push(fcTrigger);
-      }
-    }
-
-    if (!_.isEmpty(customDomainConfs)) {
-      this.logger.debug(`customDomains not empty: \n${JSON.stringify(customDomainConfs, null, '  ')}, instantiate them.`);
-      for (const customDomainConf of customDomainConfs) {
-        const fcCustomDomain = new FcCustomDomain(customDomainConf, serviceConf?.name, functionConf?.name, triggerConfs, this.serverlessProfile, this.region, this.credentials, this.curPath, this.args);
-        this.fcCustomDomains.push(fcCustomDomain);
-      }
-    }
-    return {
-      isHelp: false,
-    };
-  }
-
   async deploy(inputs: IInputs): Promise<any> {
     const {
       isHelp,
@@ -341,36 +223,6 @@ export default class FcDeployComponent {
     core.help(COMPONENT_HELP_INFO);
   }
 
-  private async checkIfResourceExistOnline(resourceType: string, resourceName?: string): Promise<boolean> {
-    if (resourceType === 'service' && _.isEmpty(this.fcService?.remoteConfig)) {
-      this.logger.error(`Service ${this.fcService?.name} dose not exist online.`);
-      return false;
-    }
-    if (resourceType === 'function' && _.isEmpty(this.fcFunction?.remoteConfig)) {
-      this.logger.error(`Function ${this.fcFunction?.name} dose not exist online.`);
-      return false;
-    }
-    if (resourceType === 'trigger' && resourceName) {
-      for (const fcTrigger of this.fcTriggers) {
-        if (fcTrigger?.name === resourceName && _.isEmpty(fcTrigger?.remoteConfig)) {
-          this.logger.error(`Trigger ${resourceName} dose not exist online.`);
-          return false;
-        }
-      }
-    } else if (resourceType === 'trigger' && !resourceName) {
-      let triggersExistOnline = false;
-      for (const fcTrigger of this.fcTriggers) {
-        if (_.isEmpty(fcTrigger?.remoteConfig)) {
-          this.logger.error(`Trigger ${resourceName} dose not exist online.`);
-        } else {
-          triggersExistOnline = true;
-        }
-      }
-      return triggersExistOnline;
-    }
-    return true;
-  }
-
   async remove(inputs: IInputs): Promise<any> {
     const {
       isHelp,
@@ -384,22 +236,15 @@ export default class FcDeployComponent {
       alias: { help: 'h', 'assume-yes': 'y' } });
 
     // 处理命令行参数
-    const nonOptionsArgs = parsedArgs.data?._;
+    const nonOptionsArgs = parsedArgs.data?._ || [];
 
-    // const assumeYes = parsedArgs.data?.y || parsedArgs.data?.assumeYes;
-    if (!nonOptionsArgs || nonOptionsArgs.length === 0) {
-      this.logger.error(' Error: expects argument.');
-      // help info
-      core.help(REMOVE_HELP_INFO);
-      return;
-    }
     if (nonOptionsArgs.length > 1) {
       this.logger.error(` Error: unexpected argument: ${nonOptionsArgs[1]}`);
       // help info
       core.help(REMOVE_HELP_INFO);
       return;
     }
-    const nonOptionsArg = nonOptionsArgs[0];
+    const nonOptionsArg = nonOptionsArgs[0] || 'service';
     if (!SUPPORTED_REMOVE_ARGS.includes(nonOptionsArg)) {
       this.logger.error(` Remove ${nonOptionsArg} is not supported now.`);
       // help info
@@ -407,16 +252,21 @@ export default class FcDeployComponent {
       return;
     }
 
-    // remove non-domain
     if (nonOptionsArg !== 'domain') {
+      const profileOfFcBase = replaceProjectName(this.serverlessProfile, `${this.serverlessProfile?.project.projectName}-fc-base-project`);
+      const { fcBaseComponentIns, BaseComponent, componentName } = await this.handlerBase();
+      if (componentName === 'fc-base-sdk') {
+        const fcBaseComponent = new BaseComponent(profileOfFcBase, this.fcService.remoteConfig, this.region, this.credentials, this.curPath, this.args, this.fcFunction?.remoteConfig, this.fcTriggers.filter((t) => (t?.remoteConfig)).map((t) => (t?.remoteConfig)));
+        const fcBaseComponentInputs = fcBaseComponent.genComponentInputs();
+        return await fcBaseComponentIns.remove(fcBaseComponentInputs);
+      }
+
       let targetTriggerName: string;
       if (nonOptionsArg === 'trigger') {
         const argsData: any = parsedArgs?.data || {};
         targetTriggerName = argsData?.n || argsData?.name;
       }
       if (!await this.checkIfResourceExistOnline(nonOptionsArg, targetTriggerName)) { return; }
-      const { fcBaseComponentIns, BaseComponent } = await this.handlerBase();
-      const profileOfFcBase = replaceProjectName(this.serverlessProfile, `${this.serverlessProfile?.project.projectName}-fc-base-project`);
       const fcBaseComponent = new BaseComponent(profileOfFcBase, this.fcService.remoteConfig, this.region, this.credentials, this.curPath, this.args, this.fcFunction?.remoteConfig, this.fcTriggers.filter((t) => (t?.remoteConfig)).map((t) => (t?.remoteConfig)));
       const fcBaseComponentInputs = fcBaseComponent.genComponentInputs();
       const removeRes = await fcBaseComponentIns.remove(fcBaseComponentInputs);
@@ -455,5 +305,154 @@ export default class FcDeployComponent {
       await fcCustomDomain.delStatedCustomDomainConf();
     }
     return `Remove custom domain: ${removedCustomDomains.map((t) => t)}`;
+  }
+
+  async report(componentName: string, command: string, accountID?: string, access?: string): Promise<void> {
+    let uid: string = accountID;
+    if (!accountID && !access) {
+      const credentials: ICredentials = await core.getCredential(access);
+      uid = credentials.AccountID;
+    }
+    core.reportComponent(componentName, {
+      command,
+      uid,
+    }).catch((e) => {
+      this.logger.warn(StdoutFormatter.stdoutFormatter.warn('component report', `component name: ${componentName}, method: ${command}`, e.message));
+    });
+  }
+
+  async handlerBase() {
+    const fcDefault = await core.loadComponent('devsapp/fc-default');
+    const res = await fcDefault.get({ args: 'deploy-type' });
+    if (res === 'pulumi') {
+      return {
+        fcBaseComponentIns: await core.loadComponent('devsapp/fc-base'),
+        BaseComponent: FcBaseComponent,
+        componentName: 'fc-base',
+      };
+    }
+
+    return {
+      fcBaseComponentIns: await core.loadComponent('devsapp/fc-base-sdk'),
+      BaseComponent: FcBaseSdkComponent,
+      componentName: 'fc-base-sdk',
+    };
+  }
+
+  private async setStatefulConfig(): Promise<void> {
+    if (this.fcService) { await this.fcService.setStatefulConfig(); }
+    if (this.fcFunction) { await this.fcFunction.setStatefulConfig(); }
+    if (!_.isEmpty(this.fcTriggers)) {
+      for (const fcTrigger of this.fcTriggers) {
+        await fcTrigger.setStatefulConfig();
+      }
+    }
+  }
+
+  private async checkIfResourceExistOnline(resourceType: string, resourceName?: string): Promise<boolean> {
+    if (resourceType === 'service' && _.isEmpty(this.fcService?.remoteConfig)) {
+      this.logger.error(`Service ${this.fcService?.name} dose not exist online.`);
+      return false;
+    }
+    if (resourceType === 'function' && _.isEmpty(this.fcFunction?.remoteConfig)) {
+      this.logger.error(`Function ${this.fcFunction?.name} dose not exist online.`);
+      return false;
+    }
+    if (resourceType === 'trigger' && resourceName) {
+      for (const fcTrigger of this.fcTriggers) {
+        if (fcTrigger?.name === resourceName && _.isEmpty(fcTrigger?.remoteConfig)) {
+          this.logger.error(`Trigger ${resourceName} dose not exist online.`);
+          return false;
+        }
+      }
+    } else if (resourceType === 'trigger' && !resourceName) {
+      let triggersExistOnline = false;
+      for (const fcTrigger of this.fcTriggers) {
+        if (_.isEmpty(fcTrigger?.remoteConfig)) {
+          this.logger.error(`Trigger ${resourceName} dose not exist online.`);
+        } else {
+          triggersExistOnline = true;
+        }
+      }
+      return triggersExistOnline;
+    }
+    return true;
+  }
+
+  // 解析入参
+  private async handlerInputs(inputs: IInputs): Promise<{[key: string]: any}> {
+    await StdoutFormatter.initStdout();
+    const project = inputs?.project;
+    this.access = project?.access;
+    this.credentials = await core.getCredential(this.access);
+    await this.report('fc-deploy', inputs?.command, this.credentials.AccountID, inputs?.project?.access);
+
+    const properties: IProperties = inputs?.props;
+
+    const appName: string = inputs?.appName;
+    // 去除 args 的行首以及行尾的空格
+    this.args = inputs?.args.replace(/(^\s*)|(\s*$)/g, '');
+    this.curPath = inputs?.path?.configPath;
+    const projectName: string = project?.projectName;
+    this.region = properties?.region;
+    const parsedArgs: {[key: string]: any} = core.commandParse({ args: this.args }, {
+      boolean: ['help'],
+      alias: { help: 'h' } });
+    const argsData: any = parsedArgs?.data || {};
+    if (argsData?.help) {
+      return {
+        isHelp: true,
+      };
+    }
+
+    this.logger.info(StdoutFormatter.stdoutFormatter.using('region', this.region));
+    this.logger.info(StdoutFormatter.stdoutFormatter.using('access alias', this.access));
+    this.logger.info(StdoutFormatter.stdoutFormatter.using('accessKeyID', mark(String(this.credentials.AccountID))));
+    this.logger.info(StdoutFormatter.stdoutFormatter.using('accessKeySecret', mark(String(this.credentials.AccessKeyID))));
+
+    this.serverlessProfile = {
+      project: {
+        access: this.access,
+        projectName,
+      },
+      appName,
+    };
+
+    const serviceConf: ServiceConfig = properties?.service;
+    const functionConf: FunctionConfig = properties?.function;
+    const triggerConfs: TriggerConfig[] = properties?.triggers;
+    const customDomainConfs: CustomDomainConfig[] = properties?.customDomains;
+
+    this.fcTriggers = [];
+    this.fcCustomDomains = [];
+
+    this.logger.debug(`instantiate serviceConfig with : \n${JSON.stringify(serviceConf, null, '  ')}`);
+    this.fcService = new FcService(serviceConf, functionConf, this.serverlessProfile, this.region, this.credentials, this.curPath, this.args);
+    await this.fcService.initRemote('service', this.fcService.name);
+    if (!_.isEmpty(functionConf)) {
+      this.logger.debug(`functionConfig not empty: \n${JSON.stringify(functionConf, null, '  ')}, instantiate it.`);
+      this.fcFunction = new FcFunction(functionConf, serviceConf?.name, this.serverlessProfile, this.region, this.credentials, this.curPath, this.args);
+      await this.fcFunction.initRemote('function', this.fcFunction.serviceName, this.fcFunction.name);
+    }
+
+    if (!_.isEmpty(triggerConfs)) {
+      this.logger.debug(`triggersConfig not empty: \n${JSON.stringify(triggerConfs, null, '  ')}, instantiate them.`);
+      for (const triggerConf of triggerConfs) {
+        const fcTrigger = new FcTrigger(triggerConf, serviceConf?.name, functionConf?.name, this.serverlessProfile, this.region, this.credentials, this.curPath, this.args);
+        await fcTrigger.initRemote('trigger', fcTrigger.serviceName, fcTrigger.functionName, fcTrigger.name);
+        this.fcTriggers.push(fcTrigger);
+      }
+    }
+
+    if (!_.isEmpty(customDomainConfs)) {
+      this.logger.debug(`customDomains not empty: \n${JSON.stringify(customDomainConfs, null, '  ')}, instantiate them.`);
+      for (const customDomainConf of customDomainConfs) {
+        const fcCustomDomain = new FcCustomDomain(customDomainConf, serviceConf?.name, functionConf?.name, triggerConfs, this.serverlessProfile, this.region, this.credentials, this.curPath, this.args);
+        this.fcCustomDomains.push(fcCustomDomain);
+      }
+    }
+    return {
+      isHelp: false,
+    };
   }
 }
