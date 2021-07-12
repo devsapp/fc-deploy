@@ -275,7 +275,6 @@ export class FcService extends FcDeploy<ServiceConfig> {
     if (!_.isNil(this.localConfig.internetAccess)) {
       Object.assign(resolvedServiceConf, { internetAccess: this.localConfig.internetAccess });
     }
-
     const role = await this.generateServiceRole();
     if (!_.isEmpty(role)) { Object.assign(resolvedServiceConf, { role }); }
     if (!_.isEmpty(this.localConfig.logConfig)) {
@@ -304,8 +303,13 @@ export class FcService extends FcDeploy<ServiceConfig> {
     }
     // await this.setResolvedConfig(this.name, resolvedServiceConf, this.hasAutoConfig);
     // update stateful config
-    this.statefulConfig = _.cloneDeep(resolvedServiceConf);
-    this.upgradeStatefulConfig();
+    // const {remoteConfig} = await this.GetRemoteInfo('service', this.name, undefined, undefined)
+    // // this.statefulConfig = _.cloneDeep(resolvedServiceConf);
+    // this.statefulConfig = remoteConfig
+    // if(this.statefulConfig && this.statefulConfig.lastModifiedTime){
+    //   delete this.statefulConfig.lastModifiedTime
+    // }
+    // this.upgradeStatefulConfig();
     return resolvedServiceConf;
   }
 }

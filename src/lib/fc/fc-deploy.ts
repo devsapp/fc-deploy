@@ -9,7 +9,7 @@ import StdoutFormatter from '../component/stdout-formatter';
 export default abstract class FcDeploy<T> extends IInputsBase {
   localConfig: T;
   remoteConfig: T;
-  statefulConfig: T; // 上一次部署的配置
+  statefulConfig: any; // 上一次部署的配置
   existOnline: boolean;
   useRemote: boolean;
 
@@ -61,7 +61,7 @@ export default abstract class FcDeploy<T> extends IInputsBase {
     }
   }
 
-  async initRemote(type: string, serviceName: string, functionName?: string, triggerName?: string): Promise<void> {
+  async GetRemoteInfo(type: string, serviceName: string, functionName?: string, triggerName?: string): Promise<{ remoteConfig: T; resourceName: string }> {
     let resourceName: string;
     if (type === 'service') {
       resourceName = serviceName;
@@ -89,7 +89,11 @@ export default abstract class FcDeploy<T> extends IInputsBase {
         this.logger.warn(StdoutFormatter.stdoutFormatter.warn(`remote ${type}`, `error is: ${e.message}`, 'Fc will use local config.'));
       }
     }
+    return {remoteConfig, resourceName}
+  }
 
+  async initRemote(type: string, serviceName: string, functionName?: string, triggerName?: string): Promise<void> {
+    let {remoteConfig, resourceName} = await this.GetRemoteInfo(type, serviceName, functionName, triggerName)
     if (!_.isEmpty(remoteConfig)) {
       this.logger.info(`${capitalizeFirstLetter(type)}: ${resourceName} already exists online.`);
       this.logger.debug(`online config of ${type}: ${resourceName} is ${JSON.stringify(remoteConfig, null, '  ')}`);
@@ -129,6 +133,7 @@ export default abstract class FcDeploy<T> extends IInputsBase {
 
     delete clonedRemoteConfig.import;
     delete clonedRemoteConfig.protect;
+    delete clonedRemoteConfig.lastModifiedTime;
     if (_.isEmpty(this.statefulConfig)) {
       // 无状态
       if (!this.existOnline) {
@@ -137,7 +142,7 @@ export default abstract class FcDeploy<T> extends IInputsBase {
       }
       const msg = `${type}: ${name} exists on line, overwrite it with local config?`;
 
-      this.useRemote = !await promptForConfirmOrDetails(msg, clonedRemoteConfig);
+      this.useRemote = !await promptForConfirmOrDetails(msg, clonedRemoteConfig, this.statefulConfig);
     } else {
       // 有状态
       if (_.isEqual(clonedRemoteConfig, this.statefulConfig)) {
@@ -146,7 +151,7 @@ export default abstract class FcDeploy<T> extends IInputsBase {
       }
       const msg = `Online ${type}: ${name} is inconsistent with the config you deployed last time, overwrite it with local config?`;
 
-      this.useRemote = !await promptForConfirmOrDetails(msg, clonedRemoteConfig);
+      this.useRemote = !await promptForConfirmOrDetails(msg, clonedRemoteConfig, this.statefulConfig);
     }
   }
 
@@ -162,11 +167,11 @@ export default abstract class FcDeploy<T> extends IInputsBase {
     // @ts-ignore
     if (_.has(this.statefulConfig, 'ossKey')) { delete this.statefulConfig.ossKey; }
     // @ts-ignore
-    if (_.has(this.statefulConfig, 'qualifier') && _.isNil(this.statefulConfig.qualifier)) { delete this.statefulConfig.qualifier; }
-    if (_.has(this.statefulConfig, 'initializationTimeout') && !_.has(this.statefulConfig, 'initializer')) {
-      // @ts-ignore
-      delete this.statefulConfig.initializationTimeout;
-    }
+    // if (_.has(this.statefulConfig, 'qualifier') && _.isNil(this.statefulConfig.qualifier)) { delete this.statefulConfig.qualifier; }
+    // if (_.has(this.statefulConfig, 'initializationTimeout') && !_.has(this.statefulConfig, 'initializer')) {
+    //   // @ts-ignore
+    //   delete this.statefulConfig.initializationTimeout;
+    // }
   }
 
   abstract genStateID(): string;

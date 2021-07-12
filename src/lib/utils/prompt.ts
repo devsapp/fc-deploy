@@ -1,6 +1,7 @@
 import inquirer from 'inquirer';
-import * as yaml from 'js-yaml';
 import { Logger } from '@serverless-devs/core';
+import yaml from 'js-yaml'
+import diff from 'variable-diff';
 
 function isInteractiveEnvironment(): boolean {
   return process.stdin.isTTY;
@@ -22,13 +23,35 @@ export async function promptForConfirmContinue(message: string): Promise<boolean
   return false;
 }
 
-export async function promptForConfirmOrDetails(message: string, details: any): Promise<boolean> {
+
+export async function promptForConfirmOrDetails(message: string, details: any, source?:any): Promise<boolean> {
   if (!isInteractiveEnvironment()) {
     return true;
   }
 
+
+  let result = details
+  try{
+    result = yaml.dump(result)
+  }catch (e){console.log(e)}
+
+  let outputSentence = '\nDetail: '
+  if(JSON.stringify(source) == "{}"){
+    outputSentence = "Online status: "
+  }else{
+    if(source){
+      result = diff(source, details).text
+      try{
+        result = result.substring(2,result.length-1)
+      }catch (e){}
+      outputSentence = '\nLocal Last Deploy status => Online status'
+    }
+  }
+
   Logger.log(`
-  ${yaml.dump({ detail: details })}`);
+${outputSentence}
+
+${result}`);
 
   const answers: any = await inquirer.prompt([{
     type: 'list',
