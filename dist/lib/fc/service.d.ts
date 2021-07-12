@@ -7,6 +7,7 @@ import { ServerlessProfile, ICredentials } from '../profile';
 import FcDeploy from './fc-deploy';
 export interface ServiceConfig {
     name: string;
+    serviceName?: string;
     description?: string;
     internetAccess?: boolean;
     logConfig?: LogConfig | 'auto' | 'Auto';

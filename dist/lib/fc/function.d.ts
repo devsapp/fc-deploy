@@ -1,6 +1,8 @@
 import { ServerlessProfile, ICredentials } from '../profile';
 import FcDeploy from './fc-deploy';
 export interface FunctionConfig {
+    functionName?: string;
+    serviceName?: string;
     name: string;
     description?: string;
     codeUri?: string;
