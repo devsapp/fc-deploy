@@ -6,6 +6,9 @@ import FcDeploy from './fc-deploy';
 import StdoutFormatter from '../component/stdout-formatter';
 
 export interface TriggerConfig {
+  functionName?: string;
+  serviceName?: string;
+  triggerName?: string;
   lastModifiedTime: any;
   name: string;
   type: 'oss' | 'log' | 'timer' | 'http' | 'mnsTopic' | 'cdnEvents' | 'tablestore';

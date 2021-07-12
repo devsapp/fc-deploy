@@ -14,6 +14,7 @@ import * as yaml from 'js-yaml';
 
 export interface ServiceConfig {
   name: string;
+  serviceName?: string;
   description?: string;
   internetAccess?: boolean;
   logConfig?: LogConfig | 'auto' | 'Auto';

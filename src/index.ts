@@ -50,7 +50,7 @@ export default class FcDeployComponent {
     await this.fcService.initLocal();
     await this.fcService.setUseRemote(this.fcService.name, 'service', useLocal);
     const resolvedServiceConf: ServiceConfig = await this.fcService.makeService(assumeYes);
-
+    resolvedServiceConf.name = resolvedServiceConf.name || resolvedServiceConf.serviceName
     this.logger.debug(`Resolved serviceConf is:\n${JSON.stringify(resolvedServiceConf, null, '  ')}`);
     // function
     let resolvedFunctionConf: FunctionConfig;
@@ -62,6 +62,8 @@ export default class FcDeployComponent {
 
       const pushRegistry = parsedArgs.data ? parsedArgs.data['push-registry'] : undefined;
       resolvedFunctionConf = await this.fcFunction.makeFunction(baseDir, pushRegistry);
+      resolvedFunctionConf.name = resolvedFunctionConf.name || resolvedFunctionConf.functionName
+      resolvedFunctionConf.serviceName = resolvedFunctionConf.serviceName || resolvedServiceConf.name
       this.logger.debug(`Resolved functionConf is:\n${JSON.stringify(resolvedFunctionConf, null, '  ')}`);
     }
     // triggers
@@ -73,6 +75,9 @@ export default class FcDeployComponent {
         await this.fcTriggers[i].initLocal();
         await this.fcTriggers[i].setUseRemote(this.fcTriggers[i].name, 'trigger', useLocal);
         const resolvedTriggerConf: TriggerConfig = await this.fcTriggers[i].makeTrigger();
+        resolvedTriggerConf.name = resolvedTriggerConf.name || resolvedTriggerConf.triggerName
+        resolvedTriggerConf.serviceName = resolvedTriggerConf.serviceName || resolvedServiceConf.name
+        resolvedTriggerConf.functionName = resolvedTriggerConf.functionName || resolvedFunctionConf.name
         hasAutoTriggerRole = hasAutoTriggerRole || this.fcTriggers[i].isRoleAuto;
         resolvedTriggerConfs.push(resolvedTriggerConf);
         this.logger.debug(`Resolved trigger: \n${JSON.stringify(resolvedTriggerConf, null, '  ')}`);
