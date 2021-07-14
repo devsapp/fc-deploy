@@ -10,21 +10,24 @@ import { readLines, getFileHash } from './utils/file';
 
 const isWindows: boolean = process.platform === 'win32';
 
-export async function pack(file: string, codeignore: any, zipPath: any) {
+export async function pack(file: string, codeignore: any, zipPath: any): Promise<any> {
   // const { zipPath } = await generateRandomZipPath();
 
-  // const { count, compressedSize } = await packTo(file, codeignore, zipPath);
-  await packTo(file, codeignore, zipPath);
+  const { compressedSize } = await packTo(file, codeignore, zipPath);
 
   // get md5 of zip file and rename it with md5
   const zipFileHash = await getFileHash(zipPath);
   const zipPathWithMd5 = path.join(path.dirname(zipPath), `${zipFileHash}-${path.basename(zipPath)}`);
   await fse.rename(zipPath, zipPathWithMd5);
 
-  return zipPathWithMd5;
+  return {
+    filePath: zipPathWithMd5,
+    fileSizeInBytes: compressedSize,
+    fileHash: zipFileHash,
+  };
 }
 
-async function packTo(file: string, codeignore: any, targetPath: string, prefix = '', zlibOptions = {}) {
+async function packTo(file: string, codeignore: any, targetPath: string, prefix = '', zlibOptions = {}): Promise<any> {
   if (!(await fse.pathExists(file))) {
     throw new Error(`Zip file ${file} is not exist.`);
   }

@@ -14,6 +14,8 @@ import { addEnv } from '../env';
 import { detailedDiff } from 'deep-object-diff';
 import { promptForConfirmOrDetails } from '../utils/prompt';
 import StdoutFormatter from '../component/stdout-formatter';
+import { getFileHash, getFileSize } from '../utils/file';
+import { AlicloudOss } from '../resource/oss';
 
 export interface FunctionConfig {
   functionName?: string;
@@ -81,8 +83,11 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
   readonly serviceName: string;
   readonly name: string;
   originalCodeUri: string; // build 场景下赋值
+
   static readonly DEFAULT_BUILD_ARTIFACTS_PATH_SUFFIX: string = path.join('.s', 'build', 'artifacts');
   static readonly DEFAULT_SYNC_CODE_PATH: string = path.join(os.homedir(), '.s', 'cache', 'fc-deploy', 'remote-code');
+  static readonly MAX_CODE_SIZE_WITH_OSS: number = !isNaN(parseInt(process.env.FC_CODE_SIZE_WITH_OSS, 10)) ? parseInt(process.env.FC_CODE_SIZE_WITH_OSS, 10) : 104857600; // 100M
+  static readonly MAX_CODE_SIZE_WITH_CODEURI: number = !isNaN(parseInt(process.env.FC_CODE_SIZE_WITH_CODEURI, 10)) ? parseInt(process.env.FC_CODE_SIZE_WITH_CODEURI, 10) : 52428800; // 50M
   constructor(functionConf: FunctionConfig, serviceName: string, serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string, args?: string) {
     super(functionConf, serverlessProfile, region, credentials, curPath, args);
     this.serviceName = serviceName;
@@ -156,7 +161,7 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
     if (!_.isNil(this.localConfig?.codeUri) && !_.isNil(this.localConfig?.ossKey)) {
       throw new Error('\'codeUri\' and \'ossKey\' can not both exist in function config.');
     }
-    if (_.isEmpty(this.localConfig) && _.isNil(this.localConfig.codeUri) && _.isNil(this.localConfig.ossKey)) {
+    if (_.isNil(this.localConfig?.codeUri) && _.isNil(this.localConfig?.ossKey)) {
       throw new Error('\'codeUri\' and \'ossKey\' can not be empty in function config at the same time.');
     }
   }
@@ -233,14 +238,19 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
     return await isIgnored(baseDir, runtime, this.originalCodeUri);
   }
 
-  async zipCode(baseDir): Promise<string> {
+  async zipCode(baseDir: string): Promise<any> {
     let codeAbsPath;
     const codeUri = this.localConfig?.codeUri || FUNCTION_CONF_DEFAULT.codeUri;
     if (codeUri) {
       codeAbsPath = path.resolve(baseDir, codeUri);
 
       if (codeUri.endsWith('.zip') || codeUri.endsWith('.jar') || codeUri.endsWith('.war')) {
-        return codeAbsPath;
+        const zipFileSizeInBytes: number = await getFileSize(codeUri);
+        return {
+          filePath: codeAbsPath,
+          fileSizeInBytes: zipFileSizeInBytes,
+          fileHash: await getFileHash(codeUri),
+        };
       }
     } else {
       codeAbsPath = path.resolve(baseDir, './');
@@ -277,7 +287,7 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
       }
     }
   }
-  async packRemoteCode(): Promise<string> {
+  async packRemoteCode(): Promise<any> {
     const syncedCodePath: string = await this.syncRemoteCode();
     await fse.ensureDir(FC_CODE_CACHE_DIR);
     const zipPath = path.join(FC_CODE_CACHE_DIR, `${this.credentials.AccountID}-${this.region}-${this.serviceName}-${this.name}-remote.zip`);
@@ -299,19 +309,49 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
     if (!isCustomContainerRuntime(this.localConfig?.runtime)) {
       // zip
       this.logger.debug(`waiting for packaging function: ${this.name} code...`);
-      let codeZipPath: string;
+
+      let zippedCode: any;
       if (this.useRemote) {
-        codeZipPath = await this.packRemoteCode();
+        // TODO: remote code not upload when use remote
+        zippedCode = await this.packRemoteCode();
       } else if (this.localConfig?.codeUri) {
-        codeZipPath = await this.zipCode(baseDir);
+        zippedCode = await this.zipCode(baseDir);
       }
-      this.logger.debug(`zipped code path: ${codeZipPath}`);
-      if (this.localConfig?.ossBucket) {
-        // upload to oss, return codeOssObject
-        return {};
+      const zipCodeFilePath: string = zippedCode?.filePath;
+      const zipCodeFileSize: number = zippedCode?.fileSizeInBytes;
+      const zipCodeFileHash: string = zippedCode?.fileHash;
+      this.logger.debug(`zipped code path: ${zipCodeFilePath}, zipped code size: ${zipCodeFileSize}`);
+      if (zipCodeFileSize > FcFunction.MAX_CODE_SIZE_WITH_OSS) {
+        // >100M
+        throw new Error(`Size of zipped code: ${zipCodeFilePath} is greater than code size: 100M.You can use:\n1. layers: https://help.aliyun.com/document_detail/193057.html\n2. custom container: https://help.aliyun.com/document_detail/179368.html`);
       }
-      // return zip name
-      return { codeZipPath };
+      if (zipCodeFileSize <= FcFunction.MAX_CODE_SIZE_WITH_CODEURI) {
+        // <= 50M
+        return { codeZipPath: zipCodeFilePath };
+      }
+      // 50M < zipCodeFileSize <= 100M
+      this.logger.info(`Size of zipped code: ${zipCodeFilePath} is between (50M, 100M], fc will upload code to oss.`);
+      if (!this.localConfig?.ossBucket) {
+        throw new Error('Please provide ossBucket attribute under function property when code size is between (50M, 100M].');
+      }
+      const alicloudOss: AlicloudOss = new AlicloudOss(this.localConfig?.ossBucket, this.credentials, this.region);
+      if (!await alicloudOss.isBucketExists()) {
+        throw new Error('Please provide existed ossBucket under your account when code size is between (50M, 100M].');
+      }
+      // upload code to oss
+      const defaultObjectName = `fcComponentGeneratedDir/${this.serviceName}-${this.name}-${zipCodeFileHash.substring(0, 5)}`;
+      const uploadVm = core.spinner(`Uploading zipped code: ${zipCodeFilePath} to oss://${this.localConfig?.ossBucket}/${defaultObjectName}`);
+      try {
+        await alicloudOss.putFileToOss(zipCodeFilePath, defaultObjectName);
+        uploadVm.succeed(`Upload zipped code: ${zipCodeFilePath} to oss://${this.localConfig?.ossBucket}/${defaultObjectName} success.`);
+        return {
+          codeZipPath: zipCodeFilePath,
+          codeOssObject: defaultObjectName,
+        };
+      } catch (e) {
+        uploadVm.fail(`Upload zipped code: ${zipCodeFilePath} to oss://${this.localConfig?.ossBucket}/${defaultObjectName} failed.`);
+        throw e;
+      }
     }
     return {};
   }
@@ -324,13 +364,14 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
     const resolvedFunctionConf: any = this.makeFunctionConfig();
     const { codeZipPath, codeOssObject } = await this.makeFunctionCode(baseDir, pushRegistry);
 
-    if (!_.isNil(codeZipPath)) {
-      Object.assign(resolvedFunctionConf, {
-        codeUri: codeZipPath,
-      });
-    } else if (!_.isNil(codeOssObject)) {
+    if (!_.isNil(codeOssObject)) {
       Object.assign(resolvedFunctionConf, {
         ossKey: codeOssObject,
+        ossBucket: this.localConfig?.ossBucket,
+      });
+    } else if (!_.isNil(codeZipPath)) {
+      Object.assign(resolvedFunctionConf, {
+        codeUri: codeZipPath,
       });
     }
     this.statefulConfig = _.cloneDeep(resolvedFunctionConf);
@@ -344,14 +385,6 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
         }
       });
     }
-
-    // const {remoteConfig} = await this.GetRemoteInfo('function', this.serviceName, this.name, undefined)
-    // // this.statefulConfig = _.cloneDeep(resolvedServiceConf);
-    // this.statefulConfig = remoteConfig
-    // if(this.statefulConfig && this.statefulConfig.lastModifiedTime){
-    //   delete this.statefulConfig.lastModifiedTime
-    // }
-    // this.upgradeStatefulConfig();
 
     return resolvedFunctionConf;
   }
