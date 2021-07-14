@@ -40,3 +40,8 @@ async function pathJudge(inputPath, type) {
     throw error;
   }
 }
+
+export async function getFileSize(filePath): Promise<number> {
+  const stat = await fse.lstat(filePath);
+  return stat.size;
+}
