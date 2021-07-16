@@ -1,7 +1,7 @@
 {
   "name": "fc-delpoy",
   "main": "./dist/index.js",
-  "version": "0.0.36",
+  "version": "0.0.37",
   "dependencies": {
     "@alicloud/fc2": "^2.2.2",
     "@alicloud/pop-core": "^1.7.10",
@@ -45,7 +45,7 @@
   "scripts": {
     "dev": "npx tsc -w -p tsconfig.json",
     "prebuild": "rimraf dist",
-    "build": "npm run fix && npm run lint && npx tsc -p tsconfig.json",
+    "build": "rm -r node_modules && npm i && npm run fix && npm run lint && npx tsc -p tsconfig.json",
     "build:component": "npx webpack --mode=production",
     "publish": "npm run build:component && s platform publish",
     "test": "jest",
