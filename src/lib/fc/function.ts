@@ -356,24 +356,27 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
     return {};
   }
 
-  async makeFunction(baseDir: string, pushRegistry?: string): Promise<FunctionConfig> {
+  async makeFunction(baseDir: string, type: string, pushRegistry?: string): Promise<FunctionConfig> {
     if (_.isEmpty(this.localConfig) && _.isEmpty(this.remoteConfig)) {
       this.statefulConfig = null;
       return null;
     }
     const resolvedFunctionConf: any = this.makeFunctionConfig();
-    const { codeZipPath, codeOssObject } = await this.makeFunctionCode(baseDir, pushRegistry);
+    if (type !== 'config') {
+      const { codeZipPath, codeOssObject } = await this.makeFunctionCode(baseDir, pushRegistry);
 
-    if (!_.isNil(codeOssObject)) {
-      Object.assign(resolvedFunctionConf, {
-        ossKey: codeOssObject,
-        ossBucket: this.localConfig?.ossBucket,
-      });
-    } else if (!_.isNil(codeZipPath)) {
-      Object.assign(resolvedFunctionConf, {
-        codeUri: codeZipPath,
-      });
+      if (!_.isNil(codeOssObject)) {
+        Object.assign(resolvedFunctionConf, {
+          ossKey: codeOssObject,
+          ossBucket: this.localConfig?.ossBucket,
+        });
+      } else if (!_.isNil(codeZipPath)) {
+        Object.assign(resolvedFunctionConf, {
+          codeUri: codeZipPath,
+        });
+      }
     }
+
     this.statefulConfig = _.cloneDeep(resolvedFunctionConf);
     this.upgradeStatefulConfig();
     // 环境变量中的 true 需要转换为字符串

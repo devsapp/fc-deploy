@@ -13,6 +13,7 @@ export const FUNCTION_CONF_DEFAULT = {
   codeUri: './',
 };
 
+export const DEPLOY_SUPPORT_COMMAND = ['all', 'domain', 'service', 'function', 'trigger'];
 export const SUPPORTED_REMOVE_ARGS = ['service', 'function', 'trigger', 'domain'];
 export const FC_BASE_CACHE_DIR = path.join(os.homedir(), '.s/cache/fc-base');
 export const FC_CODE_CACHE_DIR = path.join(FC_BASE_CACHE_DIR, 'code');
