@@ -9,6 +9,7 @@ export declare const FUNCTION_CONF_DEFAULT: {
     instanceType: string;
     codeUri: string;
 };
+export declare const DEPLOY_SUPPORT_COMMAND: string[];
 export declare const SUPPORTED_REMOVE_ARGS: string[];
 export declare const FC_BASE_CACHE_DIR: string;
 export declare const FC_CODE_CACHE_DIR: string;

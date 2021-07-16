@@ -60,6 +60,8 @@ export declare class FcFunction extends FcDeploy<FunctionConfig> {
     originalCodeUri: string;
     static readonly DEFAULT_BUILD_ARTIFACTS_PATH_SUFFIX: string;
     static readonly DEFAULT_SYNC_CODE_PATH: string;
+    static readonly MAX_CODE_SIZE_WITH_OSS: number;
+    static readonly MAX_CODE_SIZE_WITH_CODEURI: number;
     constructor(functionConf: FunctionConfig, serviceName: string, serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string, args?: string);
     initLocal(assumeYes?: boolean): Promise<void>;
     getCodeUriWithBuildPath(): Promise<any>;
@@ -69,12 +71,12 @@ export declare class FcFunction extends FcDeploy<FunctionConfig> {
     validateConfig(): void;
     makeFunctionConfig(): FunctionConfig;
     generateCodeIngore(baseDir: string): Promise<Function | null>;
-    zipCode(baseDir: any): Promise<string>;
+    zipCode(baseDir: string): Promise<any>;
     removeZipCode(codeZipPath: string): Promise<void>;
-    packRemoteCode(): Promise<string>;
+    packRemoteCode(): Promise<any>;
     makeFunctionCode(baseDir: string, pushRegistry?: string): Promise<{
         codeZipPath?: string;
         codeOssObject?: string;
     }>;
-    makeFunction(baseDir: string, pushRegistry?: string): Promise<FunctionConfig>;
+    makeFunction(baseDir: string, type: string, pushRegistry?: string): Promise<FunctionConfig>;
 }
