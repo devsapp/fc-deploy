@@ -10,6 +10,7 @@ export default abstract class FcDeploy<T> extends IInputsBase {
   localConfig: T;
   remoteConfig: T;
   statefulConfig: any; // 上一次部署的配置
+  statefulAutoConfig: any; // 上一次部署的 auto 配置
   existOnline: boolean;
   useRemote: boolean;
 
@@ -61,6 +62,20 @@ export default abstract class FcDeploy<T> extends IInputsBase {
     }
   }
 
+  async initStatefulAutoConfig(): Promise<void> {
+    try {
+      const state: any = await this.getState();
+      this.statefulAutoConfig = state?.statefulAutoConfig || {};
+      this.logger.debug(`Stateful auto config: ${JSON.stringify(this.statefulAutoConfig, null, '  ')}`);
+    } catch (e) {
+      if (e?.message !== 'The current file does not exist') {
+        this.logger.debug(StdoutFormatter.stdoutFormatter.warn('stateful auto config', 'initialized failed.Stateful config deployed last time is set to null'));
+        this.logger.debug(`error: ${e}`);
+      }
+      this.statefulAutoConfig = null;
+    }
+  }
+
   async GetRemoteInfo(type: string, serviceName: string, functionName?: string, triggerName?: string): Promise<{ remoteConfig: T; resourceName: string }> {
     let resourceName: string;
     if (type === 'service') {
@@ -99,13 +114,13 @@ export default abstract class FcDeploy<T> extends IInputsBase {
       this.logger.debug(`online config of ${type}: ${resourceName} is ${JSON.stringify(remoteConfig, null, '  ')}`);
       this.existOnline = true;
       this.remoteConfig = remoteConfig;
-      // If initializationTimeout exists and initializer doesn't exist, delete it
-      if (_.has(this.remoteConfig, 'initializationTimeout') && !_.has(this.remoteConfig, 'initializer')) {
-        // @ts-ignore
-        delete this.remoteConfig.initializationTimeout;
-      }
-      // @ts-ignore
-      if (this.remoteConfig?.config && _.has(this.remoteConfig?.config, 'qualifier') && _.isNil(this.remoteConfig.config.qualifier)) { delete this.remoteConfig.config.qualifier; }
+      // // If initializationTimeout exists and initializer doesn't exist, delete it
+      // if (_.has(this.remoteConfig, 'initializationTimeout') && !_.has(this.remoteConfig, 'initializer')) {
+      //   // @ts-ignore
+      //   delete this.remoteConfig.initializationTimeout;
+      // }
+      // // @ts-ignore
+      // if (this.remoteConfig?.config && _.has(this.remoteConfig?.config, 'qualifier') && _.isNil(this.remoteConfig.config.qualifier)) { delete this.remoteConfig.config.qualifier; }
       Object.assign(this.remoteConfig, {
         import: true,
         protect: false,

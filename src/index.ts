@@ -69,6 +69,7 @@ export default class FcDeployComponent {
     const needDeployService = needDeployAll || ((!command && type !== 'code') || command === 'service');
     if (needDeployService) {
       await this.fcService.initStateful();
+      await this.fcService.initStatefulAutoConfig();
       await this.fcService.initLocal();
       await this.fcService.setUseRemote(this.fcService.name, 'service', useLocal);
       resolvedServiceConf = await this.fcService.makeService(assumeYes);
@@ -76,7 +77,7 @@ export default class FcDeployComponent {
     }
     this.logger.debug(`Resolved serviceConf is:\n${JSON.stringify(resolvedServiceConf, null, '  ')}`);
     // function
-    let resolvedFunctionConf: FunctionConfig = this.fcFunction.localConfig;
+    let resolvedFunctionConf: FunctionConfig = this.fcFunction?.localConfig;
     const needDeployFunction = needDeployAll || (!command || command === 'function');
     if (!_.isNil(this.fcFunction) && needDeployFunction) {
       await this.fcFunction.initStateful();
@@ -132,7 +133,7 @@ export default class FcDeployComponent {
             throw ex;
           }
           this.logger.debug(`error when createService or updateService, serviceName is ${this.fcService.name}, error is: \n${ex}`);
-          this.logger.info(StdoutFormatter.stdoutFormatter.retry('create', '', '', times));
+          this.logger.info(StdoutFormatter.stdoutFormatter.retry('fc', 'create', '', times));
           retry(ex);
         }
       });
@@ -140,7 +141,6 @@ export default class FcDeployComponent {
       // set stateful config
       if (this.fcService) {
         const { remoteConfig } = await this.fcService.GetRemoteInfo('service', this.fcService.name, undefined, undefined);
-        // this.statefulConfig = _.cloneDeep(resolvedServiceConf);
         this.fcService.statefulConfig = remoteConfig;
         if (this.fcService.statefulConfig && this.fcService.statefulConfig.lastModifiedTime) {
           delete this.fcService.statefulConfig.lastModifiedTime;
@@ -148,7 +148,7 @@ export default class FcDeployComponent {
         this.fcService.upgradeStatefulConfig();
       }
       if (this.fcFunction) {
-        const { remoteConfig } = await this.fcService.GetRemoteInfo('function', this.fcFunction.serviceName, this.fcFunction.name, undefined);
+        const { remoteConfig } = await this.fcFunction.GetRemoteInfo('function', this.fcFunction.serviceName, this.fcFunction.name, undefined);
         // this.statefulConfig = _.cloneDeep(resolvedServiceConf);
         this.fcFunction.statefulConfig = remoteConfig;
         if (this.fcFunction.statefulConfig && this.fcFunction.statefulConfig.lastModifiedTime) {
@@ -159,7 +159,7 @@ export default class FcDeployComponent {
       // triggers
       if (!_.isEmpty(this.fcTriggers)) {
         for (let i = 0; i < this.fcTriggers.length; i++) {
-          const { remoteConfig } = await this.fcService.GetRemoteInfo('trigger', this.fcTriggers[i].serviceName, this.fcTriggers[i].functionName, this.fcTriggers[i].name);
+          const { remoteConfig } = await this.fcTriggers[i].GetRemoteInfo('trigger', this.fcTriggers[i].serviceName, this.fcTriggers[i].functionName, this.fcTriggers[i].name);
           // this.statefulConfig = _.cloneDeep(resolvedServiceConf);
           this.fcTriggers[i].statefulConfig = remoteConfig;
           if (this.fcTriggers[i].statefulConfig && this.fcTriggers[i].statefulConfig.lastModifiedTime) {
@@ -374,7 +374,10 @@ export default class FcDeployComponent {
   }
 
   private async setStatefulConfig(): Promise<void> {
-    if (this.fcService) { await this.fcService.setStatefulConfig(); }
+    if (this.fcService) {
+      await this.fcService.setStatefulConfig();
+      await this.fcService.setStatefulAutoConfig();
+    }
     if (this.fcFunction) { await this.fcFunction.setStatefulConfig(); }
     if (!_.isEmpty(this.fcTriggers)) {
       for (const fcTrigger of this.fcTriggers) {
