@@ -335,7 +335,7 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
         throw new Error('Please provide ossBucket attribute under function property when code size is between (50M, 100M].');
       }
       const alicloudOss: AlicloudOss = new AlicloudOss(this.localConfig?.ossBucket, this.credentials, this.region);
-      if (!await alicloudOss.isBucketExists()) {
+      if (!await alicloudOss.isBucketExists() && !await alicloudOss.tryCreatingBucket()) {
         throw new Error('Please provide existed ossBucket under your account when code size is between (50M, 100M].');
       }
       // upload code to oss
