@@ -28,6 +28,16 @@ const requestOption = {
 };
 
 export class AlicloudNas extends AlicloudClient {
+  static transformMountpointFromRemoteToLocal({ serverAddr, mountDir }): MountPoint {
+    const subscript: number = serverAddr.indexOf(':/');
+    const itemConfig: MountPoint = {
+      serverAddr: serverAddr.substr(0, subscript),
+      nasDir: serverAddr.substr(subscript + 1),
+      fcDir: mountDir,
+    };
+    return itemConfig;
+  }
+
   async getNasPopClient(): Promise<any> {
     return await this.getPopClient(`http://nas.${this.region}.aliyuncs.com`, '2017-06-26');
   }
