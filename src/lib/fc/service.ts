@@ -194,7 +194,7 @@ export class FcService extends FcDeploy<ServiceConfig> {
         nasConfig: this.statefulConfig.nasConfig,
       });
     }
-    if (!this.useRemote && this.statefulConfig?.vpcConfig && definition.isAutoConfig(this.localConfig?.vpcConfig)) {
+    if (!this.useRemote && this.statefulConfig?.vpcConfig && (definition.isAutoConfig(this.localConfig?.vpcConfig) || definition.isAutoConfig(this.localConfig?.nasConfig))) {
       Object.assign(statefulAutoConfig, {
         vpcConfig: this.statefulConfig.vpcConfig,
       });
