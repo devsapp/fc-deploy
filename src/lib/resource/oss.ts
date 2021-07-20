@@ -55,8 +55,6 @@ export class AlicloudOss {
       logger.debug(`Try to create bucket: ${this.bucket} in region:${this.region} failed, error: ${e}`);
       return false;
     }
-
-
   }
 
   async putFileToOss(filePath: string, objectName: string): Promise<any> {
