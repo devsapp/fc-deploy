@@ -16,6 +16,10 @@ export interface NasSemiAutoConfig {
     fcDir?: string;
 }
 export declare class AlicloudNas extends AlicloudClient {
+    static transformMountpointFromRemoteToLocal({ serverAddr, mountDir }: {
+        serverAddr: any;
+        mountDir: any;
+    }): MountPoint;
     getNasPopClient(): Promise<any>;
     describeNasZones(): Promise<any>;
     createDefaultNas(nasServiceName: string, vpcConfig: VpcConfig, nasDir: string, roleArn: string, assumeYes?: boolean): Promise<NasConfig>;

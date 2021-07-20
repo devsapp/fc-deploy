@@ -3,6 +3,7 @@ export default abstract class FcDeploy<T> extends IInputsBase {
     localConfig: T;
     remoteConfig: T;
     statefulConfig: any;
+    statefulAutoConfig: any;
     existOnline: boolean;
     useRemote: boolean;
     constructor(localConfig: T, serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string, args?: string);
@@ -10,6 +11,7 @@ export default abstract class FcDeploy<T> extends IInputsBase {
     unsetState(): Promise<void>;
     getState(): Promise<any>;
     initStateful(): Promise<void>;
+    initStatefulAutoConfig(): Promise<void>;
     GetRemoteInfo(type: string, serviceName: string, functionName?: string, triggerName?: string): Promise<{
         remoteConfig: T;
         resourceName: string;
