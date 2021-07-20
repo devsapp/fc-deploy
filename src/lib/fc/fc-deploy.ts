@@ -114,13 +114,6 @@ export default abstract class FcDeploy<T> extends IInputsBase {
       this.logger.debug(`online config of ${type}: ${resourceName} is ${JSON.stringify(remoteConfig, null, '  ')}`);
       this.existOnline = true;
       this.remoteConfig = remoteConfig;
-      // // If initializationTimeout exists and initializer doesn't exist, delete it
-      // if (_.has(this.remoteConfig, 'initializationTimeout') && !_.has(this.remoteConfig, 'initializer')) {
-      //   // @ts-ignore
-      //   delete this.remoteConfig.initializationTimeout;
-      // }
-      // // @ts-ignore
-      // if (this.remoteConfig?.config && _.has(this.remoteConfig?.config, 'qualifier') && _.isNil(this.remoteConfig.config.qualifier)) { delete this.remoteConfig.config.qualifier; }
       Object.assign(this.remoteConfig, {
         import: true,
         protect: false,
@@ -149,6 +142,7 @@ export default abstract class FcDeploy<T> extends IInputsBase {
     delete clonedRemoteConfig.import;
     delete clonedRemoteConfig.protect;
     delete clonedRemoteConfig.lastModifiedTime;
+
     if (_.isEmpty(this.statefulConfig)) {
       // 无状态
       if (!this.existOnline) {
@@ -171,22 +165,12 @@ export default abstract class FcDeploy<T> extends IInputsBase {
   }
 
   upgradeStatefulConfig(): void {
-    // @ts-ignore
     if (_.has(this.statefulConfig, 'import')) { delete this.statefulConfig.import; }
-    // @ts-ignore
     if (_.has(this.statefulConfig, 'protect')) { delete this.statefulConfig.protect; }
-    // @ts-ignore
     if (_.has(this.statefulConfig, 'codeUri')) { delete this.statefulConfig.codeUri; }
-    // @ts-ignore
     if (_.has(this.statefulConfig, 'ossBucket')) { delete this.statefulConfig.ossBucket; }
-    // @ts-ignore
     if (_.has(this.statefulConfig, 'ossKey')) { delete this.statefulConfig.ossKey; }
-    // @ts-ignore
-    // if (_.has(this.statefulConfig, 'qualifier') && _.isNil(this.statefulConfig.qualifier)) { delete this.statefulConfig.qualifier; }
-    // if (_.has(this.statefulConfig, 'initializationTimeout') && !_.has(this.statefulConfig, 'initializer')) {
-    //   // @ts-ignore
-    //   delete this.statefulConfig.initializationTimeout;
-    // }
+    if (_.has(this.statefulConfig, 'lastModifiedTime')) { delete this.statefulConfig.lastModifiedTime; }
   }
 
   abstract genStateID(): string;
