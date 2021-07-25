@@ -305,6 +305,7 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
       }
       return {};
     }
+    if (this.localConfig?.ossKey && this.localConfig?.ossKey) { return {}; }
 
     if (!isCustomContainerRuntime(this.localConfig?.runtime)) {
       // zip
