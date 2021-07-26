@@ -2,7 +2,7 @@ import { FUNCTION_CONF_DEFAULT, FC_CODE_CACHE_DIR } from '../static';
 import * as _ from 'lodash';
 import { AlicloudAcr } from '../resource/acr';
 import path from 'path';
-import { isIgnored } from '../ignore';
+import { isIgnored, isIgnoredInCodeUri } from '../ignore';
 import { pack } from '../zip';
 import * as fse from 'fs-extra';
 import { ServerlessProfile, ICredentials, replaceProjectName } from '../profile';
@@ -234,8 +234,15 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
       this.logger.warn(StdoutFormatter.stdoutFormatter.warn('.fcignore', `not supported for the codeUri: ${codeUri}`));
       return null;
     }
-
-    return await isIgnored(baseDir, runtime, this.originalCodeUri);
+    const ignoreFileInCodeUri: string = path.join(path.resolve(baseDir, this.localConfig?.codeUri), '.fcignore');
+    if (fse.pathExistsSync(ignoreFileInCodeUri) && fse.lstatSync(ignoreFileInCodeUri).isFile()) {
+      return await isIgnoredInCodeUri(path.resolve(baseDir, this.localConfig?.codeUri), runtime);
+    }
+    const ignoreFileInBaseDir: string = path.join(baseDir, '.fcignore');
+    if (fse.pathExistsSync(ignoreFileInBaseDir) && fse.lstatSync(ignoreFileInBaseDir).isFile()) {
+      this.logger.warn('.fcignore file will be placed under codeUri only in the future. Please update it with the relative path and then move it to the codeUri as soon as possible.');
+    }
+    return await isIgnored(baseDir, runtime, path.resolve(baseDir, this.localConfig?.codeUri), path.resolve(baseDir, this.originalCodeUri));
   }
 
   async zipCode(baseDir: string): Promise<any> {

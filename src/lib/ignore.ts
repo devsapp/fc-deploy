@@ -37,7 +37,26 @@ async function getIgnoreContent(ignoreFilePath: string): Promise<string> {
   return fileContent;
 }
 
-export async function isIgnored(baseDir: string, runtime: string, ignoreRelativePath?: string): Promise<Function> {
+export async function isIgnoredInCodeUri(actualCodeUri: string, runtime: string): Promise<Function> {
+  const ignoreFilePath = path.join(actualCodeUri, '.fcignore');
+
+  const fileContent: string = await getIgnoreContent(ignoreFilePath);
+  const fileContentList: string[] = fileContent.split('\n');
+  const ignoreDependencies = selectIgnored(runtime);
+  // const ignoreList = await generateIgnoreFileFromNasYml(baseDir);
+
+  const ignoredPaths = parser(`${[...ignoredFile, ...ignoreDependencies, ...fileContentList].join('\n')}`);
+  Logger.debug('FC-DEPLOY', `ignoredPaths is: ${ignoredPaths}`);
+  const ig = ignore().add(ignoredPaths);
+
+  return function (f) {
+    const relativePath = path.relative(actualCodeUri, f);
+    if (relativePath === '') { return false; }
+    return ig.ignores(relativePath);
+  };
+}
+
+export async function isIgnored(baseDir: string, runtime: string, actualCodeUri: string, ignoreRelativePath?: string): Promise<Function> {
   const ignoreFilePath = path.join(baseDir, '.fcignore');
 
   const fileContent: string = await getIgnoreContent(ignoreFilePath);
@@ -58,24 +77,8 @@ export async function isIgnored(baseDir: string, runtime: string, ignoreRelative
   const ig = ignore().add(ignoredPaths);
 
   return function (f) {
-    const relativePath = path.relative(baseDir, f);
+    const relativePath = path.relative(actualCodeUri, f);
     if (relativePath === '') { return false; }
     return ig.ignores(relativePath);
   };
-}
-
-export async function updateIgnore(baseDir, patterns) {
-  const ignoreFilePath = path.join(baseDir, '.fcignore');
-
-  const fileContent = await getIgnoreContent(ignoreFilePath);
-
-  const lines = fileContent.split(/\r?\n/);
-
-  for (let i = 0; i < patterns.length; i++) {
-    if (!_.includes(lines, patterns[i])) {
-      lines.push(patterns[i]);
-    }
-  }
-
-  await fse.writeFile(ignoreFilePath, lines.join('\n'));
 }
