@@ -2,8 +2,9 @@ import Pop from '@alicloud/pop-core';
 import osLocale from 'os-locale';
 import { throwProcessedFCPermissionError, throwProcessedPopPermissionError } from '../error';
 import * as p from 'path';
-import { ServerlessProfile, ICredentials, IInputsBase } from '../profile';
+import { ServerlessProfile, ICredentials, IInputsBase, getFcEndpoint } from '../profile';
 import * as _ from 'lodash';
+import StdoutFormatter from "../component/stdout-formatter";
 
 const { ROAClient } = require('@alicloud/pop-core');
 
@@ -71,13 +72,13 @@ export class AlicloudClient extends IInputsBase {
     const accessKeySecret: string = this.credentials?.AccessKeySecret ? this.credentials?.AccessKeySecret : 'accessKeySecret';
     const securityToken: string = this.credentials?.SecurityToken;
 
-    // TODO: get user profile
-    // const enable = profile.enableCustomEndpoint === true || profile.enableCustomEndpoint === 'true';
-    // const endpoint = profile.fcEndpoint ? profile.fcEndpoint : (enable ? profile.endpoint : undefined);
+    const endpoint = await getFcEndpoint();
+    endpoint && this.logger.info(StdoutFormatter.stdoutFormatter.using('fc endpoint', endpoint));
     const fc: any = new FC(accountId, {
       accessKeyID,
       accessKeySecret,
       securityToken,
+      endpoint,
       region: this.region,
       timeout: this.timeout || defaultTimeout * 1000,
       // secure: profile.protocol !== 'http',
