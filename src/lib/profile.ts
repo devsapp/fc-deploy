@@ -44,3 +44,11 @@ export function replaceProjectName(originProfile: ServerlessProfile, projectName
   replacedProfile.project.projectName = projectName;
   return replacedProfile;
 }
+
+export async function getFcEndpoint(): Promise<string | undefined> {
+  const fcDefault = await core.loadComponent('devsapp/fc-default');
+  const fcEndpoint: string = await fcDefault.get({ args: 'fc-endpoint' });
+  if (!fcEndpoint) { return undefined; }
+  const enableFcEndpoint: any = await fcDefault.get({ args: 'enable-fc-endpoint' });
+  return (enableFcEndpoint === true || enableFcEndpoint === 'true') ? fcEndpoint : undefined;
+}
