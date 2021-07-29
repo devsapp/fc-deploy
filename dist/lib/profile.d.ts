@@ -24,3 +24,4 @@ export interface ServerlessProfile {
     appName: string;
 }
 export declare function replaceProjectName(originProfile: ServerlessProfile, projectName: string): ServerlessProfile;
+export declare function getFcEndpoint(): Promise<string | undefined>;

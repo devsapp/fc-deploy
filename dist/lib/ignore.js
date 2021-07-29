@@ -65,12 +65,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateIgnore = exports.isIgnored = void 0;
+exports.isIgnored = exports.isIgnoredInCodeUri = void 0;
 var git_ignore_parser_1 = __importDefault(require("git-ignore-parser"));
 var ignore_1 = __importDefault(require("ignore"));
 var fse = __importStar(require("fs-extra"));
 var path_1 = __importDefault(require("path"));
-var _ = __importStar(require("lodash"));
 var core_1 = require("@serverless-devs/core");
 var ignoredFile = ['.git', '.svn', '.env', '.DS_Store', 'template.packaged.yml', '.nas.yml', '.s/nas', '.s/tmp', '.s/package'];
 function selectIgnored(runtime) {
@@ -106,7 +105,34 @@ function getIgnoreContent(ignoreFilePath) {
         });
     });
 }
-function isIgnored(baseDir, runtime, ignoreRelativePath) {
+function isIgnoredInCodeUri(actualCodeUri, runtime) {
+    return __awaiter(this, void 0, void 0, function () {
+        var ignoreFilePath, fileContent, fileContentList, ignoreDependencies, ignoredPaths, ig;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    ignoreFilePath = path_1.default.join(actualCodeUri, '.fcignore');
+                    return [4 /*yield*/, getIgnoreContent(ignoreFilePath)];
+                case 1:
+                    fileContent = _a.sent();
+                    fileContentList = fileContent.split('\n');
+                    ignoreDependencies = selectIgnored(runtime);
+                    ignoredPaths = git_ignore_parser_1.default("" + __spreadArrays(ignoredFile, ignoreDependencies, fileContentList).join('\n'));
+                    core_1.Logger.debug('FC-DEPLOY', "ignoredPaths is: " + ignoredPaths);
+                    ig = ignore_1.default().add(ignoredPaths);
+                    return [2 /*return*/, function (f) {
+                            var relativePath = path_1.default.relative(actualCodeUri, f);
+                            if (relativePath === '') {
+                                return false;
+                            }
+                            return ig.ignores(relativePath);
+                        }];
+            }
+        });
+    });
+}
+exports.isIgnoredInCodeUri = isIgnoredInCodeUri;
+function isIgnored(baseDir, runtime, actualCodeUri, ignoreRelativePath) {
     return __awaiter(this, void 0, void 0, function () {
         var ignoreFilePath, fileContent, fileContentList, i, ignoreDependencies, ignoredPaths, ig;
         return __generator(this, function (_a) {
@@ -130,7 +156,7 @@ function isIgnored(baseDir, runtime, ignoreRelativePath) {
                     core_1.Logger.debug('FC-DEPLOY', "ignoredPaths is: " + ignoredPaths);
                     ig = ignore_1.default().add(ignoredPaths);
                     return [2 /*return*/, function (f) {
-                            var relativePath = path_1.default.relative(baseDir, f);
+                            var relativePath = path_1.default.relative(actualCodeUri, f);
                             if (relativePath === '') {
                                 return false;
                             }
@@ -141,29 +167,4 @@ function isIgnored(baseDir, runtime, ignoreRelativePath) {
     });
 }
 exports.isIgnored = isIgnored;
-function updateIgnore(baseDir, patterns) {
-    return __awaiter(this, void 0, void 0, function () {
-        var ignoreFilePath, fileContent, lines, i;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0:
-                    ignoreFilePath = path_1.default.join(baseDir, '.fcignore');
-                    return [4 /*yield*/, getIgnoreContent(ignoreFilePath)];
-                case 1:
-                    fileContent = _a.sent();
-                    lines = fileContent.split(/\r?\n/);
-                    for (i = 0; i < patterns.length; i++) {
-                        if (!_.includes(lines, patterns[i])) {
-                            lines.push(patterns[i]);
-                        }
-                    }
-                    return [4 /*yield*/, fse.writeFile(ignoreFilePath, lines.join('\n'))];
-                case 2:
-                    _a.sent();
-                    return [2 /*return*/];
-            }
-        });
-    });
-}
-exports.updateIgnore = updateIgnore;
-//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiaWdub3JlLmpzIiwic291cmNlUm9vdCI6IiIsInNvdXJjZXMiOlsiLi4vLi4vc3JjL2xpYi9pZ25vcmUudHMiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7QUFDQSx3RUFBdUM7QUFDdkMsa0RBQTRCO0FBQzVCLDRDQUFnQztBQUNoQyw4Q0FBd0I7QUFDeEIsd0NBQTRCO0FBQzVCLDhDQUErQztBQUUvQyxJQUFNLFdBQVcsR0FBRyxDQUFDLE1BQU0sRUFBRSxNQUFNLEVBQUUsTUFBTSxFQUFFLFdBQVcsRUFBRSx1QkFBdUIsRUFBRSxVQUFVLEVBQUUsUUFBUSxFQUFFLFFBQVEsRUFBRSxZQUFZLENBQUMsQ0FBQztBQUVqSSxTQUFTLGFBQWEsQ0FBQyxPQUFPO0lBQzVCLFFBQVEsT0FBTyxFQUFFO1FBQ2YsS0FBSyxTQUFTLENBQUM7UUFDZixLQUFLLFNBQVMsQ0FBQztRQUNmLEtBQUssVUFBVSxDQUFDO1FBQ2hCLEtBQUssVUFBVTtZQUViLE9BQU8sQ0FBQyxXQUFXLENBQUMsQ0FBQztRQUN2QixLQUFLLFdBQVcsQ0FBQztRQUNqQixLQUFLLFNBQVM7WUFFWixPQUFPLENBQUMsY0FBYyxDQUFDLENBQUM7UUFDMUIsS0FBSyxRQUFRO1lBRVgsT0FBTyxDQUFDLGNBQWMsRUFBRSxXQUFXLENBQUMsQ0FBQztRQUN2QztZQUNFLE9BQU8sRUFBRSxDQUFDO0tBQ2I7QUFDSCxDQUFDO0FBRUQsU0FBZSxnQkFBZ0IsQ0FBQyxjQUFzQjs7Ozs7O29CQUNoRCxXQUFXLEdBQUcsRUFBRSxDQUFDO3lCQUVqQixHQUFHLENBQUMsVUFBVSxDQUFDLGNBQWMsQ0FBQyxFQUE5Qix3QkFBOEI7b0JBQ2xCLHFCQUFNLEdBQUcsQ0FBQyxRQUFRLENBQUMsY0FBYyxFQUFFLE1BQU0sQ0FBQyxFQUFBOztvQkFBeEQsV0FBVyxHQUFHLFNBQTBDLENBQUM7O3dCQUUzRCxz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
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiaWdub3JlLmpzIiwic291cmNlUm9vdCI6IiIsInNvdXJjZXMiOlsiLi4vLi4vc3JjL2xpYi9pZ25vcmUudHMiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7QUFDQSx3RUFBdUM7QUFDdkMsa0RBQTRCO0FBQzVCLDRDQUFnQztBQUNoQyw4Q0FBd0I7QUFDeEIsOENBQStDO0FBRS9DLElBQU0sV0FBVyxHQUFHLENBQUMsTUFBTSxFQUFFLE1BQU0sRUFBRSxNQUFNLEVBQUUsV0FBVyxFQUFFLHVCQUF1QixFQUFFLFVBQVUsRUFBRSxRQUFRLEVBQUUsUUFBUSxFQUFFLFlBQVksQ0FBQyxDQUFDO0FBRWpJLFNBQVMsYUFBYSxDQUFDLE9BQU87SUFDNUIsUUFBUSxPQUFPLEVBQUU7UUFDZixLQUFLLFNBQVMsQ0FBQztRQUNmLEtBQUssU0FBUyxDQUFDO1FBQ2YsS0FBSyxVQUFVLENBQUM7UUFDaEIsS0FBSyxVQUFVO1lBRWIsT0FBTyxDQUFDLFdBQVcsQ0FBQyxDQUFDO1FBQ3ZCLEtBQUssV0FBVyxDQUFDO1FBQ2pCLEtBQUssU0FBUztZQUVaLE9BQU8sQ0FBQyxjQUFjLENBQUMsQ0FBQztRQUMxQixLQUFLLFFBQVE7WUFFWCxPQUFPLENBQUMsY0FBYyxFQUFFLFdBQVcsQ0FBQyxDQUFDO1FBQ3ZDO1lBQ0UsT0FBTyxFQUFFLENBQUM7S0FDYjtBQUNILENBQUM7QUFFRCxTQUFlLGdCQUFnQixDQUFDLGNBQXNCOzs7Ozs7b0JBQ2hELFdBQVcsR0FBRyxFQUFFLENBQUM7eUJBRWpCLEdBQUcsQ0FBQyxVQUFVLENBQUMsY0FBYyxDQUFDLEVBQTlCLHdCQUE4QjtvQkFDbEIscUJBQU0sR0FBRyxDQUFDLFFBQVEsQ0FBQyxjQUFjLEVBQUUsTUFBTSxDQUFDLEVBQUE7O29CQUF4RCxXQUFXLEdBQUcsU0FBMEMsQ0FBQzs7d0JBRTNELHNCQUFPLFdBQVcsRUFBQzs7OztDQUNwQjtBQUVELFNBQXNCLGtCQUFrQixDQUFDLGFBQXFCLEVBQUUsT0FBZTs7Ozs7O29CQUN2RSxjQUFjLEdBQUcsY0FBSSxDQUFDLElBQUksQ0FBQyxhQUFhLEVBQUUsV0FBVyxDQUFDLENBQUM7b0JBRWpDLHFCQUFNLGdCQUFnQixDQUFDLGNBQWMsQ0FBQyxFQUFBOztvQkFBNUQsV0FBVyxHQUFXLFNBQXNDO29CQUM1RCxlQUFlLEdBQWEsV0FBVyxDQUFDLEtBQUssQ0FBQyxJQUFJLENBQUMsQ0FBQztvQkFDcEQsa0JBQWtCLEdBQUcsYUFBYSxDQUFDLE9BQU8sQ0FBQyxDQUFDO29CQUc1QyxZQUFZLEdBQUcsMkJBQU0sQ0FBQyxLQUFHLGVBQUksV0FBVyxFQUFLLGtCQUFrQixFQUFLLGVBQWUsRUFBRSxJQUFJLENBQUMsSUFBSSxDQUFHLENBQUMsQ0FBQztvQkFDekcsYUFBTSxDQUFDLEtBQUssQ0FBQyxXQUFXLEVBQUUsc0JBQW9CLFlBQWMsQ0FBQyxDQUFDO29CQUN4RCxFQUFFLEdBQUcsZ0JBQU0sRUFBRSxDQUFDLEdBQUcsQ0FBQyxZQUFZLENBQUMsQ0FBQztvQkFFdEMsc0JBQU8sVUFBVSxDQUFDOzRCQUNoQixJQUFNLFlBQVksR0FBRyxjQUFJLENBQUMsUUFBUSxDQUFDLGFBQWEsRUFBRSxDQUFDLENBQUMsQ0FBQzs0QkFDckQsSUFBSSxZQUFZLEtBQUssRUFBRSxFQUFFO2dDQUFFLE9BQU8sS0FBSyxDQUFDOzZCQUFFOzRCQUMxQyxPQUFPLEVBQUUsQ0FBQyxPQUFPLENBQUMsWUFBWSxDQUFDLENBQUM7d0JBQ2xDLENBQUMsRUFBQzs7OztDQUNIO0FBakJELGdEQWlCQztBQUVELFNBQXNCLFNBQVMsQ0FBQyxPQUFlLEVBQUUsT0FBZSxFQUFFLGFBQXFCLEVBQUUsa0JBQTJCOzs7Ozs7b0JBQzVHLGNBQWMsR0FBRyxjQUFJLENBQUMsSUFBSSxDQUFDLE9BQU8sRUFBRSxXQUFXLENBQUMsQ0FBQztvQkFFM0IscUJBQU0sZ0JBQWdCLENBQUMsY0FBYyxDQUFDLEVBQUE7O29CQUE1RCxXQUFXLEdBQVcsU0FBc0M7b0JBQzVELGVBQWUsR0FBYSxXQUFXLENBQUMsS0FBSyxDQUFDLElBQUksQ0FBQyxDQUFDO29CQUMxRCxzQ0FBc0M7b0JBQ3RDLGlHQUFpRztvQkFDakcsdURBQXVEO29CQUN2RCxJQUFJLGtCQUFrQixFQUFFO3dCQUN0QixLQUFTLENBQUMsR0FBRyxDQUFDLEVBQUUsQ0FBQyxHQUFHLGVBQWUsQ0FBQyxNQUFNLEVBQUUsQ0FBQyxFQUFFLEVBQUU7NEJBQy9DLGVBQWUsQ0FBQyxDQUFDLENBQUMsR0FBRyxjQUFJLENBQUMsUUFBUSxDQUFDLGtCQUFrQixFQUFFLGVBQWUsQ0FBQyxDQUFDLENBQUMsQ0FBQyxDQUFDO3lCQUM1RTtxQkFDRjtvQkFDSyxrQkFBa0IsR0FBRyxhQUFhLENBQUMsT0FBTyxDQUFDLENBQUM7b0JBRzVDLFlBQVksR0FBRywyQkFBTSxDQUFDLEtBQUcsZUFBSSxXQUFXLEVBQUssa0JBQWtCLEVBQUssZUFBZSxFQUFFLElBQUksQ0FBQyxJQUFJLENBQUcsQ0FBQyxDQUFDO29CQUN6RyxhQUFNLENBQUMsS0FBSyxDQUFDLFdBQVcsRUFBRSxzQkFBb0IsWUFBYyxDQUFDLENBQUM7b0JBQ3hELEVBQUUsR0FBRyxnQkFBTSxFQUFFLENBQUMsR0FBRyxDQUFDLFlBQVksQ0FBQyxDQUFDO29CQUV0QyxzQkFBTyxVQUFVLENBQUM7NEJBQ2hCLElBQU0sWUFBWSxHQUFHLGNBQUksQ0FBQyxRQUFRLENBQUMsYUFBYSxFQUFFLENBQUMsQ0FBQyxDQUFDOzRCQUNyRCxJQUFJLFlBQVksS0FBSyxFQUFFLEVBQUU7Z0NBQUUsT0FBTyxLQUFLLENBQUM7NkJBQUU7NEJBQzFDLE9BQU8sRUFBRSxDQUFDLE9BQU8sQ0FBQyxZQUFZLENBQUMsQ0FBQzt3QkFDbEMsQ0FBQyxFQUFDOzs7O0NBQ0g7QUF6QkQsOEJBeUJDIn0=
