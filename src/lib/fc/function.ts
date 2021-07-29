@@ -143,7 +143,7 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
 
   async syncRemoteCode(): Promise<string> {
     // 基于 fc-sync 获取函数代码
-    await fse.ensureDir(FcFunction.DEFAULT_SYNC_CODE_PATH, 0o777);
+    await fse.mkdirp(FcFunction.DEFAULT_SYNC_CODE_PATH);
     const profileOfFcSync = replaceProjectName(this.serverlessProfile, `${this.serverlessProfile?.project.projectName}-fc-sync-project`);
     const fcSync: FcSync = new FcSync(this.serviceName, profileOfFcSync, this.region, this.credentials, this.curPath, '--type code -f', this.name, null, FcFunction.DEFAULT_SYNC_CODE_PATH);
     const fcSyncComponentInputs: any = await fcSync.genComponentInputs('fc-sync');
@@ -266,7 +266,7 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
     const codeignore = await this.generateCodeIngore(baseDir);
 
     // await detectLibrary(codeAbsPath, runtime, baseDir, functionName, '\t');
-    await fse.ensureDir(FC_CODE_CACHE_DIR);
+    await fse.mkdirp(FC_CODE_CACHE_DIR);
     const zipPath = path.join(FC_CODE_CACHE_DIR, `${this.credentials.AccountID}-${this.region}-${this.serviceName}-${this.name}.zip`);
     return await pack(codeAbsPath, codeignore, zipPath);
   }
@@ -296,7 +296,7 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
   }
   async packRemoteCode(): Promise<any> {
     const syncedCodePath: string = await this.syncRemoteCode();
-    await fse.ensureDir(FC_CODE_CACHE_DIR);
+    await fse.mkdirp(FC_CODE_CACHE_DIR);
     const zipPath = path.join(FC_CODE_CACHE_DIR, `${this.credentials.AccountID}-${this.region}-${this.serviceName}-${this.name}-remote.zip`);
     return await pack(syncedCodePath, null, zipPath);
   }

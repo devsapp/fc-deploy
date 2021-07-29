@@ -4,7 +4,7 @@ import { throwProcessedFCPermissionError, throwProcessedPopPermissionError } fro
 import * as p from 'path';
 import { ServerlessProfile, ICredentials, IInputsBase, getFcEndpoint } from '../profile';
 import * as _ from 'lodash';
-import StdoutFormatter from "../component/stdout-formatter";
+import StdoutFormatter from '../component/stdout-formatter';
 
 const { ROAClient } = require('@alicloud/pop-core');
 
