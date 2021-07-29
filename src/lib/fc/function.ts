@@ -242,7 +242,7 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
     if (fse.pathExistsSync(ignoreFileInBaseDir) && fse.lstatSync(ignoreFileInBaseDir).isFile()) {
       this.logger.warn('.fcignore file will be placed under codeUri only in the future. Please update it with the relative path and then move it to the codeUri as soon as possible.');
     }
-    return await isIgnored(baseDir, runtime, path.resolve(baseDir, this.localConfig?.codeUri), path.resolve(baseDir, this.originalCodeUri));
+    return await isIgnored(baseDir, runtime, path.resolve(baseDir, this.localConfig?.codeUri), path.resolve(baseDir, this.originalCodeUri || this.localConfig?.codeUri));
   }
 
   async zipCode(baseDir: string): Promise<any> {
