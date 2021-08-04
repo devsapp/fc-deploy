@@ -45,7 +45,7 @@
   "scripts": {
     "dev": "npx tsc -w -p tsconfig.json",
     "prebuild": "rimraf dist",
-    "build": "rm -r node_modules && npm i && npm run fix && npm run lint && npx tsc -p tsconfig.json",
+    "build": "rm -rf node_modules && rm -rf package-lock.json && npm i && npm run fix && npm run lint && npx tsc -p tsconfig.json",
     "build:component": "npx webpack --mode=production",
     "publish": "npm run build:component && s platform publish",
     "test": "jest",
