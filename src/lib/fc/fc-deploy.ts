@@ -107,11 +107,11 @@ export default abstract class FcDeploy<T> extends IInputsBase {
     return { remoteConfig, resourceName };
   }
 
-  async initRemote(type: string, serviceName: string, functionName?: string, triggerName?: string): Promise<void> {
-    const { remoteConfig, resourceName } = await this.GetRemoteInfo(type, serviceName, functionName, triggerName);
+  async initRemote(resourceType: string, serviceName: string, functionName?: string, triggerName?: string): Promise<void> {
+    const { remoteConfig, resourceName } = await this.GetRemoteInfo(resourceType, serviceName, functionName, triggerName);
     if (!_.isEmpty(remoteConfig)) {
-      this.logger.info(`${capitalizeFirstLetter(type)}: ${resourceName} already exists online.`);
-      this.logger.debug(`online config of ${type}: ${resourceName} is ${JSON.stringify(remoteConfig, null, '  ')}`);
+      this.logger.info(`${capitalizeFirstLetter(resourceType)}: ${resourceName} already exists online.`);
+      this.logger.debug(`online config of ${resourceType}: ${resourceName} is ${JSON.stringify(remoteConfig, null, '  ')}`);
       this.existOnline = true;
       this.remoteConfig = remoteConfig;
       Object.assign(this.remoteConfig, {
@@ -131,36 +131,53 @@ export default abstract class FcDeploy<T> extends IInputsBase {
     await this.setKVInState(stateID, 'statefulConfig', this.statefulConfig);
   }
 
-  async setUseRemote(name: string, type: string, useLocalFlag?: boolean): Promise<void> {
+  async setUseRemote(name: string, resourceType: string, useLocalFlag?: boolean, type?: string): Promise<void> {
     if (useLocalFlag || _.isEmpty(this.remoteConfig)) {
       // 强制使用线下
       this.useRemote = false;
       return;
     }
-    const clonedRemoteConfig: any = _.cloneDeep(this.remoteConfig);
+    let clonedRemoteConfig: any = _.cloneDeep(this.remoteConfig);
+    let clonedStatefulConfig: any = _.cloneDeep(this.statefulConfig);
 
     delete clonedRemoteConfig.import;
     delete clonedRemoteConfig.protect;
     delete clonedRemoteConfig.lastModifiedTime;
 
-    if (_.isEmpty(this.statefulConfig)) {
+    if (resourceType === 'function' && type === 'config') {
+      delete clonedRemoteConfig.codeSize;
+      delete clonedRemoteConfig.codeChecksum;
+      delete clonedStatefulConfig.codeSize;
+      delete clonedStatefulConfig.codeChecksum;
+    } else if (resourceType === 'function' && type === 'code') {
+      clonedRemoteConfig = {
+        codeSize: clonedRemoteConfig.codeSize,
+        codeChecksum: clonedRemoteConfig.codeChecksum,
+      };
+      clonedStatefulConfig = {
+        codeSize: clonedStatefulConfig.codeSize,
+        codeChecksum: clonedStatefulConfig.codeChecksum,
+      };
+    }
+
+    if (_.isEmpty(clonedStatefulConfig)) {
       // 无状态
       if (!this.existOnline) {
         this.useRemote = false;
         return;
       }
-      const msg = `${type}: ${name} exists on line, overwrite it with local config?`;
+      const msg = `${resourceType}: ${name} exists remotely, deploy it with local config or remote config?`;
 
-      this.useRemote = !await promptForConfirmOrDetails(msg, clonedRemoteConfig, this.statefulConfig);
+      this.useRemote = !await promptForConfirmOrDetails(msg, clonedRemoteConfig, clonedStatefulConfig, ['use local', 'use remote'], 'use local');
     } else {
       // 有状态
-      if (_.isEqual(clonedRemoteConfig, this.statefulConfig)) {
+      if (_.isEqual(clonedRemoteConfig, clonedStatefulConfig)) {
         this.useRemote = false;
         return;
       }
-      const msg = `Online ${type}: ${name} is inconsistent with the config you deployed last time, overwrite it with local config?`;
+      const msg = `Remote ${resourceType}: ${name} is inconsistent with the config you deployed last time, deploy it with local config or remote config?`;
 
-      this.useRemote = !await promptForConfirmOrDetails(msg, clonedRemoteConfig, this.statefulConfig);
+      this.useRemote = !await promptForConfirmOrDetails(msg, clonedRemoteConfig, clonedStatefulConfig, ['use remote', 'use local'], 'use local');
     }
   }
 

@@ -49,7 +49,15 @@ export class FcService extends FcDeploy<ServiceConfig> {
     this.name = serviceConf?.name;
   }
 
-  async initLocal(): Promise<void> {
+  async init(useLocal?: boolean): Promise<void> {
+    await this.initRemote('service', this.name);
+    await this.initStateful();
+    await this.initStatefulAutoConfig();
+    await this.initLocal();
+    await this.setUseRemote(this.name, 'service', useLocal);
+  }
+
+  private async initLocal(): Promise<void> {
     this.validateConfig();
     await this.initLocalConfig();
     this.logger.debug(`local service config is: ${JSON.stringify(this.localConfig, null, '  ')} after init.`);
@@ -66,7 +74,7 @@ export class FcService extends FcDeploy<ServiceConfig> {
     }
   }
 
-  async initLocalConfig(): Promise<void> {
+  private async initLocalConfig(): Promise<void> {
     if (_.isEmpty(this.statefulAutoConfig)) { return; }
     const resolvedAutoConfigInState: any = this.statefulAutoConfig || {};
     // transform nasConfig
@@ -349,15 +357,6 @@ export class FcService extends FcDeploy<ServiceConfig> {
         protect: false,
       });
     }
-    // await this.setResolvedConfig(this.name, resolvedServiceConf, this.hasAutoConfig);
-    // update stateful config
-    // const {remoteConfig} = await this.GetRemoteInfo('service', this.name, undefined, undefined)
-    // // this.statefulConfig = _.cloneDeep(resolvedServiceConf);
-    // this.statefulConfig = remoteConfig
-    // if(this.statefulConfig && this.statefulConfig.lastModifiedTime){
-    //   delete this.statefulConfig.lastModifiedTime
-    // }
-    // this.upgradeStatefulConfig();
     return resolvedServiceConf;
   }
 }

@@ -2,6 +2,7 @@ import inquirer from 'inquirer';
 import { Logger } from '@serverless-devs/core';
 import yaml from 'js-yaml';
 import diff from 'variable-diff';
+import _ from 'lodash';
 
 function isInteractiveEnvironment(): boolean {
   return process.stdin.isTTY;
@@ -24,7 +25,7 @@ export async function promptForConfirmContinue(message: string): Promise<boolean
 }
 
 
-export async function promptForConfirmOrDetails(message: string, details: any, source?: any): Promise<boolean> {
+export async function promptForConfirmOrDetails(message: string, details: any, source?: any, choices?: string[], trueChoice?: string): Promise<boolean> {
   if (!isInteractiveEnvironment()) {
     return true;
   }
@@ -56,8 +57,8 @@ ${result}`);
     type: 'list',
     name: 'prompt',
     message,
-    choices: ['yes', 'no'],
+    choices: choices || ['yes', 'no'],
   }]);
 
-  return answers.prompt === 'yes';
+  return _.isNil(trueChoice) ? answers.prompt === 'yes' : answers.prompt === trueChoice;
 }
