@@ -70,57 +70,73 @@ export default class FcDeployComponent {
     }
     if (['service', 'trigger'].includes(command) && type) {
       // deploy service/trigger 不支持 --type 参数
-      this.logger.error(`Deploy ${command} dose not support --type option.`);
-      return core.help(DEPLOY_HELP_INFO);
+      this.logger.warn(`Deploy ${command} dose not support --type option.\nFc will continue to deploy ${command} without --type option`);
+      this.args = this.args.replace(`--type ${type}`, '');
+      type = null;
     }
     const { fcBaseComponentIns, componentName, BaseComponent } = await this.handlerBase();
     if (type && (componentName === 'fc-base')) {
       // pulumi 底座时, --type 不生效
-      this.logger.warn('Deployment in pulumi mode dose not support --type option. You can run [s cli fc-default set deploy-type sdk] to switch to sdk mode that supports --type option.');
+      this.logger.warn('Deployment in pulumi mode dose not support --type option. You can run [s cli fc-default set deploy-type sdk] to switch to sdk mode that supports --type option.\nFc will continue to deploy without --type option');
       this.args = this.args.replace(`--type ${type}`, '');
       type = null;
+    }
+    // 去除 args 的行首以及行尾的空格
+    this.args = inputs?.args.replace(/(^\s*)|(\s*$)/g, '');
+    let targetTriggerName: string;
+    if (command === 'trigger') {
+      targetTriggerName = argsData?.n || argsData?.name;
     }
     const needDeployAll = (command === 'all');
 
     // service
     let resolvedServiceConf: ServiceConfig = this.fcService?.localConfig;
-    const needDeployService = needDeployAll || ((!command && type !== 'code') || command === 'service');
+    let needDeployService = (needDeployAll && type !== 'code') || ((!command && type !== 'code') || command === 'service');
     if (needDeployService) {
-      await this.fcService.initRemote('service', this.fcService.name);
-      await this.fcService.initStateful();
-      await this.fcService.initStatefulAutoConfig();
-      await this.fcService.initLocal();
-      await this.fcService.setUseRemote(this.fcService.name, 'service', useLocal);
-      resolvedServiceConf = await this.fcService.makeService(assumeYes);
-      resolvedServiceConf.name = resolvedServiceConf.name || resolvedServiceConf.serviceName;
+      await this.fcService.init(useLocal);
+      if (this.fcService.useRemote) {
+        this.logger.info(`Deploy service ${this.fcService.name} using online config, skip it.`);
+        needDeployService = false;
+      } else {
+        resolvedServiceConf = await this.fcService.makeService(assumeYes);
+        resolvedServiceConf.name = resolvedServiceConf.name || resolvedServiceConf.serviceName;
+      }
     }
     this.logger.debug(`Resolved serviceConf is:\n${JSON.stringify(resolvedServiceConf, null, '  ')}`);
     // function
     let resolvedFunctionConf: FunctionConfig = this.fcFunction?.localConfig;
-    const needDeployFunction = needDeployAll || (!command || command === 'function');
+    let needDeployFunction = needDeployAll || (!command || command === 'function');
     if (!_.isNil(this.fcFunction) && needDeployFunction) {
-      await this.fcFunction.initRemote('function', this.fcFunction.serviceName, this.fcFunction.name);
-      await this.fcFunction.initStateful();
-      await this.fcFunction.initLocal(assumeYes);
-      await this.fcFunction.setUseRemote(this.fcFunction.name, 'function', useLocal);
-      const baseDir = path.dirname(this.curPath);
+      await this.fcFunction.init(type, useLocal, assumeYes);
+      if (this.fcFunction.useRemote) {
+        this.logger.info(`Deploy function ${this.fcFunction.name} using online config, skip it.`);
+        needDeployFunction = false;
+      } else {
+        const baseDir = path.dirname(this.curPath);
 
-      const pushRegistry = parsedArgs.data ? parsedArgs.data['push-registry'] : undefined;
-      resolvedFunctionConf = await this.fcFunction.makeFunction(baseDir, type, pushRegistry);
-      resolvedFunctionConf.name = resolvedFunctionConf.name || resolvedFunctionConf.functionName;
-      resolvedFunctionConf.serviceName = resolvedFunctionConf.serviceName || resolvedServiceConf.name;
-      this.logger.debug(`Resolved functionConf is:\n${JSON.stringify(resolvedFunctionConf, null, '  ')}`);
+        const pushRegistry = parsedArgs.data ? parsedArgs.data['push-registry'] : undefined;
+        resolvedFunctionConf = await this.fcFunction.makeFunction(baseDir, type, pushRegistry);
+        resolvedFunctionConf.name = resolvedFunctionConf.name || resolvedFunctionConf.functionName;
+        resolvedFunctionConf.serviceName = resolvedFunctionConf.serviceName || resolvedServiceConf.name;
+        this.logger.debug(`Resolved functionConf is:\n${JSON.stringify(resolvedFunctionConf, null, '  ')}`);
+      }
     }
     // triggers
     const resolvedTriggerConfs: TriggerConfig[] = [];
     let hasAutoTriggerRole = false;
-    const needDeployTrigger = needDeployAll || ((!command && type !== 'code') || command === 'trigger');
+    let needDeployTrigger = (needDeployAll && type !== 'code') || ((!command && type !== 'code') || command === 'trigger');
     if (!_.isEmpty(this.fcTriggers) && needDeployTrigger) {
+      let existTriggersUseLocal = false;
       for (let i = 0; i < this.fcTriggers.length; i++) {
-        await this.fcTriggers[i].initRemote('trigger', this.fcTriggers[i].serviceName, this.fcTriggers[i].functionName, this.fcTriggers[i].name);
-        await this.fcTriggers[i].initStateful();
-        await this.fcTriggers[i].initLocal();
-        await this.fcTriggers[i].setUseRemote(this.fcTriggers[i].name, 'trigger', useLocal);
+        if (!_.isNil(targetTriggerName) && targetTriggerName != this.fcTriggers[i].name) {
+          continue;
+        }
+        await this.fcTriggers[i].init(useLocal);
+        if (this.fcTriggers[i].useRemote) {
+          this.logger.info(`Deploy trigger ${this.fcTriggers[i].name} using online config, skip it.`);
+          continue;
+        }
+        existTriggersUseLocal = true;
         const resolvedTriggerConf: TriggerConfig = await this.fcTriggers[i].makeTrigger();
         resolvedTriggerConf.name = resolvedTriggerConf.name || resolvedTriggerConf.triggerName;
         resolvedTriggerConf.serviceName = resolvedTriggerConf.serviceName || resolvedServiceConf?.name;
@@ -129,6 +145,7 @@ export default class FcDeployComponent {
         resolvedTriggerConfs.push(resolvedTriggerConf);
         this.logger.debug(`Resolved trigger: \n${JSON.stringify(resolvedTriggerConf, null, '  ')}`);
       }
+      needDeployTrigger = existTriggersUseLocal;
     }
 
     // deploy service/function/triggers
@@ -173,6 +190,9 @@ export default class FcDeployComponent {
       // triggers
       if (needDeployTrigger && !_.isEmpty(this.fcTriggers)) {
         for (let i = 0; i < this.fcTriggers.length; i++) {
+          if (!_.isNil(targetTriggerName) && targetTriggerName != this.fcTriggers[i].name) {
+            continue;
+          }
           const { remoteConfig } = await this.fcTriggers[i].GetRemoteInfo('trigger', this.fcTriggers[i].serviceName, this.fcTriggers[i].functionName, this.fcTriggers[i].name);
           this.fcTriggers[i].statefulConfig = remoteConfig;
           this.fcTriggers[i].upgradeStatefulConfig();
@@ -375,8 +395,7 @@ export default class FcDeployComponent {
     const res = await fcDefault.get({ args: 'deploy-type' });
     if (res === 'pulumi') {
       return {
-        // fcBaseComponentIns: await core.loadComponent('devsapp/fc-base'),
-        fcBaseComponentIns: await core.loadComponent('/Users/zqf/Documents/git_proj/devsapp/component/fc-base-alibaba-component'),
+        fcBaseComponentIns: await core.loadComponent('devsapp/fc-base'),
         BaseComponent: FcBaseComponent,
         componentName: 'fc-base',
       };
@@ -448,7 +467,7 @@ export default class FcDeployComponent {
     this.curPath = inputs?.path?.configPath;
     const projectName: string = project?.projectName;
     this.region = properties?.region;
-    const parsedArgs: {[key: string]: any} = core.commandParse({ args: this.args }, {
+    const parsedArgs: {[key: string]: any} = core.commandParse(inputs, {
       boolean: ['help'],
       alias: { help: 'h' } });
     const argsData: any = parsedArgs?.data || {};

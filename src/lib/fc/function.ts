@@ -93,7 +93,15 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
     this.serviceName = serviceName;
     this.name = functionConf?.name;
   }
-  async initLocal(assumeYes?: boolean): Promise<void> {
+
+  async init(type: string, useLocal?: boolean, assumeYes?: boolean): Promise<void> {
+    await this.initRemote('function', this.serviceName, this.name);
+    await this.initStateful();
+    await this.initLocal(assumeYes);
+    await this.setUseRemote(this.name, 'function', useLocal, type);
+  }
+
+  private async initLocal(assumeYes?: boolean): Promise<void> {
     this.validateConfig();
     await this.initLocalConfig(assumeYes);
   }
@@ -383,18 +391,6 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
           codeUri: codeZipPath,
         });
       }
-    }
-
-    this.statefulConfig = _.cloneDeep(resolvedFunctionConf);
-    this.upgradeStatefulConfig();
-    // 环境变量中的 true 需要转换为字符串
-    if (!_.isEmpty(this.statefulConfig?.environmentVariables)) {
-      Object.keys(this.statefulConfig?.environmentVariables).forEach((key) => {
-        if (_.isBoolean(this.statefulConfig?.environmentVariables[key])) {
-          // @ts-ignore
-          this.statefulConfig?.environmentVariables[key] = _.toString(this.statefulConfig?.environmentVariables[key]);
-        }
-      });
     }
 
     return resolvedFunctionConf;

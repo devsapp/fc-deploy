@@ -138,7 +138,14 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
     return `${this.credentials.AccountID}-${this.region}-${this.serviceName}-${this.functionName}-${this.name}`;
   }
 
-  async initLocal(): Promise<void> {
+  async init(useLocal?: boolean): Promise<void> {
+    await this.initRemote('trigger', this.serviceName, this.functionName, this.name);
+    await this.initStateful();
+    await this.initLocal();
+    await this.setUseRemote(this.name, 'trigger', useLocal);
+  }
+
+  private async initLocal(): Promise<void> {
     this.validateConfig();
     await this.initLocalConfig();
     this.logger.debug(`local trigger config is: ${JSON.stringify(this.localConfig, null, '  ')} after init.`);
@@ -356,9 +363,6 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
     }
 
     if (!_.isNil(this.localConfig.role) || this.isHttpTrigger() || this.isTimerTrigger()) {
-      // this.statefulConfig = _.cloneDeep(resolvedTriggerConf);
-      // this.statefulConfig = remoteConfig
-      // this.upgradeStatefulConfig();
       return resolvedTriggerConf;
     }
     const role = await this.makeInvocationRole();
@@ -367,12 +371,6 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
     });
     this.logger.debug(`after making invocation role: ${role} for trigger ${this.name}.`);
     this.isRoleAuto = true;
-
-    // await this.setResolvedConfig(this.name, resolvedTriggerConf, this.isRoleAuto);
-    // this.statefulConfig = _.cloneDeep(resolvedTriggerConf);
-
-    // this.statefulConfig = remoteConfig
-    // this.upgradeStatefulConfig();
 
     return resolvedTriggerConf;
   }
