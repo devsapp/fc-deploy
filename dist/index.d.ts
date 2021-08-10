@@ -1,5 +1,4 @@
 import * as core from '@serverless-devs/core';
-import { FcBaseComponent } from './lib/component/fc-base';
 import { IInputs } from './interface';
 export default class FcDeployComponent {
     logger: core.ILogger;
@@ -17,11 +16,7 @@ export default class FcDeployComponent {
     help(): Promise<void>;
     remove(inputs: IInputs): Promise<any>;
     report(componentName: string, command: string, accountID?: string, access?: string): Promise<void>;
-    handlerBase(): Promise<{
-        fcBaseComponentIns: any;
-        BaseComponent: typeof FcBaseComponent;
-        componentName: string;
-    }>;
+    private handlerBase;
     private setStatefulConfig;
     private checkIfResourceExistOnline;
     private handlerInputs;
