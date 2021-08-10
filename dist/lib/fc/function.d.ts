@@ -63,7 +63,8 @@ export declare class FcFunction extends FcDeploy<FunctionConfig> {
     static readonly MAX_CODE_SIZE_WITH_OSS: number;
     static readonly MAX_CODE_SIZE_WITH_CODEURI: number;
     constructor(functionConf: FunctionConfig, serviceName: string, serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string, args?: string);
-    initLocal(assumeYes?: boolean): Promise<void>;
+    init(type: string, useLocal?: boolean, assumeYes?: boolean): Promise<void>;
+    private initLocal;
     getCodeUriWithBuildPath(): Promise<any>;
     initLocalConfig(assumeYes?: boolean): Promise<void>;
     syncRemoteCode(): Promise<string>;
