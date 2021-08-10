@@ -12,7 +12,14 @@ const { ROAClient } = require('@alicloud/pop-core');
 const hashedMachineId = require('node-machine-id').machineId;
 const FC = require('@alicloud/fc2');
 
-const pkg = require(p.join(p.resolve(__dirname, '../../..'), 'package.json'));
+const baseName: string = p.basename(__dirname);
+let pkg;
+if (baseName === 'dist') {
+  pkg = require(p.join(p.resolve(__dirname, '../'), 'package.json'));
+} else {
+  pkg = require(p.join(p.resolve(__dirname, '../../..'), 'package.json'));
+}
+
 
 const defaultTimeout = 300;
 

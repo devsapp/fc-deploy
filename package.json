@@ -12,7 +12,6 @@
     "deep-object-diff": "^1.1.0",
     "fs-extra": "^10.0.0",
     "git-ignore-parser": "0.0.2",
-    "graceful-fs": "^4.2.6",
     "ignore": "^5.0.4",
     "inquirer": "^8.1.0",
     "js-yaml": "^4.1.0",
@@ -22,8 +21,6 @@
     "os-locale": "^5.0.0",
     "progress": "^2.0.3",
     "promise-retry": "^2.0.1",
-    "temp-dir": "^2.0.0",
-    "uuid-by-string": "^3.0.2",
     "variable-diff": "^2.0.2"
   },
   "devDependencies": {
@@ -39,15 +36,14 @@
     "ts-loader": "^8.0.14",
     "ts-node": "^9.1.1",
     "typescript": "^3.9.7",
-    "webpack": "^4.46.0",
-    "webpack-cli": "^4.4.0"
+    "@vercel/ncc": "^0.24.0"
   },
+  "autoInstall": false,
   "scripts": {
     "dev": "npx tsc -w -p tsconfig.json",
-    "prebuild": "rimraf dist",
-    "build": "rm -rf node_modules && rm -rf package-lock.json && npm i && npm run fix && npm run lint && npx tsc -p tsconfig.json",
-    "build:component": "npx webpack --mode=production",
-    "publish": "npm run build:component && s platform publish",
+    "prebuild": "rm -rf node_modules && rm -rf package-lock.json && npm i && rimraf dist",
+    "build": "npm run fix && npm run lint && ncc build src/index.ts -m -o dist",
+    "postbuild": "rm -rf package-lock.json && rm -rf node_modules",
     "test": "jest",
     "test:cov": "jest --coverage",
     "lint": "f2elint scan -i ./src",
