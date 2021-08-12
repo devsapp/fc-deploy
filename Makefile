@@ -1,13 +1,21 @@
+.PHONY: push
 
-lint:
-	npm i && npm run fix && npm run lint && npm run build
+CURRENT_BRANCH_NAME := $(shell git symbolic-ref --short HEAD)
 
+add:
+	git add .
 
-
-dev: lint
-	git add .;\
-	npm run dev
-
-ci: lint
-	git add .;\
+commit: add
 	git-cz
+
+rebase-main: commit
+	git pull --rebase origin master
+
+push:
+	git push --force-with-lease origin $(CURRENT_BRANCH_NAME)
+
+release-dev: push
+	-gh release delete dev -y
+	-git tag -d dev
+	-git push origin :refs/tags/dev
+	gh release create dev --notes "dev release" --target dev --title "Release dev"
