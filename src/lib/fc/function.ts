@@ -16,6 +16,7 @@ import { promptForConfirmOrDetails } from '../utils/prompt';
 import StdoutFormatter from '../component/stdout-formatter';
 import { getFileHash, getFileSize } from '../utils/file';
 import { AlicloudOss } from '../resource/oss';
+import { imageExist } from '../utils/docker';
 
 export interface FunctionConfig {
   functionName?: string;
@@ -309,18 +310,35 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
     return await pack(syncedCodePath, null, zipPath);
   }
 
+  async needPushRegistry(pushRegistry?: string): Promise<boolean> {
+    if (!isCustomContainerRuntime(this.localConfig?.runtime) || this.useRemote) { return false; }
+    if (!_.isNil(pushRegistry)) { return true; }
+    if (!await imageExist(this.localConfig.customContainerConfig.image)) {
+      this.logger.warn(`Image ${this.localConfig.customContainerConfig.image} dose not exist locally.\nMaybe you need to run 's build' first if it dose not exist remotely.`);
+      return false;
+    }
+    return true;
+  }
+
   async makeFunctionCode(baseDir: string, pushRegistry?: string): Promise<{ codeZipPath?: string; codeOssObject?: string }> {
     this.logger.debug('waiting for making function code.');
-    // return { codeZipPath, codeOssObject }
-    if (isCustomContainerRuntime(this.localConfig?.runtime) && !_.isNil(pushRegistry)) {
-      // push image
-      if (!this.useRemote) {
-        const alicloudAcr = new AlicloudAcr(pushRegistry, this.serverlessProfile, this.credentials, this.region);
+    if (await this.needPushRegistry(pushRegistry)) {
+      const alicloudAcr = new AlicloudAcr(pushRegistry, this.serverlessProfile, this.credentials, this.region);
+      try {
         await alicloudAcr.pushImage(this.localConfig?.customContainerConfig.image);
+      } catch (e) {
+        if (e.message.includes('Custom container function only support ACR image')){ throw e; }
+        this.logger.warn(`Push image ${this.localConfig.customContainerConfig.image} failed.`);
+        this.logger.debug(`Push image ${this.localConfig.customContainerConfig.image} failed. eror is ${e}`);
       }
       return {};
     }
-    if (this.localConfig?.ossKey && this.localConfig?.ossKey) { return {}; }
+
+    if (this.localConfig?.ossKey && this.localConfig?.ossBucket) {
+      return {
+        codeOssObject: this.localConfig.ossKey,
+      };
+    }
 
     if (!isCustomContainerRuntime(this.localConfig?.runtime)) {
       // zip

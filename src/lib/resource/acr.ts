@@ -11,8 +11,6 @@ export class AlicloudAcr extends AlicloudClient {
       this.registry = `registry.${this.region}.aliyuncs.com`;
     } else if (pushRegistry === 'acr-vpc') {
       this.registry = `registry-vpc.${this.region}.aliyuncs.com`;
-    } else if (pushRegistry) {
-      this.registry = pushRegistry;
     }
   }
 
@@ -24,7 +22,7 @@ export class AlicloudAcr extends AlicloudClient {
     return this.getRoaClient(`https://cr.${this.region}.aliyuncs.com`, '2016-06-07');
   }
 
-  async loginToRegistry(): Promise<void> {
+  async loginToRegistry(registry: string): Promise<void> {
     const acrClient = this.getAcrClient();
 
     const httpMethod = 'GET';
@@ -43,22 +41,34 @@ export class AlicloudAcr extends AlicloudClient {
 
     this.logger.info('Try to use a temporary token for docker login');
     try {
-      execSync(`docker login --username=${dockerTmpUser} ${this.registry} --password-stdin`, {
+      execSync(`docker login --username=${dockerTmpUser} ${registry} --password-stdin`, {
         input: dockerTmpToken,
       });
-      this.logger.log(`Login to registry: ${this.registry} with user: ${dockerTmpUser}`, 'green');
+      this.logger.log(`Login to registry: ${registry} with user: ${dockerTmpUser}`, 'green');
     } catch (e) {
-      this.logger.warn(StdoutFormatter.stdoutFormatter.warn('registry', `login to ${this.registry} failed with temporary token`));
+      this.logger.warn(StdoutFormatter.stdoutFormatter.warn('registry', `login to ${registry} failed with temporary token`));
     }
   }
 
   async pushImage(image: string): Promise<void> {
-    await this.loginToRegistry();
     const imageArr = image.split('/');
-    imageArr[0] = this.registry;
+    if (this.registry) {
+      imageArr[0] = this.registry;
+    }
+    if (!AlicloudAcr.isAcrRegistry(imageArr[0])) {
+      throw new Error(`Custom container function only support ACR image.\nPlease use ACR: https://help.aliyun.com/product/60716.html and make the registry in ACR format: registry.${this.region}.aliyuncs.com`);
+    }
+    this.logger.info(StdoutFormatter.stdoutFormatter.using('image registry', imageArr[0]));
+
+    await this.loginToRegistry(imageArr[0]);
+
 
     const resolvedImage = imageArr.join('/');
     this.logger.log(`Pushing docker image: ${resolvedImage}...`, 'yellow');
     execSync(`docker push ${resolvedImage}`, { stdio: 'inherit' });
+  }
+
+  static isAcrRegistry(registry: string): boolean {
+    return registry.startsWith('registry') && registry.endsWith('.aliyuncs.com');
   }
 }
