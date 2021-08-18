@@ -21,7 +21,8 @@
     "os-locale": "^5.0.0",
     "progress": "^2.0.3",
     "promise-retry": "^2.0.1",
-    "variable-diff": "^2.0.2"
+    "variable-diff": "^2.0.2",
+    "dockerode": "^3.3.0"
   },
   "devDependencies": {
     "@types/fs-extra": "^9.0.11",
