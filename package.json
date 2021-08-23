@@ -9,7 +9,9 @@
     "ali-oss": "^6.1.1",
     "archiver": "^2.0.0",
     "colors": "^1.4.0",
+    "crypto": "^1.0.1",
     "deep-object-diff": "^1.1.0",
+    "dockerode": "^3.3.0",
     "fs-extra": "^10.0.0",
     "git-ignore-parser": "0.0.2",
     "ignore": "^5.0.4",
@@ -21,8 +23,7 @@
     "os-locale": "^5.0.0",
     "progress": "^2.0.3",
     "promise-retry": "^2.0.1",
-    "variable-diff": "^2.0.2",
-    "dockerode": "^3.3.0"
+    "variable-diff": "^2.0.2"
   },
   "devDependencies": {
     "@types/fs-extra": "^9.0.11",
@@ -41,6 +42,7 @@
   },
   "autoInstall": false,
   "scripts": {
+    "start": "npm run dev",
     "dev": "npm run prebuild && npx tsc -w -p tsconfig.json",
     "prebuild": "rm -rf node_modules && rm -rf package-lock.json && npm i && rimraf dist",
     "build": "npm run fix && npm run lint && ncc build src/index.ts -m -e @serverless-devs/core -o dist",
