@@ -28,3 +28,11 @@ export function hasHttpPrefix(s: string): boolean {
 export function capitalizeFirstLetter(s: string) {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
+
+export function extract(regex, endpoint, idx) {
+  const matchs = endpoint.match(regex);
+  if (matchs) {
+    return matchs[idx];
+  }
+  return null;
+}

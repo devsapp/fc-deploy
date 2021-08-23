@@ -1,5 +1,14 @@
 import { Logger } from '@serverless-devs/core';
 import * as _ from 'lodash';
+import logger from '../common/logger';
+
+export function handleKnownErrors(ex: any) {
+  if (ex.statusCode === 401 && ex.result?.code === 'AUTHENTICATION_FAILED' && ex?.result?.message === 'user jurisdiction error.') {
+    // login acr registry failed because of insufficient permissions
+    logger.error('Please add AliyunContainerRegistryFullAccess policy to your aliyun user if your want fc component to push image for you.');
+  }
+  if (ex.message.includes('Custom container function only support ACR image')) { throw ex; }
+}
 
 export function throwProcessedPopPermissionError(ex: any, action) {
   if (!ex.code || !ex.url || (ex.code !== 'NoPermission' && ex.code !== 'Forbidden.RAM' && !ex.code.includes('Forbbiden'))) { // NAS 返回的权限错误码是 Forbbiden.ram
