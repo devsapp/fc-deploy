@@ -62,3 +62,15 @@ ${result}`);
 
   return _.isNil(trueChoice) ? answers.prompt === 'yes' : answers.prompt === trueChoice;
 }
+
+export async function promptForInputContinue(message: string, defaultValue?: any) {
+
+  const answers = await inquirer.prompt([{
+    type: 'input',
+    name: 'input',
+    message,
+    default: defaultValue,
+  }]);
+
+  return answers;
+}

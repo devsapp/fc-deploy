@@ -17,6 +17,7 @@ import StdoutFormatter from '../component/stdout-formatter';
 import { getFileHash, getFileSize } from '../utils/file';
 import { AlicloudOss } from '../resource/oss';
 import { imageExist } from '../utils/docker';
+import { handleKnownErrors } from '../error';
 
 export interface FunctionConfig {
   functionName?: string;
@@ -173,6 +174,17 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
     if (_.isEmpty(this.localConfig?.customContainerConfig) && _.isNil(this.localConfig?.codeUri) && _.isNil(this.localConfig?.ossKey)) {
       throw new Error('\'codeUri\' and \'ossKey\' can not be empty in function config at the same time.');
     }
+    if (!_.isEmpty(this.localConfig?.customContainerConfig?.image)) {
+      const imageRegistry: string = AlicloudAcr.extractRegistryFromAcrUrl(this.localConfig?.customContainerConfig?.image);
+      if (!AlicloudAcr.isAcrRegistry(imageRegistry)) {
+        throw new Error(`Custom container function only support ACR image.\nPlease use ACR: https://help.aliyun.com/product/60716.html and make the registry in ACR format: registry.${this.region}.aliyuncs.com`);
+      }
+      const regionInImage: string = AlicloudAcr.extractRegionFromAcrRegistry(imageRegistry);
+      this.logger.debug(`Region in image is ${regionInImage}`);
+      if (regionInImage && regionInImage !== this.region) {
+        throw new Error(`Please make region in custom container image: ${this.localConfig?.customContainerConfig?.image} equal to the region: ${this.region} in props`);
+      }
+    }
   }
 
 
@@ -320,16 +332,16 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
     return true;
   }
 
-  async makeFunctionCode(baseDir: string, pushRegistry?: string): Promise<{ codeZipPath?: string; codeOssObject?: string }> {
+  async makeFunctionCode(baseDir: string, pushRegistry?: string, assumeYes?: boolean): Promise<{ codeZipPath?: string; codeOssObject?: string }> {
     this.logger.debug('waiting for making function code.');
     if (await this.needPushRegistry(pushRegistry)) {
       const alicloudAcr = new AlicloudAcr(pushRegistry, this.serverlessProfile, this.credentials, this.region);
       try {
-        await alicloudAcr.pushImage(this.localConfig?.customContainerConfig.image);
+        await alicloudAcr.pushImage(this.localConfig?.customContainerConfig.image, assumeYes);
       } catch (e) {
-        if (e.message.includes('Custom container function only support ACR image')){ throw e; }
+        handleKnownErrors(e);
         this.logger.warn(`Push image ${this.localConfig.customContainerConfig.image} failed.`);
-        this.logger.debug(`Push image ${this.localConfig.customContainerConfig.image} failed. eror is ${e}`);
+        this.logger.debug(`Push image ${this.localConfig.customContainerConfig.image} failed. error is ${e}`);
       }
       return {};
     }
@@ -390,14 +402,14 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
     return {};
   }
 
-  async makeFunction(baseDir: string, type: string, pushRegistry?: string): Promise<FunctionConfig> {
+  async makeFunction(baseDir: string, type: string, pushRegistry?: string, assumeYes?: boolean): Promise<FunctionConfig> {
     if (_.isEmpty(this.localConfig) && _.isEmpty(this.remoteConfig)) {
       this.statefulConfig = null;
       return null;
     }
     const resolvedFunctionConf: any = this.makeFunctionConfig();
     if (type !== 'config') {
-      const { codeZipPath, codeOssObject } = await this.makeFunctionCode(baseDir, pushRegistry);
+      const { codeZipPath, codeOssObject } = await this.makeFunctionCode(baseDir, pushRegistry, assumeYes);
 
       if (!_.isNil(codeOssObject)) {
         Object.assign(resolvedFunctionConf, {

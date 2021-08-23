@@ -107,6 +107,10 @@ export default class FcDeployComponent {
     let resolvedFunctionConf: FunctionConfig = this.fcFunction?.localConfig;
     let needDeployFunction = needDeployAll || (!command || command === 'function');
     if (!_.isNil(this.fcFunction) && needDeployFunction) {
+      const pushRegistry = parsedArgs.data ? parsedArgs.data['push-registry'] : undefined;
+      if (pushRegistry) {
+        this.logger.warn(StdoutFormatter.stdoutFormatter.warn('--push-registry', 'will be deprecated soon.'));
+      }
       await this.fcFunction.init(type, useLocal, assumeYes);
       if (this.fcFunction.useRemote) {
         this.logger.info(`Deploy function ${this.fcFunction.name} using online config, skip it.`);
@@ -114,8 +118,7 @@ export default class FcDeployComponent {
       } else {
         const baseDir = path.dirname(this.curPath);
 
-        const pushRegistry = parsedArgs.data ? parsedArgs.data['push-registry'] : undefined;
-        resolvedFunctionConf = await this.fcFunction.makeFunction(baseDir, type, pushRegistry);
+        resolvedFunctionConf = await this.fcFunction.makeFunction(baseDir, type, pushRegistry, assumeYes);
         resolvedFunctionConf.name = resolvedFunctionConf.name || resolvedFunctionConf.functionName;
         resolvedFunctionConf.serviceName = resolvedFunctionConf.serviceName || resolvedServiceConf.name;
         this.logger.debug(`Resolved functionConf is:\n${JSON.stringify(resolvedFunctionConf, null, '  ')}`);

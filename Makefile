@@ -8,8 +8,8 @@ add:
 commit: add
 	git-cz
 
-rebase-main: commit
-	git pull --rebase origin master
+rebase-staging: commit
+	git pull --rebase origin staging
 
 push:
 	git push --force-with-lease origin $(CURRENT_BRANCH_NAME)
