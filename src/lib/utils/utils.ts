@@ -1,5 +1,6 @@
 import { green, white } from 'colors';
 import ProgressBar from 'progress';
+import crypto from 'crypto';
 
 export function createProgressBar(format, options) {
   const opts = Object.assign({
@@ -35,4 +36,11 @@ export function extract(regex, endpoint, idx) {
     return matchs[idx];
   }
   return null;
+}
+
+export function generateResourceName(serviceName: string, region: string, accountID: string) {
+  const prefix = serviceName.slice(0, 6);
+
+  const md5Uid = crypto.createHmac('md5', accountID).update(serviceName).digest('hex');
+  return `${prefix}-${md5Uid.slice(0, 7)}-${region}`;
 }

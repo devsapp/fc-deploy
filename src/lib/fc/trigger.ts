@@ -182,7 +182,8 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
   }
 
   async makeInvocationRole(): Promise<string> {
-    const roleName: string = generateRamResourceName('FcDeployCreateRole-', `${this.serviceName}-${this.functionName}`, 'serviceNameAndFunctionName');
+    const accountID = this.credentials.AccountID;
+    const roleName: string = generateRamResourceName('FcDeployCreateRole-', `${this.serviceName}-${this.functionName}`, accountID);
     this.logger.info(StdoutFormatter.stdoutFormatter.set(`invocation role for trigger: ${this.name}`, roleName));
     let assumeRolePolicy: {[key: string]: any};
     let serviceOfAssumeRolePolicy: string;
@@ -194,7 +195,7 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
       serviceOfAssumeRolePolicy = 'log.aliyuncs.com';
 
       policyConf = {
-        name: generateRamResourceName('FcDeployDefaultLogPolicy-', `${this.serviceName}-${this.functionName}`, 'serviceNameAndFunctionName'),
+        name: generateRamResourceName('FcDeployDefaultLogPolicy-', `${this.serviceName}-${this.functionName}`, accountID),
         description: DESCRIPTION,
         statement: [
           {
@@ -230,7 +231,7 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
       this.logger.debug('instance of mns trigger config');
       serviceOfAssumeRolePolicy = 'mns.aliyuncs.com';
       policyConf = {
-        name: generateRamResourceName('FcDeployDefaultMnsPolicy-', `${this.serviceName}-${this.functionName}`, 'serviceNameAndFunctionName'),
+        name: generateRamResourceName('FcDeployDefaultMnsPolicy-', `${this.serviceName}-${this.functionName}`, accountID),
         description: DESCRIPTION,
         statement: [
           {
@@ -250,7 +251,7 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
       this.logger.debug('instance of oss trigger config');
       serviceOfAssumeRolePolicy = 'oss.aliyuncs.com';
       policyConf = {
-        name: generateRamResourceName('FcDeployDefaultOssPolicy-', `${this.serviceName}-${this.functionName}`, 'serviceNameAndFunctionName'),
+        name: generateRamResourceName('FcDeployDefaultOssPolicy-', `${this.serviceName}-${this.functionName}`, accountID),
         description: DESCRIPTION,
         statement: [
           {
@@ -270,7 +271,7 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
       this.logger.debug('instance of cdn trigger config');
       serviceOfAssumeRolePolicy = 'cdn.aliyuncs.com';
       policyConf = {
-        name: generateRamResourceName('FcDeployDefaultCdnPolicy-', `${this.serviceName}-${this.functionName}`, 'serviceNameAndFunctionName'),
+        name: generateRamResourceName('FcDeployDefaultCdnPolicy-', `${this.serviceName}-${this.functionName}`, accountID),
         description: DESCRIPTION,
         statement: [
           {
@@ -299,7 +300,7 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
         },
       ];
       policyConf = {
-        name: generateRamResourceName('FcDeployDefaultOtsPolicy-', `${this.serviceName}-${this.functionName}`, 'serviceNameAndFunctionName'),
+        name: generateRamResourceName('FcDeployDefaultOtsPolicy-', `${this.serviceName}-${this.functionName}`, accountID),
         description: DESCRIPTION,
         statement: [
           {
