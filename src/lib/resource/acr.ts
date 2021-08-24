@@ -2,9 +2,13 @@ import { AlicloudClient } from './client';
 import { execSync } from 'child_process';
 import { ServerlessProfile, ICredentials } from '../profile';
 import StdoutFormatter from '../component/stdout-formatter';
+import { extract } from '../utils/utils';
+import * as core from '@serverless-devs/core';
+import { promptForConfirmContinue, promptForInputContinue } from '../utils/prompt';
 
 export class AlicloudAcr extends AlicloudClient {
   readonly registry: string;
+  readonly acrClient: any;
   constructor(pushRegistry: string, serverlessProfile: ServerlessProfile, credentials: ICredentials, region: string, curPath?: string, args?: string, timeout?: number) {
     super(serverlessProfile, credentials, region, curPath, args, timeout);
     if (pushRegistry === 'acr-internet') {
@@ -12,6 +16,7 @@ export class AlicloudAcr extends AlicloudClient {
     } else if (pushRegistry === 'acr-vpc') {
       this.registry = `registry-vpc.${this.region}.aliyuncs.com`;
     }
+    this.acrClient = this.getAcrClient();
   }
 
   async getAcrPopClient(): Promise<any> {
@@ -22,9 +27,7 @@ export class AlicloudAcr extends AlicloudClient {
     return this.getRoaClient(`https://cr.${this.region}.aliyuncs.com`, '2016-06-07');
   }
 
-  async loginToRegistry(registry: string): Promise<void> {
-    const acrClient = this.getAcrClient();
-
+  async getAuthorizationToken(): Promise<any> {
     const httpMethod = 'GET';
     const uriPath = '/tokens';
     const queries: any = {};
@@ -33,42 +36,112 @@ export class AlicloudAcr extends AlicloudClient {
       'Content-Type': 'application/json',
     };
     const requestOption = {};
-
-    const response = await acrClient.request(httpMethod, uriPath, queries, body, headers, requestOption);
-
-    const dockerTmpUser = response.data.tempUserName;
-    const dockerTmpToken = response.data.authorizationToken;
-
-    this.logger.info('Try to use a temporary token for docker login');
-    try {
-      execSync(`docker login --username=${dockerTmpUser} ${registry} --password-stdin`, {
-        input: dockerTmpToken,
-      });
-      this.logger.log(`Login to registry: ${registry} with user: ${dockerTmpUser}`, 'green');
-    } catch (e) {
-      this.logger.warn(StdoutFormatter.stdoutFormatter.warn('registry', `login to ${registry} failed with temporary token`));
-    }
+    return await this.acrClient.request(httpMethod, uriPath, queries, body, headers, requestOption);
   }
 
-  async pushImage(image: string): Promise<void> {
+  async createUserInfo(pwd: string): Promise<any> {
+    const httpMethod = 'PUT';
+    const uriPath = '/users';
+    const queries = {};
+    const body = JSON.stringify({
+      User: {
+        Password: pwd,
+      },
+    });
+    const headers = {
+      'Content-Type': 'application/json',
+    };
+    const requestOption = {};
+    await this.acrClient.request(httpMethod, uriPath, queries, body, headers, requestOption);
+  }
+
+  async getAuthorizationTokenOfRegisrty(registry: string, assumeYes?: boolean): Promise<any> {
+    let response;
+    try {
+      response = await this.getAuthorizationToken();
+    } catch (e) {
+      if (e.statusCode === 404 && e.result?.message === 'user is not exist.' && e.result?.code === 'USER_NOT_EXIST') {
+        // 子账号需要先设置 Regisrty 的登陆密码后才能获取登录 Registry 的临时账号和临时密码
+        const msg = `Aliyun ACR need the sub account to set password for logging in the registry ${registry} first if you want fc component to push image automatically. Do you want to continue?`;
+        if (assumeYes || await promptForConfirmContinue(msg)) {
+          const pwd: string = (await promptForInputContinue(`Input password for logging in the registry ${registry}`)).input;
+          await this.createUserInfo(pwd);
+          response = await this.getAuthorizationToken();
+        } else {
+          this.logger.info('Fc component will not push image for you. Please make the image exist online.');
+          return {};
+        }
+      } else {
+        throw e;
+      }
+    }
+
+    return {
+      dockerTmpUser: response?.data?.tempUserName,
+      dockerTmpToken: response?.data?.authorizationToken,
+    };
+  }
+
+  async pushImage(image: string, assumeYes?: boolean): Promise<void> {
     const imageArr = image.split('/');
     if (this.registry) {
       imageArr[0] = this.registry;
     }
-    if (!AlicloudAcr.isAcrRegistry(imageArr[0])) {
-      throw new Error(`Custom container function only support ACR image.\nPlease use ACR: https://help.aliyun.com/product/60716.html and make the registry in ACR format: registry.${this.region}.aliyuncs.com`);
+    let resolvedImage = imageArr.join('/');
+
+    if (AlicloudAcr.isVpcAcrRegistry(imageArr[0])) {
+      // 没有 --push-registry 参数且是 vpc registry
+      imageArr[0] = `registry.${this.region}.aliyuncs.com`;
+      resolvedImage = imageArr.join('/');
     }
     this.logger.info(StdoutFormatter.stdoutFormatter.using('image registry', imageArr[0]));
 
-    await this.loginToRegistry(imageArr[0]);
+    const { dockerTmpUser, dockerTmpToken } = await this.getAuthorizationTokenOfRegisrty(imageArr[0], assumeYes);
+    this.logger.info('Try to use a temporary token for docker login');
+    try {
+      execSync(`docker login --username=${dockerTmpUser} ${imageArr[0]} --password-stdin`, {
+        input: dockerTmpToken,
+      });
+      this.logger.log(`Login to registry: ${imageArr[0]} with user: ${dockerTmpUser}`, 'green');
+    } catch (e) {
+      this.logger.warn(StdoutFormatter.stdoutFormatter.warn('registry', `login to ${imageArr[0]} failed with temporary token`));
+    }
+    // try to push image
+    try {
+      this.logger.log(`Pushing docker image: ${image}...`, 'yellow');
+      execSync(`docker push ${image}`, { stdio: 'inherit' });
+      return;
+    } catch (e) {
+      if (image === resolvedImage) { throw e; }
+      this.logger.warn(StdoutFormatter.stdoutFormatter.warn('failed', `push image: ${image}`));
+      this.logger.debug(`Push image: ${image} failed， error is ${e}`);
+    }
 
+    const tagVm = core.spinner(`Tagging image ${image} as ${resolvedImage}`);
+    try {
+      execSync(`docker tag ${image} ${resolvedImage}`, { stdio: 'inherit' });
+      tagVm.succeed(`Tag image ${image} as ${resolvedImage}`);
+    } catch (e) {
+      tagVm.fail(`Tag image ${image} as ${resolvedImage} failed.`);
+      throw e;
+    }
 
-    const resolvedImage = imageArr.join('/');
     this.logger.log(`Pushing docker image: ${resolvedImage}...`, 'yellow');
     execSync(`docker push ${resolvedImage}`, { stdio: 'inherit' });
   }
 
   static isAcrRegistry(registry: string): boolean {
     return registry.startsWith('registry') && registry.endsWith('.aliyuncs.com');
+  }
+  static extractRegionFromAcrRegistry(registry: string): string {
+    return extract(/^registry(|-vpc).([^.]+).aliyuncs.com$/, registry, 2);
+  }
+  static extractRegistryFromAcrUrl(imageUrl: string): string {
+    const imageArr = imageUrl.split('/');
+    return imageArr[0];
+  }
+
+  static isVpcAcrRegistry(registry: string): boolean {
+    return registry.startsWith('registry-vpc');
   }
 }
