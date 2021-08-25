@@ -4,6 +4,8 @@ import { replaceProjectName } from '../profile';
 import { AlicloudClient } from './client';
 import { generateResourceName } from '../utils/utils';
 
+const LOGSTROE_NAME_MAX_LENGTH = 64;
+
 export interface LogConfig {
   project: string;
   logstore: string;
@@ -16,7 +18,8 @@ export const generateProjectName = (accountID, region: string) => {
 };
 
 export const generateLogstoreName = (serviceName: string, region: string, accountID: string) => {
-  if (serviceName.length > 43) {
+  // -20 是因为要抛去生成名称的前缀（fc-service-）和后缀（-logstore）
+  if (serviceName.length > (LOGSTROE_NAME_MAX_LENGTH - 20)) {
     return generateResourceName(serviceName, region, accountID);
   }
 
