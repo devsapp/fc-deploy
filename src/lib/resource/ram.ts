@@ -27,9 +27,11 @@ function normalizeRoleOrPoliceName(roleName: string): string {
   return roleName.replace(/_/g, '-');
 }
 
+const RAM_NAME_MAX_LENGTH = 64;
+
 export function generateRamResourceName(prefix: string, name: string, accountID) {
   const policeName = normalizeRoleOrPoliceName(`${prefix}${name}`);
-  const maxNameLeng = 64 - prefix.length;
+  const maxNameLeng = RAM_NAME_MAX_LENGTH - prefix.length;
   if (name.length > maxNameLeng) {
     return generateResourceName(name, prefix, accountID);
   }
