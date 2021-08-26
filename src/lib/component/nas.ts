@@ -12,9 +12,10 @@ export class NasComponent extends Component {
   readonly zoneId: string;
   readonly storageType: string;
   readonly assistServiceName: string;
+  readonly mountPointDomain: string;
+  readonly vswitchId: string;
 
-
-  constructor(serverlessProfile: ServerlessProfile, { nasName, nasUid, nasGid, nasDir, vpcConfig, role, zoneId, storageType, assistServiceName }, region: string, credentials: ICredentials, curPath?: string, args?: string) {
+  constructor(serverlessProfile: ServerlessProfile, { nasName, nasUid, nasGid, nasDir, vpcConfig, role, zoneId, storageType, assistServiceName, mountPointDomain, vswitchId }, region: string, credentials: ICredentials, curPath?: string, args?: string) {
     super(serverlessProfile, region, credentials, curPath, args);
     this.nasName = nasName;
     this.nasUid = nasUid;
@@ -25,22 +26,42 @@ export class NasComponent extends Component {
     this.zoneId = zoneId;
     this.storageType = storageType;
     this.assistServiceName = assistServiceName;
+    this.mountPointDomain = mountPointDomain;
+    this.vswitchId = vswitchId;
   }
 
   genComponentProp(): { [key: string]: any } {
-    return {
+    const props = {
       regionId: this.region,
       serviceName: this.assistServiceName,
       vpcId: this.vpcConfig.vpcId,
-      vSwitchId: this.vpcConfig.vswitchIds[0],
+      vSwitchId: this.vswitchId || this.vpcConfig.vswitchIds[0],
       securityGroupId: this.vpcConfig.securityGroupId,
       groupId: this.nasGid,
       userId: this.nasUid,
-      nasName: this.nasName,
-      zoneId: this.zoneId,
-      nasDir: this.nasDir,
-      storageType: this.storageType,
       role: this.role,
+      nasDir: this.nasDir,
     };
+    if (this.nasName) {
+      Object.assign(props, {
+        nasName: this.nasName,
+      });
+    }
+    if (this.zoneId) {
+      Object.assign(props, {
+        zoneId: this.zoneId,
+      });
+    }
+    if (this.storageType) {
+      Object.assign(props, {
+        storageType: this.storageType,
+      });
+    }
+    if (this.mountPointDomain) {
+      Object.assign(props, {
+        mountPointDomain: this.mountPointDomain,
+      });
+    }
+    return props;
   }
 }
