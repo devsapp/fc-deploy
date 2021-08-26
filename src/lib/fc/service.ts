@@ -19,6 +19,7 @@ import FcDeploy from './fc-deploy';
 import { isAutoConfig } from '../definition';
 import StdoutFormatter from '../component/stdout-formatter';
 import * as yaml from 'js-yaml';
+import * as core from '@serverless-devs/core';
 
 export interface ServiceConfig {
   name: string;
@@ -277,10 +278,10 @@ export class FcService extends FcDeploy<ServiceConfig> {
 
   async generateServiceNas(vpcConfig: VpcConfig, roleArn: string, assumeYes?: boolean): Promise<NasConfig> {
     const { nasConfig } = this.localConfig;
+    const alicloudNas = new AlicloudNas(this.serverlessProfile, this.credentials, this.region);
     if (_.isString(nasConfig)) {
       if (definition.isAutoConfig(nasConfig)) {
         this.hasAutoConfig = true;
-        const alicloudNas = new AlicloudNas(this.serverlessProfile, this.credentials, this.region);
         this.logger.info(StdoutFormatter.stdoutFormatter.using('nasConfig: auto', 'fc will try to generate related nas file system automatically'));
         const nasDefaultConfig = await alicloudNas.createDefaultNas(`${FC_NAS_SERVICE_PREFIX}${this.name}`, vpcConfig, `/${this.name}`, roleArn, assumeYes);
         this.logger.info(`Generated nasConfig: \n${yaml.dump(nasDefaultConfig, {
@@ -292,6 +293,17 @@ export class FcService extends FcDeploy<ServiceConfig> {
         return nasDefaultConfig;
       } else {
         throw new Error('nasConfig only support auto/Auto when set to string.');
+      }
+    }
+    // user-defined nasConfig
+    for (const mountPoint of nasConfig?.mountPoints) {
+      const ensureVm = core.spinner(`Ensuring nas dir: ${mountPoint.nasDir} in mount point: ${mountPoint.serverAddr}...`);
+      try {
+        await alicloudNas.ensureNasDir(`${FC_NAS_SERVICE_PREFIX}${this.name}`, mountPoint.nasDir, nasConfig.groupId, nasConfig.userId, vpcConfig, roleArn, mountPoint.serverAddr);
+        ensureVm.succeed(`Nas dir: ${mountPoint.nasDir} in mount point: ${mountPoint.serverAddr} exists.`);
+      } catch (e) {
+        ensureVm.fail(`Ensure nas dir: ${mountPoint.nasDir} in mount point: ${mountPoint.serverAddr} failed.`);
+        this.logger.debug(`Ensure nas dir: ${mountPoint.nasDir} in mount point: ${mountPoint.serverAddr} failed, error: ${e}`);
       }
     }
 
