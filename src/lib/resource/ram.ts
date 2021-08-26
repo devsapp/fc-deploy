@@ -2,6 +2,7 @@ import { RamComponent } from '../component/ram';
 import * as core from '@serverless-devs/core';
 import { AlicloudClient } from './client';
 import { replaceProjectName } from '../profile';
+import { generateResourceName } from '../utils/utils';
 import _ from 'lodash';
 
 export interface RoleConfig {
@@ -26,17 +27,13 @@ function normalizeRoleOrPoliceName(roleName: string): string {
   return roleName.replace(/_/g, '-');
 }
 
-const generateNameMaxLengthMessage = {
-  serviceName: (maxNameLeng: number) => `The service name is greater than ${maxNameLeng}, please reduce the service name`,
-  regionAndServiceName: (maxNameLeng: number) => `The total length of the region and service name exceeds ${maxNameLeng}, please reduce the service name`,
-  serviceNameAndFunctionName: (maxNameLeng: number) => `The total length of the service name and function name exceeds ${maxNameLeng}, please reduce the service or function name`,
-};
+const RAM_NAME_MAX_LENGTH = 64;
 
-export function generateRamResourceName(prefix: string, name: string, type: 'serviceName' | 'regionAndServiceName' | 'serviceNameAndFunctionName') {
+export function generateRamResourceName(prefix: string, name: string, accountID) {
   const policeName = normalizeRoleOrPoliceName(`${prefix}${name}`);
-  const maxNameLeng = 64 - prefix.length;
+  const maxNameLeng = RAM_NAME_MAX_LENGTH - prefix.length;
   if (name.length > maxNameLeng) {
-    throw new Error(generateNameMaxLengthMessage[type](maxNameLeng) || `The police name(${policeName}) is greater than 64, please reduce the resource name`);
+    return generateResourceName(name, prefix, accountID);
   }
 
   return policeName;
