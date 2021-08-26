@@ -23,6 +23,8 @@ import { hasHttpPrefix } from './lib/utils/utils';
 import { promiseRetry, retryDeployUntilSlsCreated } from './lib/retry';
 import { isSlsNotExistException } from './lib/error';
 import StdoutFormatter from './lib/component/stdout-formatter';
+import { isAutoConfig } from './lib/definition';
+import { VpcConfig } from './lib/resource/vpc';
 
 export default class FcDeployComponent {
   @core.HLogger('FC-DEPLOY') logger: core.ILogger;
@@ -45,7 +47,7 @@ export default class FcDeployComponent {
       core.help(DEPLOY_HELP_INFO);
       return;
     }
-    const parsedArgs: {[key: string]: any} = core.commandParse({ args: this.args }, {
+    const parsedArgs: {[key: string]: any} = core.commandParse(inputs, {
       boolean: ['help', 'assume-yes', 'use-local'],
       string: ['type'],
       alias: { help: 'h', 'assume-yes': 'y' } });
@@ -298,7 +300,7 @@ export default class FcDeployComponent {
       core.help(REMOVE_HELP_INFO);
       return;
     }
-    const parsedArgs: {[key: string]: any} = core.commandParse({ args: this.args }, {
+    const parsedArgs: {[key: string]: any} = core.commandParse(inputs, {
       boolean: ['help', 'assume-yes', 'use-local'],
       alias: { help: 'h', 'assume-yes': 'y' } });
 
@@ -377,6 +379,29 @@ export default class FcDeployComponent {
       await fcCustomDomain.delStatedCustomDomainConf();
     }
     return `Remove custom domain: ${removedCustomDomains.map((t) => t)}`;
+  }
+
+  async deployAutoNas(inputs: IInputs): Promise<any> {
+    const {
+      isHelp,
+    } = await this.handlerInputs(inputs);
+    if (isHelp) {
+      this.logger.info('There is no help info for deployAutoNas method.');
+      return;
+    }
+    if (!isAutoConfig(this.fcService.localConfig?.nasConfig)) {
+      this.logger.error('Method deployAutoNas only supports auto nasConfig.');
+      return;
+    }
+    const parsedArgs: {[key: string]: any} = core.commandParse(inputs, {
+      boolean: ['help', 'assume-yes'],
+      alias: { help: 'h', 'assume-yes': 'y' } });
+    const argsData: any = parsedArgs?.data || {};
+
+    const assumeYes: boolean = argsData.y || argsData.assumeYes || argsData['assume-yes'];
+    const role: string = await this.fcService.generateServiceRole();
+    const vpcConfig: VpcConfig = await this.fcService.generateServiceVpc(true);
+    return await this.fcService.generateServiceNas(vpcConfig, role, assumeYes);
   }
 
   async report(componentName: string, command: string, accountID?: string, access?: string): Promise<void> {
