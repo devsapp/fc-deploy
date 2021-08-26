@@ -173,7 +173,7 @@ export class AlicloudVpc extends AlicloudClient {
     return null;
   }
 
-  async getAvailableVSwitchId(vswitchIds: string[], nasZones): Promise<any> {
+  async getAvailableVSwitchId(vswitchIds: string[], nasZones: any, assumeYes?: boolean): Promise<any> {
     const fcZones = await this.convertToFcAllowedZones(vswitchIds);
     const availableZones = fcZones.filter((fcZone) => { return _.includes(nasZones.map((m) => { return m.ZoneId; }), fcZone.zoneId); });
 
@@ -193,8 +193,7 @@ export class AlicloudVpc extends AlicloudClient {
 
     if (!_.isEmpty(capacities)) {
       const msg = `Region ${this.region} only supports capacity NAS. Do you want to create it automatically?`;
-      const yes = await promptForConfirmContinue(msg);
-      if (yes) { return this.convertZones(_.head(capacities), availableZones, 'Capacity'); }
+      if (assumeYes || await promptForConfirmContinue(msg)) { return this.convertZones(_.head(capacities), availableZones, 'Capacity'); }
       throw new Error(`No NAS service available under region ${this.region}.`);
     }
 
