@@ -364,6 +364,12 @@ export class FcService extends FcDeploy<ServiceConfig> {
     return resolvedServiceConf;
   }
 
+  async initLocal(): Promise<void> {
+    this.validateConfig();
+    await this.initLocalConfig();
+    this.logger.debug(`local service config is: ${JSON.stringify(this.localConfig, null, '  ')} after init.`);
+  }
+
   private async initLocalConfig(): Promise<void> {
     if (_.isEmpty(this.statefulAutoConfig)) { return; }
     const resolvedAutoConfigInState: any = this.statefulAutoConfig || {};
@@ -393,11 +399,5 @@ export class FcService extends FcDeploy<ServiceConfig> {
         protect: false,
       });
     }
-  }
-
-  private async initLocal(): Promise<void> {
-    this.validateConfig();
-    await this.initLocalConfig();
-    this.logger.debug(`local service config is: ${JSON.stringify(this.localConfig, null, '  ')} after init.`);
   }
 }

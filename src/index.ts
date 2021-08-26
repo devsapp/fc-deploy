@@ -25,6 +25,7 @@ import { isSlsNotExistException } from './lib/error';
 import StdoutFormatter from './lib/component/stdout-formatter';
 import { isAutoConfig } from './lib/definition';
 import { VpcConfig } from './lib/resource/vpc';
+import { AlicloudNas, NasConfig } from "./lib/resource/nas";
 
 export default class FcDeployComponent {
   @core.HLogger('FC-DEPLOY') logger: core.ILogger;
@@ -393,6 +394,12 @@ export default class FcDeployComponent {
       this.logger.error('Method deployAutoNas only supports auto nasConfig.');
       return;
     }
+    await this.fcService.initStatefulAutoConfig();
+    await this.fcService.initLocal();
+    if (!isAutoConfig(this.fcService.localConfig?.nasConfig)) {
+      this.logger.info('You have created auto nas config before.');
+      return this.fcService.localConfig.nasConfig;
+    }
     const parsedArgs: {[key: string]: any} = core.commandParse(inputs, {
       boolean: ['help', 'assume-yes'],
       alias: { help: 'h', 'assume-yes': 'y' } });
@@ -401,7 +408,20 @@ export default class FcDeployComponent {
     const assumeYes: boolean = argsData.y || argsData.assumeYes || argsData['assume-yes'];
     const role: string = await this.fcService.generateServiceRole();
     const vpcConfig: VpcConfig = await this.fcService.generateServiceVpc(true);
-    return await this.fcService.generateServiceNas(vpcConfig, role, assumeYes);
+    const nasConfig: NasConfig = await this.fcService.generateServiceNas(vpcConfig, role, assumeYes);
+    const nasConfigInRemoteFormat: any = {
+      userId: nasConfig.userId,
+      groupId: nasConfig.groupId,
+      mountPoints: nasConfig.mountPoints.map((item) => AlicloudNas.transformMountpointFromLocalToRemote({ serverAddr: item.serverAddr, nasDir: item.nasDir, fcDir: item.fcDir })),
+    };
+    this.fcService.statefulConfig = {};
+    Object.assign(this.fcService.statefulConfig, {
+      nasConfig: nasConfigInRemoteFormat,
+      vpcConfig,
+      role,
+    });
+    await this.fcService.setStatefulAutoConfig();
+    return nasConfig;
   }
 
   async report(componentName: string, command: string, accountID?: string, access?: string): Promise<void> {
@@ -491,7 +511,9 @@ export default class FcDeployComponent {
 
     const appName: string = inputs?.appName;
     // 去除 args 的行首以及行尾的空格
-    this.args = inputs?.args.replace(/(^\s*)|(\s*$)/g, '');
+    if (inputs?.args) {
+      this.args = inputs?.args.replace(/(^\s*)|(\s*$)/g, '');
+    }
     this.curPath = inputs?.path?.configPath;
     const projectName: string = project?.projectName;
     this.region = properties?.region;
