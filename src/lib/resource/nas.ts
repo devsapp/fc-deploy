@@ -52,6 +52,27 @@ export class AlicloudNas extends AlicloudClient {
     return zones.Zones.Zone;
   }
 
+  async ensureNasDir(nasServiceName: string, nasDir: string, nasGid: number, nasUid: number, vpcConfig: VpcConfig, role: string, mountPointDomain: string): Promise<void> {
+    const profileOfNas = replaceProjectName(this.serverlessProfile, `${this.serverlessProfile?.project.projectName}-nas-project`);
+
+    const nasComponent = new NasComponent(profileOfNas, {
+      nasName: null,
+      nasDir,
+      nasGid,
+      nasUid,
+      vpcConfig,
+      role,
+      storageType: null,
+      zoneId: null,
+      assistServiceName: nasServiceName,
+      mountPointDomain,
+      vswitchId: vpcConfig.vswitchIds,
+    }, this.region, this.credentials, this.curPath);
+    const nasComponentInputs = nasComponent.genComponentInputs('nas');
+    const nasComponentIns = await core.load('devsapp/nas');
+    await nasComponentIns.ensureNasDir(nasComponentInputs);
+  }
+
 
   async createDefaultNas(nasServiceName: string, vpcConfig: VpcConfig, nasDir: string, roleArn: string, assumeYes?: boolean): Promise<NasConfig> {
     const nasZones = await this.describeNasZones();
@@ -77,6 +98,8 @@ export class AlicloudNas extends AlicloudClient {
       storageType,
       zoneId,
       assistServiceName: nasServiceName,
+      mountPointDomain: null,
+      vswitchId: null,
     }, this.region, this.credentials, this.curPath, assumeYes ? '-y' : undefined);
     const nasComponentInputs = nasComponent.genComponentInputs('nas');
     const nasComponentIns = await core.load('devsapp/nas');
