@@ -64,7 +64,6 @@ ${result}`);
 }
 
 export async function promptForInputContinue(message: string, defaultValue?: any) {
-
   const answers = await inquirer.prompt([{
     type: 'input',
     name: 'input',
