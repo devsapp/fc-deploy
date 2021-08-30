@@ -37,4 +37,4 @@ lerna-debug.log*
 **/s.origin.yaml
 **/.env
 package-lock.json
-dist
+

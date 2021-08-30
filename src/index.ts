@@ -25,7 +25,7 @@ import { isSlsNotExistException } from './lib/error';
 import StdoutFormatter from './lib/component/stdout-formatter';
 import { isAutoConfig } from './lib/definition';
 import { VpcConfig } from './lib/resource/vpc';
-import { AlicloudNas, NasConfig } from "./lib/resource/nas";
+import { AlicloudNas, NasConfig } from './lib/resource/nas';
 
 export default class FcDeployComponent {
   @core.HLogger('FC-DEPLOY') logger: core.ILogger;

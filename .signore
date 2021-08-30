@@ -1,7 +1,5 @@
 node_modules
 .s
-tsconfig.json
-tsconfig.base.json
 LICENSE
 package-lock.json
 .prettierrc.js
