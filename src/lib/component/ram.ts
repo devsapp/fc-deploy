@@ -9,8 +9,8 @@ export class RamComponent extends Component {
   readonly attachedPolicies?: any[];
   readonly description?: string;
 
-  constructor(serverlessProfile: ServerlessProfile, { roleName, resourceName, assumeRolePolicy, attachedPolicies, description }, region: string, credentials: ICredentials, curPath?: string, args?: string) {
-    super(serverlessProfile, region, credentials, curPath, args);
+  constructor(serverlessProfile: ServerlessProfile, { roleName, resourceName, assumeRolePolicy, attachedPolicies, description }, region: string, credentials: ICredentials, curPath?: string) {
+    super(serverlessProfile, region, credentials, curPath);
     this.roleName = roleName;
     if (!_.isNil(resourceName)) { this.resourceName = resourceName; }
     if (!_.isNil(assumeRolePolicy)) { this.assumeRolePolicy = assumeRolePolicy; }

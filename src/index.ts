@@ -19,7 +19,7 @@ import * as _ from 'lodash';
 import { mark, ServerlessProfile, replaceProjectName, ICredentials } from './lib/profile';
 import { IProperties, IInputs } from './interface';
 import * as path from 'path';
-import { hasHttpPrefix } from './lib/utils/utils';
+import { formatArgs, hasHttpPrefix } from './lib/utils/utils';
 import { promiseRetry, retryDeployUntilSlsCreated } from './lib/retry';
 import { isSlsNotExistException } from './lib/error';
 import StdoutFormatter from './lib/component/stdout-formatter';
@@ -81,14 +81,16 @@ export default class FcDeployComponent {
     if (type && (componentName === 'fc-base')) {
       // pulumi 底座时, --type 不生效
       this.logger.warn('Deployment in pulumi mode dose not support --type option. You can run [s cli fc-default set deploy-type sdk] to switch to sdk mode that supports --type option.\nFc will continue to deploy without --type option');
-      this.args = this.args.replace(`--type ${type}`, '');
+      if (this.args) {
+        this.args = this.args.replace(`--type ${type}`, '');
+      }
       type = null;
     }
-    // 去除 args 的行首以及行尾的空格
-    this.args = inputs?.args.replace(/(^\s*)|(\s*$)/g, '');
-    let targetTriggerName: string;
+    this.args = formatArgs(inputs?.args);
+    let targetTriggerNameArr: string[];
     if (command === 'trigger') {
-      targetTriggerName = argsData?.n || argsData?.name;
+      const targetTriggerName = argsData['trigger-name'];
+      targetTriggerNameArr = typeof (targetTriggerName) === 'string' ? [targetTriggerName] : targetTriggerName;
     }
     const needDeployAll = (command === 'all');
 
@@ -98,7 +100,7 @@ export default class FcDeployComponent {
     if (needDeployService) {
       await this.fcService.init(useLocal);
       if (this.fcService.useRemote) {
-        this.logger.info(`Deploy service ${this.fcService.name} using online config, skip it.`);
+        this.logger.info(`Service ${this.fcService.name} using online config, skip it.`);
         needDeployService = false;
       } else {
         resolvedServiceConf = await this.fcService.makeService(assumeYes);
@@ -116,7 +118,7 @@ export default class FcDeployComponent {
       }
       await this.fcFunction.init(type, useLocal, assumeYes);
       if (this.fcFunction.useRemote) {
-        this.logger.info(`Deploy function ${this.fcFunction.name} using online config, skip it.`);
+        this.logger.info(`Function ${this.fcFunction.name} using online config, skip it.`);
         needDeployFunction = false;
       } else {
         const baseDir = path.dirname(this.curPath);
@@ -131,15 +133,17 @@ export default class FcDeployComponent {
     const resolvedTriggerConfs: TriggerConfig[] = [];
     let hasAutoTriggerRole = false;
     let needDeployTrigger = (needDeployAll && type !== 'code') || ((!command && type !== 'code') || command === 'trigger');
+    let needDeployAllTriggers: boolean = true;
     if (!_.isEmpty(this.fcTriggers) && needDeployTrigger) {
       let existTriggersUseLocal = false;
       for (let i = 0; i < this.fcTriggers.length; i++) {
-        if (!_.isNil(targetTriggerName) && targetTriggerName != this.fcTriggers[i].name) {
+        if (!_.isEmpty(targetTriggerNameArr) && targetTriggerNameArr.includes(this.fcTriggers[i].name)) {
           continue;
         }
         await this.fcTriggers[i].init(useLocal);
         if (this.fcTriggers[i].useRemote) {
-          this.logger.info(`Deploy trigger ${this.fcTriggers[i].name} using online config, skip it.`);
+          this.logger.info(`Trigger ${this.fcTriggers[i].name} using online config, skip it.`);
+          needDeployAllTriggers = false;
           continue;
         }
         existTriggersUseLocal = true;
@@ -154,59 +158,87 @@ export default class FcDeployComponent {
       needDeployTrigger = existTriggersUseLocal;
     }
 
-    // deploy service/function/triggers
-    if (needDeployTrigger || needDeployFunction || needDeployService) {
-      const profileOfFcBase = replaceProjectName(this.serverlessProfile, `${this.serverlessProfile?.project.projectName}-fc-base-project`);
-      const fcBaseComponent = new BaseComponent(profileOfFcBase, resolvedServiceConf, this.region, this.credentials, this.curPath, this.args, resolvedFunctionConf, resolvedTriggerConfs);
+    const profileOfFcBase = replaceProjectName(this.serverlessProfile, `${this.serverlessProfile?.project.projectName}-fc-base-project`);
+    const fcBaseComponent = new BaseComponent(profileOfFcBase, resolvedServiceConf, this.region, this.credentials, this.curPath, resolvedFunctionConf, resolvedTriggerConfs);
 
-      const fcBaseComponentInputs = fcBaseComponent.genComponentInputs(componentName);
-      needDeployService && this.logger.info(StdoutFormatter.stdoutFormatter.create('service', resolvedServiceConf.name));
-      if (!_.isEmpty(resolvedFunctionConf) && needDeployFunction) {
+    if (needDeployTrigger && needDeployFunction && needDeployService) {
+      // 部署所有资源，则复用传入的 args 执行子组件的 deploy 方法
+      const fcBaseComponentInputs = fcBaseComponent.genComponentInputs(componentName, this.args);
+
+      await this.deployWithRetry(fcBaseComponentIns, fcBaseComponentInputs);
+    } else {
+      // 部署部分资源
+      if (needDeployService) {
+        this.logger.info(StdoutFormatter.stdoutFormatter.create('service', resolvedServiceConf.name));
+        let resolvedArgs: string;
+        if (command === 'service') {
+          // deploy service
+          resolvedArgs = this.args;
+        } else {
+          // deploy all 或 deploy
+          resolvedArgs = command === 'all' ? this.args.replace(/all/g, 'service') : `service ${this.args}`;
+        }
+        const fcBaseComponentInputs = fcBaseComponent.genComponentInputs(componentName, formatArgs(resolvedArgs));
+        await this.deployWithRetry(fcBaseComponentIns, fcBaseComponentInputs);
+      }
+      if (needDeployFunction) {
         this.logger.info(StdoutFormatter.stdoutFormatter.create('function', resolvedFunctionConf.name));
-      }
-      if (!_.isEmpty(resolvedTriggerConfs) && needDeployTrigger) {
-        this.logger.info(StdoutFormatter.stdoutFormatter.create('triggers', JSON.stringify(resolvedTriggerConfs.map((t) => t.name))));
-      }
-
-      await promiseRetry(async (retry: any, times: number): Promise<any> => {
-        try {
-          await retryDeployUntilSlsCreated(fcBaseComponentIns, fcBaseComponentInputs);
-          return;
-        } catch (ex) {
-          if (ex.code === 'AccessDenied' || isSlsNotExistException(ex)) {
-            throw ex;
-          }
-          this.logger.debug(`error when createService or updateService, serviceName is ${this.fcService.name}, error is: \n${ex}`);
-          this.logger.info(StdoutFormatter.stdoutFormatter.retry('fc', 'create', '', times));
-          retry(ex);
+        let resolvedArgs: string;
+        if (command === 'function') {
+          // deploy function
+          resolvedArgs = this.args;
+        } else {
+          // deploy all 或 deploy
+          resolvedArgs = command === 'all' ? this.args.replace(/all/g, 'function') : `function ${this.args}`;
         }
-      });
+        const fcBaseComponentInputs = fcBaseComponent.genComponentInputs(componentName, formatArgs(resolvedArgs));
+        await this.deployWithRetry(fcBaseComponentIns, fcBaseComponentInputs);
+      }
 
-      // set stateful config
-      if (needDeployService && this.fcService) {
-        const { remoteConfig } = await this.fcService.GetRemoteInfo('service', this.fcService.name, undefined, undefined);
-        this.fcService.statefulConfig = remoteConfig;
-        this.fcService.upgradeStatefulConfig();
-      }
-      if (needDeployFunction && this.fcFunction) {
-        const { remoteConfig } = await this.fcFunction.GetRemoteInfo('function', this.fcFunction.serviceName, this.fcFunction.name, undefined);
-        this.fcFunction.statefulConfig = remoteConfig;
-        this.fcFunction.upgradeStatefulConfig();
-      }
-      // triggers
-      if (needDeployTrigger && !_.isEmpty(this.fcTriggers)) {
-        for (let i = 0; i < this.fcTriggers.length; i++) {
-          if (!_.isNil(targetTriggerName) && targetTriggerName != this.fcTriggers[i].name) {
-            continue;
+      if (needDeployTrigger) {
+        if (_.isEmpty(resolvedTriggerConfs) && command === 'trigger') {
+          this.logger.info('No trigger need to be deloyed.');
+        } else if (!_.isEmpty(resolvedTriggerConfs)) {
+          this.logger.info(StdoutFormatter.stdoutFormatter.create('triggers', JSON.stringify(resolvedTriggerConfs.map((t) => t.name))));
+          let resolvedArgs: string;
+          if (command === 'trigger') {
+            // deploy function
+            resolvedArgs = this.args;
+          } else {
+            // deploy all 或 deploy
+            const triggerNamesInArgs: string = needDeployAllTriggers ? '' : resolvedTriggerConfs.map((triggerConf) => `--trigger-name ${triggerConf.name}`).join(' ');
+            resolvedArgs = command === 'all' ? this.args.replace(/all/g, 'trigger') : `trigger ${this.args}`;
+            resolvedArgs = triggerNamesInArgs ? resolvedArgs : (resolvedArgs + ' ' + triggerNamesInArgs);
           }
-          const { remoteConfig } = await this.fcTriggers[i].GetRemoteInfo('trigger', this.fcTriggers[i].serviceName, this.fcTriggers[i].functionName, this.fcTriggers[i].name);
-          this.fcTriggers[i].statefulConfig = remoteConfig;
-          this.fcTriggers[i].upgradeStatefulConfig();
+          const fcBaseComponentInputs = fcBaseComponent.genComponentInputs(componentName, formatArgs(resolvedArgs));
+          await this.deployWithRetry(fcBaseComponentIns, fcBaseComponentInputs);
         }
       }
-
-      await this.setStatefulConfig();
     }
+    // set stateful config
+    if (needDeployService && this.fcService) {
+      const { remoteConfig } = await this.fcService.GetRemoteInfo('service', this.fcService.name, undefined, undefined);
+      this.fcService.statefulConfig = remoteConfig;
+      this.fcService.upgradeStatefulConfig();
+    }
+    if (needDeployFunction && this.fcFunction) {
+      const { remoteConfig } = await this.fcFunction.GetRemoteInfo('function', this.fcFunction.serviceName, this.fcFunction.name, undefined);
+      this.fcFunction.statefulConfig = remoteConfig;
+      this.fcFunction.upgradeStatefulConfig();
+    }
+    // triggers
+    if (needDeployTrigger && !_.isEmpty(this.fcTriggers)) {
+      for (let i = 0; i < this.fcTriggers.length; i++) {
+        if (!_.isEmpty(targetTriggerNameArr) && targetTriggerNameArr.includes(this.fcTriggers[i].name)) {
+          continue;
+        }
+        const { remoteConfig } = await this.fcTriggers[i].GetRemoteInfo('trigger', this.fcTriggers[i].serviceName, this.fcTriggers[i].functionName, this.fcTriggers[i].name);
+        this.fcTriggers[i].statefulConfig = remoteConfig;
+        this.fcTriggers[i].upgradeStatefulConfig();
+      }
+    }
+
+    await this.setStatefulConfig();
 
     // deploy custom domain
     let hasAutoCustomDomainNameInDomains = false;
@@ -215,7 +247,7 @@ export default class FcDeployComponent {
     if (!_.isEmpty(this.fcCustomDomains) && needDeployDomain) {
       for (let i = 0; i < this.fcCustomDomains.length; i++) {
         await this.fcCustomDomains[i].initLocal();
-        const resolvedCustomDomainConf: CustomDomainConfig = await this.fcCustomDomains[i].makeCustomDomain();
+        const resolvedCustomDomainConf: CustomDomainConfig = await this.fcCustomDomains[i].makeCustomDomain(this.args);
         hasAutoCustomDomainNameInDomains = hasAutoCustomDomainNameInDomains || this.fcCustomDomains[i].isDomainNameAuto;
         resolvedCustomDomainConfs.push(resolvedCustomDomainConf);
         this.logger.debug(`resolved custom domain: \n${JSON.stringify(resolvedCustomDomainConf, null, '  ')}`);
@@ -226,8 +258,8 @@ export default class FcDeployComponent {
       for (const resolvedCustomDomainConf of resolvedCustomDomainConfs) {
         this.logger.info(StdoutFormatter.stdoutFormatter.create('custom domain', resolvedCustomDomainConf.domainName));
 
-        const fcDomainComponent = new FcDomainComponent(profileOfFcDomain, resolvedCustomDomainConf, this.region, this.credentials, this.curPath, this.args);
-        const fcDomainComponentInputs = fcDomainComponent.genComponentInputs();
+        const fcDomainComponent = new FcDomainComponent(profileOfFcDomain, resolvedCustomDomainConf, this.region, this.credentials, this.curPath);
+        const fcDomainComponentInputs = fcDomainComponent.genComponentInputs('fc-domain', this.args);
         const fcDoaminComponentIns = await core.load('devsapp/fc-domain');
         await fcDoaminComponentIns.deploy(fcDomainComponentInputs);
       }
@@ -237,7 +269,7 @@ export default class FcDeployComponent {
 
     if (hasAutoCustomDomainNameInDomains) {
       for (let i = 0; i < this.fcCustomDomains.length; i++) {
-        this.fcCustomDomains[i].setStatedCustomDomainConf(resolvedCustomDomainConfs[i]);
+        await this.fcCustomDomains[i].setStatedCustomDomainConf(resolvedCustomDomainConfs[i]);
       }
     }
     const res = {
@@ -327,14 +359,16 @@ export default class FcDeployComponent {
       if (['service', 'function', 'all'].includes(nonOptionsArg) && !_.isEmpty(this.fcFunction)) {
         await this.fcFunction.initRemote('function', this.fcFunction.serviceName, this.fcFunction.name);
       }
-      let targetTriggerName: string;
+      const argsData: any = parsedArgs?.data || {};
+
+      let targetTriggerNameArr: string[];
       if (nonOptionsArg === 'trigger') {
-        const argsData: any = parsedArgs?.data || {};
-        targetTriggerName = argsData?.n || argsData?.name;
+        const targetTriggerName = argsData['trigger-name'];
+        targetTriggerNameArr = typeof (targetTriggerName) === 'string' ? [targetTriggerName] : targetTriggerName;
       }
       if (!_.isEmpty(this.fcTriggers)) {
         for (const fcTrigger of this.fcTriggers) {
-          if (_.isNil(targetTriggerName) || targetTriggerName === fcTrigger.name) {
+          if (_.isEmpty(targetTriggerNameArr) || targetTriggerNameArr.includes(fcTrigger.name)) {
             await fcTrigger.initRemote('trigger', fcTrigger.serviceName, fcTrigger.functionName, fcTrigger.name);
           }
         }
@@ -342,15 +376,15 @@ export default class FcDeployComponent {
 
       const profileOfFcBase = replaceProjectName(this.serverlessProfile, `${this.serverlessProfile?.project.projectName}-fc-base-project`);
       const { fcBaseComponentIns, BaseComponent, componentName } = await this.handlerBase();
-      if (!await this.checkIfResourceExistOnline(nonOptionsArg, targetTriggerName)) { return; }
+      if (!await this.checkIfResourceExistOnline(nonOptionsArg, targetTriggerNameArr)) { return; }
 
-      const fcBaseComponent = new BaseComponent(profileOfFcBase, this.fcService.localConfig, this.region, this.credentials, this.curPath, this.args, this.fcFunction?.localConfig, this.fcTriggers.filter((t) => (t?.localConfig)).map((t) => (t?.localConfig)));
-      const fcBaseComponentInputs = fcBaseComponent.genComponentInputs(componentName);
+      const fcBaseComponent = new BaseComponent(profileOfFcBase, this.fcService.localConfig, this.region, this.credentials, this.curPath, this.fcFunction?.localConfig, this.fcTriggers.filter((t) => (t?.localConfig)).map((t) => (t?.localConfig)));
+      const fcBaseComponentInputs = fcBaseComponent.genComponentInputs(componentName, this.args);
 
       // unset state
       if (!_.isEmpty(this.fcTriggers)) {
         for (let i = 0; i < this.fcTriggers.length; i++) {
-          if (_.isNil(targetTriggerName) || targetTriggerName === this.fcTriggers[i].name) {
+          if (_.isNil(targetTriggerNameArr) || targetTriggerNameArr.includes(this.fcTriggers[i].name)) {
             await this.fcTriggers[i].unsetState();
           }
         }
@@ -370,10 +404,10 @@ export default class FcDeployComponent {
     const profileOfFcDomain = replaceProjectName(this.serverlessProfile, `${this.serverlessProfile?.project.projectName}-fc-domain-project`);
     const removedCustomDomains: string[] = [];
     for (const fcCustomDomain of this.fcCustomDomains) {
-      const resolvedCustomDomainConf: CustomDomainConfig = await fcCustomDomain.makeCustomDomain();
+      const resolvedCustomDomainConf: CustomDomainConfig = await fcCustomDomain.makeCustomDomain(this.args);
       this.logger.debug(`waiting for custom domain: ${resolvedCustomDomainConf.domainName} to be removed.`);
-      const fcDomainComponent = new FcDomainComponent(profileOfFcDomain, resolvedCustomDomainConf, this.region, this.credentials, this.curPath, this.args);
-      const fcDomainComponentInputs = fcDomainComponent.genComponentInputs();
+      const fcDomainComponent = new FcDomainComponent(profileOfFcDomain, resolvedCustomDomainConf, this.region, this.credentials, this.curPath);
+      const fcDomainComponentInputs = fcDomainComponent.genComponentInputs('fc-domain', this.args);
       const fcDoaminComponentIns = await core.load('devsapp/fc-domain');
       await fcDoaminComponentIns.remove(fcDomainComponentInputs);
       removedCustomDomains.push(resolvedCustomDomainConf.domainName);
@@ -469,7 +503,7 @@ export default class FcDeployComponent {
     }
   }
 
-  private async checkIfResourceExistOnline(resourceType: string, resourceName?: string): Promise<boolean> {
+  private async checkIfResourceExistOnline(resourceType: string, resourceName?: any): Promise<boolean> {
     if (resourceType === 'service' && _.isEmpty(this.fcService?.remoteConfig)) {
       this.logger.error(`Service ${this.fcService?.name} dose not exist online.`);
       return false;
@@ -480,7 +514,7 @@ export default class FcDeployComponent {
     }
     if (resourceType === 'trigger' && resourceName) {
       for (const fcTrigger of this.fcTriggers) {
-        if (fcTrigger?.name === resourceName && _.isEmpty(fcTrigger?.remoteConfig)) {
+        if (resourceName.includes(fcTrigger?.name) && _.isEmpty(fcTrigger?.remoteConfig)) {
           this.logger.error(`Trigger ${resourceName} dose not exist online.`);
           return false;
         }
@@ -510,10 +544,8 @@ export default class FcDeployComponent {
     const properties: IProperties = inputs?.props;
 
     const appName: string = inputs?.appName;
-    // 去除 args 的行首以及行尾的空格
-    if (inputs?.args) {
-      this.args = inputs?.args.replace(/(^\s*)|(\s*$)/g, '');
-    }
+    this.args = formatArgs(inputs?.args);
+
     this.curPath = inputs?.path?.configPath;
     const projectName: string = project?.projectName;
     this.region = properties?.region;
@@ -549,16 +581,16 @@ export default class FcDeployComponent {
     this.fcCustomDomains = [];
 
     this.logger.debug(`instantiate serviceConfig with : \n${JSON.stringify(serviceConf, null, '  ')}`);
-    this.fcService = new FcService(serviceConf, functionConf, this.serverlessProfile, this.region, this.credentials, this.curPath, this.args);
+    this.fcService = new FcService(serviceConf, functionConf, this.serverlessProfile, this.region, this.credentials, this.curPath);
     if (!_.isEmpty(functionConf)) {
       this.logger.debug(`functionConfig not empty: \n${JSON.stringify(functionConf, null, '  ')}, instantiate it.`);
-      this.fcFunction = new FcFunction(functionConf, serviceConf?.name, this.serverlessProfile, this.region, this.credentials, this.curPath, this.args);
+      this.fcFunction = new FcFunction(functionConf, serviceConf?.name, this.serverlessProfile, this.region, this.credentials, this.curPath);
     }
 
     if (!_.isEmpty(triggerConfs)) {
       this.logger.debug(`triggersConfig not empty: \n${JSON.stringify(triggerConfs, null, '  ')}, instantiate them.`);
       for (const triggerConf of triggerConfs) {
-        const fcTrigger = new FcTrigger(triggerConf, serviceConf?.name, functionConf?.name, this.serverlessProfile, this.region, this.credentials, this.curPath, this.args);
+        const fcTrigger = new FcTrigger(triggerConf, serviceConf?.name, functionConf?.name, this.serverlessProfile, this.region, this.credentials, this.curPath);
         this.fcTriggers.push(fcTrigger);
       }
     }
@@ -566,12 +598,29 @@ export default class FcDeployComponent {
     if (!_.isEmpty(customDomainConfs)) {
       this.logger.debug(`customDomains not empty: \n${JSON.stringify(customDomainConfs, null, '  ')}, instantiate them.`);
       for (const customDomainConf of customDomainConfs) {
-        const fcCustomDomain = new FcCustomDomain(customDomainConf, serviceConf?.name, functionConf?.name, triggerConfs, this.serverlessProfile, this.region, this.credentials, this.curPath, this.args);
+        const fcCustomDomain = new FcCustomDomain(customDomainConf, serviceConf?.name, functionConf?.name, triggerConfs, this.serverlessProfile, this.region, this.credentials, this.curPath);
         this.fcCustomDomains.push(fcCustomDomain);
       }
     }
     return {
       isHelp: false,
     };
+  }
+
+  // 调用 fc-base/fc-base-sdk 组件部署资源
+  private async deployWithRetry(fcBaseComponentIns, fcBaseComponentInputs): Promise<any> {
+    await promiseRetry(async (retry: any, times: number): Promise<any> => {
+      try {
+        await retryDeployUntilSlsCreated(fcBaseComponentIns, fcBaseComponentInputs);
+        return;
+      } catch (ex) {
+        if (ex.code === 'AccessDenied' || isSlsNotExistException(ex)) {
+          throw ex;
+        }
+        this.logger.debug(`error when create service/function/trigger or update service/function/trigger, error is: \n${ex}`);
+        this.logger.info(StdoutFormatter.stdoutFormatter.retry('fc', 'create', '', times));
+        retry(ex);
+      }
+    });
   }
 }

@@ -7,8 +7,8 @@ export default class FcInfoComponent extends Component {
   private readonly functionName?: string;
   private readonly triggerNames?: string[];
 
-  constructor(serviceName: string, serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string, args?: string, functionName?: string, triggerNames?: string[]) {
-    super(serverlessProfile, region, credentials, curPath, args);
+  constructor(serviceName: string, serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string, functionName?: string, triggerNames?: string[]) {
+    super(serverlessProfile, region, credentials, curPath);
     this.serviceName = serviceName;
     this.functionName = functionName;
     this.triggerNames = triggerNames;

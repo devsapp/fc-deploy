@@ -48,8 +48,8 @@ export class FcService extends FcDeploy<ServiceConfig> {
   hasAutoConfig: boolean;
   name: string;
 
-  constructor(serviceConf: ServiceConfig, functionConf: FunctionConfig, serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string, args?: string) {
-    super(serviceConf, serverlessProfile, region, credentials, curPath, args);
+  constructor(serviceConf: ServiceConfig, functionConf: FunctionConfig, serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string) {
+    super(serviceConf, serverlessProfile, region, credentials, curPath);
     this.hasCustomContainerConfig = _.has(functionConf, 'customContainerConfig');
     this.hasFunctionAsyncConfig = _.has(functionConf, 'asyncConfiguration');
     this.hasAutoConfig = false;

@@ -12,8 +12,8 @@ export class VpcComponent extends Component {
   readonly securityGroupDescription?: string;
   readonly zoneId: string;
 
-  constructor(serverlessProfile: ServerlessProfile, { cidrBlock, vpcName, vpcDescription, vSwitchName, vSwitchDescription, securityGroupName, securityGroupDescription, zoneId }, region: string, credentials: ICredentials, curPath?: string, args?: string) {
-    super(serverlessProfile, region, credentials, curPath, args);
+  constructor(serverlessProfile: ServerlessProfile, { cidrBlock, vpcName, vpcDescription, vSwitchName, vSwitchDescription, securityGroupName, securityGroupDescription, zoneId }, region: string, credentials: ICredentials, curPath?: string) {
+    super(serverlessProfile, region, credentials, curPath);
     this.vpcName = vpcName;
     this.vSwitchName = vSwitchName;
     this.securityGroupName = securityGroupName;

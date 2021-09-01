@@ -27,7 +27,7 @@ export class AlicloudClient extends IInputsBase {
   readonly timeout?: number;
 
   constructor(serverlessProfile: ServerlessProfile, credentials: ICredentials, region: string, curPath?: string, args?: string, timeout?: number) {
-    super(serverlessProfile, region, credentials, curPath, args);
+    super(serverlessProfile, region, credentials, curPath);
     if (!_.isNil(timeout)) { this.timeout = timeout; }
   }
 

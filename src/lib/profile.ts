@@ -7,14 +7,12 @@ export class IInputsBase {
   readonly region: string;
   readonly credentials: ICredentials;
   readonly curPath?: string;
-  readonly args?: string;
 
-  constructor(serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string, args?: string) {
+  constructor(serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string) {
     this.serverlessProfile = serverlessProfile;
     this.region = region;
     this.credentials = credentials;
     if (!_.isNil(curPath)) { this.curPath = curPath; }
-    if (!_.isNil(args)) { this.args = args; }
   }
 }
 export interface ICredentials {

@@ -11,8 +11,8 @@ export class FcBaseSdkComponent extends Component {
   readonly functionConf?: FunctionConfig;
   readonly triggers?: TriggerConfig[];
 
-  constructor(serverlessProfile: ServerlessProfile, serviceConf: ServiceConfig, region: string, credentials: ICredentials, curPath?: string, args?: string, functionConf?: FunctionConfig, triggers?: TriggerConfig[]) {
-    super(serverlessProfile, region, credentials, curPath, args);
+  constructor(serverlessProfile: ServerlessProfile, serviceConf: ServiceConfig, region: string, credentials: ICredentials, curPath?: string, functionConf?: FunctionConfig, triggers?: TriggerConfig[]) {
+    super(serverlessProfile, region, credentials, curPath);
     this.serviceConf = serviceConf;
     this.functionConf = functionConf;
     this.triggers = triggers;

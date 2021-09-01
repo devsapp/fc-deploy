@@ -7,8 +7,8 @@ export class SlsComponent extends Component {
   readonly logstore: string;
   readonly description?: string;
 
-  constructor(serverlessProfile: ServerlessProfile, logproject: string, logstore: string, region: string, credentials: ICredentials, curPath?: string, args?: string, description?: string) {
-    super(serverlessProfile, region, credentials, curPath, args);
+  constructor(serverlessProfile: ServerlessProfile, logproject: string, logstore: string, region: string, credentials: ICredentials, curPath?: string, description?: string) {
+    super(serverlessProfile, region, credentials, curPath);
     this.logproject = logproject;
     this.logstore = logstore;
     if (!_.isNil(description)) { this.description = description; }
