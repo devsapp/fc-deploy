@@ -9,8 +9,8 @@ export default class FcSync extends Component {
   private readonly triggerName?: string;
   private readonly targetDir?: string;
 
-  constructor(serviceName: string, serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string, args?: string, functionName?: string, triggerName?: string, targetDir?: string) {
-    super(serverlessProfile, region, credentials, curPath, args);
+  constructor(serviceName: string, serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string, functionName?: string, triggerName?: string, targetDir?: string) {
+    super(serverlessProfile, region, credentials, curPath);
     this.serviceName = serviceName;
     this.functionName = functionName;
     this.triggerName = triggerName;

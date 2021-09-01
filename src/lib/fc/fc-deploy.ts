@@ -14,8 +14,8 @@ export default abstract class FcDeploy<T> extends IInputsBase {
   existOnline: boolean;
   useRemote: boolean;
 
-  constructor(localConfig: T, serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string, args?: string) {
-    super(serverlessProfile, region, credentials, curPath, args);
+  constructor(localConfig: T, serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string) {
+    super(serverlessProfile, region, credentials, curPath);
     this.localConfig = localConfig;
     this.existOnline = false;
   }
@@ -87,7 +87,7 @@ export default abstract class FcDeploy<T> extends IInputsBase {
     }
     // Get config info via fc-info component
     const profileOfFcInfo = replaceProjectName(this.serverlessProfile, `${this.serverlessProfile?.project.projectName}-fc-info-project`);
-    const fcInfo: FcInfo = new FcInfo(serviceName, profileOfFcInfo, this.region, this.credentials, this.curPath, null, functionName, triggerName ? [triggerName] : null);
+    const fcInfo: FcInfo = new FcInfo(serviceName, profileOfFcInfo, this.region, this.credentials, this.curPath, functionName, triggerName ? [triggerName] : null);
     const fcInfoComponentInputs: any = await fcInfo.genComponentInputs('fc-info');
     const fcInfoComponentIns: any = await core.load('devsapp/fc-info');
     this.logger.info(StdoutFormatter.stdoutFormatter.check(type, resourceName));
@@ -168,7 +168,7 @@ export default abstract class FcDeploy<T> extends IInputsBase {
       }
       const msg = `${resourceType}: ${name} exists remotely, deploy it with local config or remote config?`;
 
-      this.useRemote = !await promptForConfirmOrDetails(msg, clonedRemoteConfig, clonedStatefulConfig, ['use local', 'use remote'], 'use local');
+      this.useRemote = await promptForConfirmOrDetails(msg, clonedRemoteConfig, clonedStatefulConfig, ['use local', 'use remote'], 'use remote');
     } else {
       // 有状态
       if (_.isEqual(clonedRemoteConfig, clonedStatefulConfig)) {
@@ -177,7 +177,7 @@ export default abstract class FcDeploy<T> extends IInputsBase {
       }
       const msg = `Remote ${resourceType}: ${name} is inconsistent with the config you deployed last time, deploy it with local config or remote config?`;
 
-      this.useRemote = !await promptForConfirmOrDetails(msg, clonedRemoteConfig, clonedStatefulConfig, ['use remote', 'use local'], 'use local');
+      this.useRemote = await promptForConfirmOrDetails(msg, clonedRemoteConfig, clonedStatefulConfig, ['use local', 'use remote'], 'use remote');
     }
   }
 

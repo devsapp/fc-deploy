@@ -5,8 +5,8 @@ import { CustomDomainConfig } from '../fc/custom-domain';
 export class FcDomainComponent extends Component {
   readonly customDomainConfig: CustomDomainConfig;
 
-  constructor(serverlessProfile: ServerlessProfile, customDomainConfig: CustomDomainConfig, region: string, credentials: ICredentials, curPath?: string, args?: string) {
-    super(serverlessProfile, region, credentials, curPath, args);
+  constructor(serverlessProfile: ServerlessProfile, customDomainConfig: CustomDomainConfig, region: string, credentials: ICredentials, curPath?: string) {
+    super(serverlessProfile, region, credentials, curPath);
     this.customDomainConfig = customDomainConfig;
   }
 

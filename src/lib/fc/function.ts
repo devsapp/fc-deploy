@@ -90,8 +90,8 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
   static readonly DEFAULT_SYNC_CODE_PATH: string = path.join(os.homedir(), '.s', 'cache', 'fc-deploy', 'remote-code');
   static readonly MAX_CODE_SIZE_WITH_OSS: number = !isNaN(parseInt(process.env.FC_CODE_SIZE_WITH_OSS, 10)) ? parseInt(process.env.FC_CODE_SIZE_WITH_OSS, 10) : 104857600; // 100M
   static readonly MAX_CODE_SIZE_WITH_CODEURI: number = !isNaN(parseInt(process.env.FC_CODE_SIZE_WITH_CODEURI, 10)) ? parseInt(process.env.FC_CODE_SIZE_WITH_CODEURI, 10) : 52428800; // 50M
-  constructor(functionConf: FunctionConfig, serviceName: string, serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string, args?: string) {
-    super(functionConf, serverlessProfile, region, credentials, curPath, args);
+  constructor(functionConf: FunctionConfig, serviceName: string, serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string) {
+    super(functionConf, serverlessProfile, region, credentials, curPath);
     this.serviceName = serviceName;
     this.name = functionConf?.name;
   }
@@ -155,8 +155,8 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
     // 基于 fc-sync 获取函数代码
     await fse.mkdirp(FcFunction.DEFAULT_SYNC_CODE_PATH);
     const profileOfFcSync = replaceProjectName(this.serverlessProfile, `${this.serverlessProfile?.project.projectName}-fc-sync-project`);
-    const fcSync: FcSync = new FcSync(this.serviceName, profileOfFcSync, this.region, this.credentials, this.curPath, '--type code -f', this.name, null, FcFunction.DEFAULT_SYNC_CODE_PATH);
-    const fcSyncComponentInputs: any = await fcSync.genComponentInputs('fc-sync');
+    const fcSync: FcSync = new FcSync(this.serviceName, profileOfFcSync, this.region, this.credentials, this.curPath, this.name, null, FcFunction.DEFAULT_SYNC_CODE_PATH);
+    const fcSyncComponentInputs: any = await fcSync.genComponentInputs('fc-sync', '--type code -f');
     const fcSyncComponentIns: any = await core.load('devsapp/fc-sync');
     const syncRes: any = await fcSyncComponentIns.sync(fcSyncComponentInputs);
     const codeUri: string = syncRes?.codeFiles[this.name];

@@ -41,8 +41,8 @@ export class FcCustomDomain extends IInputsBase {
   readonly stateId: string;
   isDomainNameAuto: boolean;
 
-  constructor(customDomainConf: CustomDomainConfig, serviceName: string, functionName: string, triggerConfs: TriggerConfig[], serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string, args?: string) {
-    super(serverlessProfile, region, credentials, curPath, args);
+  constructor(customDomainConf: CustomDomainConfig, serviceName: string, functionName: string, triggerConfs: TriggerConfig[], serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string) {
+    super(serverlessProfile, region, credentials, curPath);
     this.customDomainConf = customDomainConf;
     this.serviceName = serviceName;
     this.functionName = functionName;
@@ -126,7 +126,7 @@ export class FcCustomDomain extends IInputsBase {
   }
 
 
-  async makeCustomDomain(): Promise<CustomDomainConfig> {
+  async makeCustomDomain(args: string): Promise<CustomDomainConfig> {
     const resolvedCustomDomainConf: CustomDomainConfig = _.cloneDeep(this.customDomainConf);
     if (!_.isEmpty(this.customDomainConf.certConfig)) {
       const { privateKey } = this.customDomainConf.certConfig;
@@ -172,8 +172,8 @@ export class FcCustomDomain extends IInputsBase {
         this.logger.debug('Auto domain name');
         this.logger.info(StdoutFormatter.stdoutFormatter.using('customDomain: auto', 'fc will try to generate related custom domain resources automatically'));
         const profileOfDomain: ServerlessProfile = replaceProjectName(this.serverlessProfile, `${this.serverlessProfile?.project.projectName}-domain-project`);
-        const domainComponent = new DomainComponent(profileOfDomain, this.serviceName, this.functionName, this.region, this.credentials, this.curPath, this.args);
-        const domainComponentInputs = domainComponent.genComponentInputs('domain');
+        const domainComponent = new DomainComponent(profileOfDomain, this.serviceName, this.functionName, this.region, this.credentials, this.curPath);
+        const domainComponentInputs = domainComponent.genComponentInputs('domain', args);
         const domainComponentIns = await core.load('devsapp/domain');
         generatedDomain = await domainComponentIns.get(domainComponentInputs);
       }

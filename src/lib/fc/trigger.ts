@@ -126,8 +126,8 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
   isRoleAuto: boolean;
   readonly name: string;
 
-  constructor(triggerConf: TriggerConfig, serviceName: string, functionName: string, serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string, args?: string) {
-    super(triggerConf, serverlessProfile, region, credentials, curPath, args);
+  constructor(triggerConf: TriggerConfig, serviceName: string, functionName: string, serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string) {
+    super(triggerConf, serverlessProfile, region, credentials, curPath);
     this.serviceName = serviceName;
     this.functionName = functionName;
     this.isRoleAuto = false;

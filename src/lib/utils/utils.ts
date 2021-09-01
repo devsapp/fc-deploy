@@ -44,3 +44,8 @@ export function generateResourceName(serviceName: string, region: string, accoun
   const md5Uid = crypto.createHmac('md5', accountID).update(serviceName).digest('hex');
   return `${prefix}-${md5Uid.slice(0, 7)}-${region}`;
 }
+
+export function formatArgs(args: string): string | null {
+  // 去除 args 的行首以及行尾的空格
+  return (args ? args.replace(/(^\s*)|(\s*$)/g, '') : '');
+}
