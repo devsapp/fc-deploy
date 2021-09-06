@@ -21,4 +21,5 @@ export default class FcDeployComponent {
     private setStatefulConfig;
     private checkIfResourceExistOnline;
     private handlerInputs;
+    private deployWithRetry;
 }

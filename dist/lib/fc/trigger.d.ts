@@ -89,7 +89,7 @@ export declare class FcTrigger extends FcDeploy<TriggerConfig> {
     readonly functionName: string;
     isRoleAuto: boolean;
     readonly name: string;
-    constructor(triggerConf: TriggerConfig, serviceName: string, functionName: string, serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string, args?: string);
+    constructor(triggerConf: TriggerConfig, serviceName: string, functionName: string, serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string);
     genStateID(): string;
     init(useLocal?: boolean): Promise<void>;
     private initLocal;

@@ -7,7 +7,7 @@ export declare class FcBaseComponent extends Component {
     readonly serviceConf: ServiceConfig;
     readonly functionConf?: FunctionConfig;
     readonly triggers?: TriggerConfig[];
-    constructor(serverlessProfile: ServerlessProfile, serviceConf: ServiceConfig, region: string, credentials: ICredentials, curPath?: string, args?: string, functionConf?: FunctionConfig, triggers?: TriggerConfig[]);
+    constructor(serverlessProfile: ServerlessProfile, serviceConf: ServiceConfig, region: string, credentials: ICredentials, curPath?: string, functionConf?: FunctionConfig, triggers?: TriggerConfig[]);
     genServiceProp(): {
         [key: string]: any;
     };

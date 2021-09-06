@@ -25,7 +25,7 @@ export declare class NasComponent extends Component {
         assistServiceName: any;
         mountPointDomain: any;
         vswitchId: any;
-    }, region: string, credentials: ICredentials, curPath?: string, args?: string);
+    }, region: string, credentials: ICredentials, curPath?: string);
     genComponentProp(): {
         [key: string]: any;
     };

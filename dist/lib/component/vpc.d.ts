@@ -18,7 +18,7 @@ export declare class VpcComponent extends Component {
         securityGroupName: any;
         securityGroupDescription: any;
         zoneId: any;
-    }, region: string, credentials: ICredentials, curPath?: string, args?: string);
+    }, region: string, credentials: ICredentials, curPath?: string);
     genComponentProp(): {
         [key: string]: any;
     };
