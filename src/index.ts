@@ -133,7 +133,7 @@ export default class FcDeployComponent {
     const resolvedTriggerConfs: TriggerConfig[] = [];
     let hasAutoTriggerRole = false;
     let needDeployTrigger = (needDeployAll && type !== 'code') || ((!command && type !== 'code') || command === 'trigger');
-    let needDeployAllTriggers: boolean = true;
+    let needDeployAllTriggers = true;
     if (!_.isEmpty(this.fcTriggers) && needDeployTrigger) {
       let existTriggersUseLocal = false;
       for (let i = 0; i < this.fcTriggers.length; i++) {
@@ -208,7 +208,7 @@ export default class FcDeployComponent {
             // deploy all 或 deploy
             const triggerNamesInArgs: string = needDeployAllTriggers ? '' : resolvedTriggerConfs.map((triggerConf) => `--trigger-name ${triggerConf.name}`).join(' ');
             resolvedArgs = command === 'all' ? this.args.replace(/all/g, 'trigger') : `trigger ${this.args}`;
-            resolvedArgs = triggerNamesInArgs ? resolvedArgs : (resolvedArgs + ' ' + triggerNamesInArgs);
+            resolvedArgs = triggerNamesInArgs ? resolvedArgs : (`${resolvedArgs } ${ triggerNamesInArgs}`);
           }
           const fcBaseComponentInputs = fcBaseComponent.genComponentInputs(componentName, formatArgs(resolvedArgs));
           await this.deployWithRetry(fcBaseComponentIns, fcBaseComponentInputs);

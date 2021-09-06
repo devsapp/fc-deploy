@@ -6,7 +6,7 @@ export default abstract class FcDeploy<T> extends IInputsBase {
     statefulAutoConfig: any;
     existOnline: boolean;
     useRemote: boolean;
-    constructor(localConfig: T, serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string, args?: string);
+    constructor(localConfig: T, serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string);
     setKVInState(stateID: string, key: string, value: any): Promise<void>;
     unsetState(): Promise<void>;
     getState(): Promise<any>;

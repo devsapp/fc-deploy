@@ -12,7 +12,7 @@ export declare class RamComponent extends Component {
         assumeRolePolicy: any;
         attachedPolicies: any;
         description: any;
-    }, region: string, credentials: ICredentials, curPath?: string, args?: string);
+    }, region: string, credentials: ICredentials, curPath?: string);
     genComponentProp(): {
         [key: string]: any;
     };

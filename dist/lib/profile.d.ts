@@ -5,8 +5,7 @@ export declare class IInputsBase {
     readonly region: string;
     readonly credentials: ICredentials;
     readonly curPath?: string;
-    readonly args?: string;
-    constructor(serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string, args?: string);
+    constructor(serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string);
 }
 export interface ICredentials {
     AccountID: string;
