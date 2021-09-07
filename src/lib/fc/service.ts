@@ -100,8 +100,8 @@ export class FcService extends FcDeploy<ServiceConfig> {
       if (!definition.isAutoConfig(logConfig)) {
         throw new Error('logConfig only support auto/Auto when set to string.');
       }
-    } else if (logConfig?.project || logConfig?.logstore) {
-      throw new Error('LogStore and Project must both exist');
+    } else if (_.isEmpty(logConfig) && !(logConfig?.project && logConfig?.logstore)) {
+      throw new Error('Logstore and Project must both exist');
     }
 
     let roleName: string;
