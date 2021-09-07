@@ -189,7 +189,8 @@ export class FcService extends FcDeploy<ServiceConfig> {
 
   async setStatefulAutoConfig(): Promise<void> {
     const stateID: string = this.genStateID();
-    const statefulAutoConfig: any = {};
+    const state: any = await this.getState();
+    const statefulAutoConfig: any = state?.statefulAutoConfig;
     if (!this.useRemote && this.statefulConfig?.nasConfig && definition.isAutoConfig(this.localConfig?.nasConfig)) {
       Object.assign(statefulAutoConfig, {
         nasConfig: this.statefulConfig.nasConfig,

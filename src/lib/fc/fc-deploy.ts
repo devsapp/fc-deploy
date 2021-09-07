@@ -188,6 +188,10 @@ export default abstract class FcDeploy<T> extends IInputsBase {
     if (_.has(this.statefulConfig, 'ossBucket')) { delete this.statefulConfig.ossBucket; }
     if (_.has(this.statefulConfig, 'ossKey')) { delete this.statefulConfig.ossKey; }
     if (_.has(this.statefulConfig, 'lastModifiedTime')) { delete this.statefulConfig.lastModifiedTime; }
+    if (_.has(this.statefulConfig, 'vpcConfig') && _.has(this.statefulConfig.vpcConfig, 'vSwitchIds')) {
+      this.statefulConfig.vpcConfig.vswitchIds = this.statefulConfig.vpcConfig.vSwitchIds;
+      delete this.statefulConfig.vpcConfig.vSwitchIds;
+    }
   }
 
   abstract genStateID(): string;
