@@ -50,6 +50,13 @@ export class FcService extends FcDeploy<ServiceConfig> {
 
   constructor(serviceConf: ServiceConfig, functionConf: FunctionConfig, serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string) {
     super(serviceConf, serverlessProfile, region, credentials, curPath);
+    if (_.has(this.localConfig, 'vpcConfig') && _.has(this.localConfig.vpcConfig, 'vswitchIds')) {
+      // vswitchIds -> vSwitchIds
+      // @ts-ignore
+      this.localConfig.vpcConfig.vSwitchIds = this.localConfig.vpcConfig.vswitchIds;
+      // @ts-ignore
+      delete this.localConfig.vpcConfig.vswitchIds;
+    }
     this.hasCustomContainerConfig = _.has(functionConf, 'customContainerConfig');
     this.hasFunctionAsyncConfig = _.has(functionConf, 'asyncConfiguration');
     this.hasAutoConfig = false;
@@ -271,7 +278,7 @@ export class FcService extends FcDeploy<ServiceConfig> {
       return {
         vpcId: vpcDeployRes.vpcId,
         securityGroupId: vpcDeployRes.securityGroupId,
-        vswitchIds: [vpcDeployRes.vSwitchId],
+        vSwitchIds: [vpcDeployRes.vSwitchId],
       };
     }
     return vpcConfig;

@@ -74,7 +74,7 @@ export class AlicloudNas extends AlicloudClient {
       zoneId: null,
       assistServiceName: nasServiceName,
       mountPointDomain,
-      vswitchId: vpcConfig.vswitchIds,
+      vSwitchId: vpcConfig.vSwitchIds,
     }, this.region, this.credentials, this.curPath);
     const nasComponentInputs = nasComponent.genComponentInputs('nas');
     const nasComponentIns = await core.load('devsapp/nas');
@@ -85,7 +85,7 @@ export class AlicloudNas extends AlicloudClient {
   async createDefaultNas(nasServiceName: string, vpcConfig: VpcConfig, nasDir: string, roleArn: string, assumeYes?: boolean): Promise<NasConfig> {
     const nasZones = await this.describeNasZones();
     const alicloudVpc = new AlicloudVpc(this.serverlessProfile, this.credentials, this.region);
-    const { zoneId, vswitchId, storageType } = await alicloudVpc.getAvailableVSwitchId(vpcConfig.vswitchIds, nasZones, assumeYes);
+    const { zoneId, vswitchId, storageType } = await alicloudVpc.getAvailableVSwitchId(vpcConfig.vSwitchIds, nasZones, assumeYes);
     this.logger.debug(`getAvailableVSwitchId done, available vswitchID: ${vswitchId}, zoneId: ${zoneId}, storageType: ${storageType}`);
     const defaultNasUid = 10003;
     const defaultNasGid = 10003;
@@ -93,7 +93,7 @@ export class AlicloudNas extends AlicloudClient {
     const profileOfNas = replaceProjectName(this.serverlessProfile, `${this.serverlessProfile?.project.projectName}-nas-project`);
     const defaultVpcConf: VpcConfig = {
       vpcId: vpcConfig.vpcId,
-      vswitchIds: [vswitchId],
+      vSwitchIds: [vswitchId],
       securityGroupId: vpcConfig.securityGroupId,
     };
     const nasComponent = new NasComponent(profileOfNas, {
@@ -107,7 +107,7 @@ export class AlicloudNas extends AlicloudClient {
       zoneId,
       assistServiceName: nasServiceName,
       mountPointDomain: null,
-      vswitchId: null,
+      vSwitchId: null,
     }, this.region, this.credentials, this.curPath);
     const nasComponentInputs = nasComponent.genComponentInputs('nas', assumeYes ? '-y' : null);
     const nasComponentIns = await core.load('devsapp/nas');
