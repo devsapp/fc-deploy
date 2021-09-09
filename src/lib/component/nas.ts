@@ -13,9 +13,9 @@ export class NasComponent extends Component {
   readonly storageType: string;
   readonly assistServiceName: string;
   readonly mountPointDomain: string;
-  readonly vswitchId: string;
+  readonly vSwitchId: string;
 
-  constructor(serverlessProfile: ServerlessProfile, { nasName, nasUid, nasGid, nasDir, vpcConfig, role, zoneId, storageType, assistServiceName, mountPointDomain, vswitchId }, region: string, credentials: ICredentials, curPath?: string) {
+  constructor(serverlessProfile: ServerlessProfile, { nasName, nasUid, nasGid, nasDir, vpcConfig, role, zoneId, storageType, assistServiceName, mountPointDomain, vSwitchId }, region: string, credentials: ICredentials, curPath?: string) {
     super(serverlessProfile, region, credentials, curPath);
     this.nasName = nasName;
     this.nasUid = nasUid;
@@ -27,7 +27,7 @@ export class NasComponent extends Component {
     this.storageType = storageType;
     this.assistServiceName = assistServiceName;
     this.mountPointDomain = mountPointDomain;
-    this.vswitchId = vswitchId;
+    this.vSwitchId = vSwitchId;
   }
 
   genComponentProp(): { [key: string]: any } {
@@ -35,7 +35,7 @@ export class NasComponent extends Component {
       regionId: this.region,
       serviceName: this.assistServiceName,
       vpcId: this.vpcConfig.vpcId,
-      vSwitchId: this.vswitchId || this.vpcConfig.vswitchIds[0],
+      vSwitchId: this.vSwitchId || this.vpcConfig.vSwitchIds[0],
       securityGroupId: this.vpcConfig.securityGroupId,
       groupId: this.nasGid,
       userId: this.nasUid,
