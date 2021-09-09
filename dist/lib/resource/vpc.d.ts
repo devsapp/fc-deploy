@@ -1,7 +1,7 @@
 import { AlicloudClient } from './client';
 export interface VpcConfig {
     securityGroupId: string;
-    vswitchIds: string[];
+    vSwitchIds?: string[];
     vpcId?: string;
 }
 export declare class AlicloudVpc extends AlicloudClient {
