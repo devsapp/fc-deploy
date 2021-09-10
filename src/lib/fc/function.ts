@@ -200,10 +200,22 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
       instanceConcurrency: this.localConfig?.instanceConcurrency || FUNCTION_CONF_DEFAULT.instanceConcurrency,
       instanceType: this.localConfig?.instanceType || FUNCTION_CONF_DEFAULT.instanceType,
       runtime: this.localConfig?.runtime || FUNCTION_CONF_DEFAULT.runtime,
-      instanceLifecycleConfig: this.localConfig?.instanceLifecycleConfig,
-      asyncConfiguration: this.localConfig?.asyncConfiguration,
-      layers: this.localConfig?.layers,
     };
+    if (!_.isNil(this.localConfig?.asyncConfiguration)) {
+      Object.assign(resolvedFunctionConf, {
+        asyncConfiguration: this.localConfig?.asyncConfiguration,
+      });
+    }
+    if (!_.isNil(this.localConfig?.instanceLifecycleConfig)) {
+      Object.assign(resolvedFunctionConf, {
+        instanceLifecycleConfig: this.localConfig?.instanceLifecycleConfig,
+      });
+    }
+    if (!_.isNil(this.localConfig?.layers)) {
+      Object.assign(resolvedFunctionConf, {
+        layers: this.localConfig?.layers,
+      });
+    }
     if (!_.isNil(this.localConfig?.initializer)) {
       Object.assign(resolvedFunctionConf, {
         initializer: this.localConfig?.initializer,

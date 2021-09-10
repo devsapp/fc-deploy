@@ -86,7 +86,7 @@ export default class FcDeployComponent {
       }
       type = null;
     }
-    this.args = formatArgs(inputs?.args);
+    this.args = formatArgs(this.args);
     let targetTriggerNameArr: string[];
     if (command === 'trigger') {
       const targetTriggerName = argsData['trigger-name'];

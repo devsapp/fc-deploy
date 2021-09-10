@@ -9,7 +9,7 @@ export interface TriggerConfig {
   functionName?: string;
   serviceName?: string;
   triggerName?: string;
-  lastModifiedTime: any;
+  lastModifiedTime?: any;
   name: string;
   type: 'oss' | 'log' | 'timer' | 'http' | 'mnsTopic' | 'cdnEvents' | 'tablestore';
   role?: string;
