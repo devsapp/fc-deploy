@@ -26,19 +26,21 @@
     "variable-diff": "^2.0.2"
   },
   "devDependencies": {
-    "@types/fs-extra": "^9.0.11",
-    "@types/lodash": "^4.14.170",
+    "@alicloud/log": "^1.2.1",
     "@types/eslint": "^7.2.6",
+    "@types/fs-extra": "^9.0.11",
     "@types/jest": "^26.0.10",
+    "@types/lodash": "^4.14.170",
     "@types/node": "14",
+    "@vercel/ncc": "^0.24.0",
+    "dotenv": "^10.0.0",
     "f2elint": "^0.4.4",
     "jest": "^26.4.0",
     "rimraf": "^3.0.2",
     "ts-jest": "^26.2.0",
     "ts-loader": "^8.0.14",
     "ts-node": "^9.1.1",
-    "typescript": "^3.9.7",
-    "@vercel/ncc": "^0.24.0"
+    "typescript": "^3.9.7"
   },
   "autoInstall": false,
   "scripts": {
@@ -46,7 +48,7 @@
     "dev": "npm run prebuild && npx tsc -w -p tsconfig.json",
     "prebuild": "rm -rf node_modules && rm -rf package-lock.json && npm i && rimraf dist",
     "build": "npm run fix && npm run lint && ncc build src/index.ts -m -e @serverless-devs/core -o dist",
-    "test": "jest",
+    "test-integration": "jest --testNamePattern ^Integration::",
     "test:cov": "jest --coverage",
     "lint": "f2elint scan -i ./src",
     "fix": "f2elint fix -i ./src",
