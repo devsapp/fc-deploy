@@ -214,6 +214,8 @@ describe('Integration::remove', () => {
         functions: [FUNCTION_CONFIG.name],
         triggers: [HTTP_TRIGGER_CONFIG.name],
       });
+      const regex = new RegExp("^" + "GET /services/" + SERVICE_CONFIG.name + " failed with 404." + ".*", "g");
+      await expect(fcClient.getService(SERVICE_CONFIG.name)).rejects.toThrowError(regex);
     } finally {
       try {
         await fcClient.deleteTrigger(SERVICE_CONFIG.name, FUNCTION_CONFIG.name, HTTP_TRIGGER_CONFIG.name);
