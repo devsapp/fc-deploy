@@ -1,6 +1,6 @@
 edition: 1.0.0          #  命令行YAML规范版本，遵循语义化版本（Semantic Versioning）规范
 name: fcDeployApp       #  项目名称
-access: default  #  秘钥别名
+access: fcDemo  #  秘钥别名
 
 services:
   fc-deploy-test: #  服务名称
@@ -8,26 +8,11 @@ services:
     props: #  组件的属性值
       region: cn-shanghai
       service:
-        name: qianfeng-fc-deploy-service
+        name: fc-deploy-service
         description: demo for fc-deploy component
         internetAccess: true
-#        role: acs:ram::xxx:role/aliyunfcgeneratedrole-cn-shanghai-qianfeng-demo
-        nasConfig: auto
-        vpcConfig: auto
-        logConfig: auto
+        role: acs:ram::xxx:role/aliyunfcdefaultrole
+#        nasConfig: auto
+#        vpcConfig: auto
+#        logConfig: auto
 
-          #        nasConfig:
-#          userId: 10003
-#          groupId: 10003
-#          mountPoints:
-#            - serverAddr: '3011648303-mln27.cn-shanghai.nas.aliyuncs.com'
-#              nasDir: /qianfeng-test
-#              fcDir: /mnt/auto
-#        vpcConfig:
-#          vpcId: vpc-uf6aeqhdqec2hd4g2t85t
-#          vSwitchIds:
-#            - vsw-uf6cuo9vhe2mfjqzltwq6
-#          securityGroupId: sg-uf60inq7p2vt4gp2hzx6
-#        logConfig:
-#          project: aliyun-fc-cn-shanghai-2960df9f-ca07-539c-9be8-b50ff9e6e820
-#          logstore: function-log

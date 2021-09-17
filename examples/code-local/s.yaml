@@ -8,7 +8,7 @@ services:
     props: #  组件的属性值
       region: cn-shanghai
       service:
-        name: qianfeng-fc-deploy-service
+        name: fc-deploy-service
         internetAccess: true
       function:
         name: test-function
@@ -20,7 +20,7 @@ services:
     props: #  组件的属性值
       region: cn-shanghai
       service:
-        name: qianfeng-fc-deploy-service
+        name: fc-deploy-service
         description: demo for fc-deploy component
         internetAccess: true
       function:
@@ -48,7 +48,7 @@ services:
           protocol: HTTP  # HTTP 或 HTTP,HTTPS
           routeConfigs:
             - path: /*
-              serviceName: qianfeng-fc-deploy-service
+              serviceName: fc-deploy-service
               functionName: test-function
               methods:
                 - GET

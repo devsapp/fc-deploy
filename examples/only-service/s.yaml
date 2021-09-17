@@ -8,16 +8,16 @@ services:
     props: #  组件的属性值
       region: cn-qingdao
       service:
-        name: qianfeng-fc-deploy-service
+        name: fc-deploy-service
         description: demo for fc-deploy component
         internetAccess: true
-        role: 'acs:ram::xxx:role/qianfeng-fc-deploy-test-role'
+        role: 'acs:ram::xxx:role/fc-deploy-test-role'
         nasConfig:
           userId: 10003
           groupId: 10003
           mountPoints:
             - serverAddr: xxx.cn-qingdao.nas.aliyuncs.com
-              nasDir: /qianfeng-fc-deploy-service
+              nasDir: /fc-deploy-service
               fcDir: /mnt/auto
         vpcConfig:
           vpcId: xxx

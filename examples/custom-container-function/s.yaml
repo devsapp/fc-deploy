@@ -8,11 +8,11 @@ services:
     props: #  组件的属性值
       region: cn-shanghai
       service:
-        name: qianfeng-fc-deploy-service
+        name: fc-deploy-service
         description: 'demo for fc-deploy component'
         internetAccess: true
         role:
-          name: qianfeng-fc-deploy-role
+          name: fc-deploy-role
           policies:
             - AliyunContainerRegistryReadOnlyAccess
       function:
@@ -23,7 +23,7 @@ services:
         timeout: 60
         customContainerConfig:
           # image: ${env(image)}
-          image: registry.cn-shanghai.aliyuncs.com/fc-demo/qianfeng-node-express:v1
+          image: registry.cn-shanghai.aliyuncs.com/fc-demo/node-express:v1
           command: '["node"]'
           args: '["server.js"]'
         environmentVariables:
@@ -42,5 +42,5 @@ services:
           protocol: HTTP
           routeConfigs:
             - path: /*
-              serviceName: qianfeng-fc-deploy-service
+              serviceName: fc-deploy-service
               functionName: custom-container-function

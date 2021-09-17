@@ -285,7 +285,7 @@ export class FcService extends FcDeploy<ServiceConfig> {
     return vpcConfig;
   }
 
-  async generateServiceNas(vpcConfig: VpcConfig, roleArn: string, assumeYes?: boolean): Promise<NasConfig> {
+  async generateServiceNas(vpcConfig: VpcConfig, roleArn: string, assumeYes?: boolean, escapeNasCheck?: boolean): Promise<NasConfig> {
     const { nasConfig } = this.localConfig;
     const alicloudNas = new AlicloudNas(this.serverlessProfile, this.credentials, this.region);
     if (_.isString(nasConfig)) {
@@ -304,22 +304,24 @@ export class FcService extends FcDeploy<ServiceConfig> {
         throw new Error('nasConfig only support auto/Auto when set to string.');
       }
     }
-    // user-defined nasConfig
-    for (const mountPoint of nasConfig?.mountPoints) {
-      const ensureVm = core.spinner(`Ensuring nas dir: ${mountPoint.nasDir} in mount point: ${mountPoint.serverAddr}...`);
-      try {
-        await alicloudNas.ensureNasDir(`${FC_NAS_SERVICE_PREFIX}${this.name}`, mountPoint.nasDir, nasConfig.groupId, nasConfig.userId, vpcConfig, roleArn, mountPoint.serverAddr);
-        ensureVm.succeed(`Nas dir: ${mountPoint.nasDir} in mount point: ${mountPoint.serverAddr} exists.`);
-      } catch (e) {
-        ensureVm.fail(`Ensure nas dir: ${mountPoint.nasDir} in mount point: ${mountPoint.serverAddr} failed.`);
-        this.logger.debug(`Ensure nas dir: ${mountPoint.nasDir} in mount point: ${mountPoint.serverAddr} failed, error: ${e}`);
+    if (!escapeNasCheck) {
+      // user-defined nasConfig
+      for (const mountPoint of nasConfig?.mountPoints) {
+        const ensureVm = core.spinner(`Ensuring nas dir: ${mountPoint.nasDir} in mount point: ${mountPoint.serverAddr}...`);
+        try {
+          await alicloudNas.ensureNasDir(`${FC_NAS_SERVICE_PREFIX}${this.name}`, mountPoint.nasDir, nasConfig.groupId, nasConfig.userId, vpcConfig, roleArn, mountPoint.serverAddr);
+          ensureVm.succeed(`Nas dir: ${mountPoint.nasDir} in mount point: ${mountPoint.serverAddr} exists.`);
+        } catch (e) {
+          ensureVm.fail(`Ensure nas dir: ${mountPoint.nasDir} in mount point: ${mountPoint.serverAddr} failed.`);
+          this.logger.debug(`Ensure nas dir: ${mountPoint.nasDir} in mount point: ${mountPoint.serverAddr} failed, error: ${e}`);
+        }
       }
     }
 
     return nasConfig;
   }
 
-  async makeService(assumeYes?: boolean): Promise<ServiceConfig> {
+  async makeService(assumeYes?: boolean, escapeNasCheck?: boolean): Promise<ServiceConfig> {
     if (this.useRemote) {
       this.statefulConfig = _.cloneDeep(this.remoteConfig);
       this.upgradeStatefulConfig();
@@ -361,7 +363,7 @@ export class FcService extends FcDeploy<ServiceConfig> {
     if (!_.isEmpty(this.localConfig.nasConfig)) {
       // nas
       // @ts-ignore
-      const resolvedNasConfig = await this.generateServiceNas(resolvedServiceConf?.vpcConfig, resolvedServiceConf?.role, assumeYes);
+      const resolvedNasConfig = await this.generateServiceNas(resolvedServiceConf?.vpcConfig, resolvedServiceConf?.role, assumeYes, escapeNasCheck);
       Object.assign(resolvedServiceConf, { nasConfig: resolvedNasConfig });
     }
     if (this.existOnline) {

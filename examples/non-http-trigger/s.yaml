@@ -8,7 +8,7 @@ services:
     props: #  组件的属性值
       region: cn-hangzhou
       service:
-        name: qianfeng-service
+        name: service
         description: 'demo for fc-deploy component'
         internetAccess: true
       function:
