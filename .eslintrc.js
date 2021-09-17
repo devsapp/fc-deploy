@@ -9,5 +9,6 @@ module.exports = {
     'no-await-in-loop': 'off',
     'max-len': 'off',
     '@typescript-eslint/ban-ts-comment': 'off',
+    'no-param-reassign': 'off'
   },
 };

@@ -49,13 +49,15 @@ export default class FcDeployComponent {
       return;
     }
     const parsedArgs: {[key: string]: any} = core.commandParse(inputs, {
-      boolean: ['help', 'assume-yes', 'use-local'],
+      boolean: ['help', 'assume-yes', 'use-local', 'escape-nas-check'],
       string: ['type'],
       alias: { help: 'h', 'assume-yes': 'y' } });
     const argsData: any = parsedArgs?.data || {};
 
     const assumeYes: boolean = argsData.y || argsData.assumeYes || argsData['assume-yes'];
     const useLocal: boolean = argsData['use-local'];
+    // 指定 --escape-nas-check 参数后，当用户使用自定义的 nasConfig，不会进行 nasDir 的检查
+    const escapeNasCheck: boolean = argsData['escape-nas-check'];
     let { type } = argsData;
     if (type && !DEPLOY_SUPPORT_CONFIG_ARGS.includes(type)) {
       core.help(DEPLOY_HELP_INFO);
@@ -103,7 +105,7 @@ export default class FcDeployComponent {
         this.logger.info(`Service ${this.fcService.name} using online config, skip it.`);
         needDeployService = false;
       } else {
-        resolvedServiceConf = await this.fcService.makeService(assumeYes);
+        resolvedServiceConf = await this.fcService.makeService(assumeYes, escapeNasCheck);
         resolvedServiceConf.name = resolvedServiceConf.name || resolvedServiceConf.serviceName;
       }
     }
@@ -561,8 +563,8 @@ export default class FcDeployComponent {
 
     this.logger.info(StdoutFormatter.stdoutFormatter.using('region', this.region));
     this.logger.info(StdoutFormatter.stdoutFormatter.using('access alias', this.access));
-    this.logger.info(StdoutFormatter.stdoutFormatter.using('accessKeyID', mark(String(this.credentials.AccountID))));
-    this.logger.info(StdoutFormatter.stdoutFormatter.using('accessKeySecret', mark(String(this.credentials.AccessKeyID))));
+    this.logger.info(StdoutFormatter.stdoutFormatter.using('accessKeyID', mark(String(this.credentials.AccessKeyID))));
+    this.logger.info(StdoutFormatter.stdoutFormatter.using('accessKeySecret', mark(String(this.credentials.AccessKeySecret))));
 
     this.serverlessProfile = {
       project: {

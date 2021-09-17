@@ -8,14 +8,14 @@ services:
     props: #  组件的属性值
       region: cn-shanghai
       service:
-        name: qianfeng-fc-deploy-service
+        name: fc-deploy-service
         description: demo for fc-deploy component
         internetAccess: true
       function:
         name: test-function
         description: this is a test
         runtime: nodejs10
-        ossBucket: qianfeng-fc-deploy-bucket
+        ossBucket: fc-deploy-bucket
         ossKey: code.zip
         handler: index.handler
         memorySize: 128
