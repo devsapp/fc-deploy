@@ -13,7 +13,7 @@ export interface ServiceConfig {
     logConfig?: LogConfig | 'auto' | 'Auto';
     role?: string | RoleConfig;
     vpcConfig?: VpcConfig | 'auto' | 'Auto';
-    nasConfig?: NasConfig | 'atuo' | 'Auto';
+    nasConfig?: NasConfig | 'auto' | 'Auto';
     tracingConfig?: 'Enable' | 'Disable';
     import?: boolean;
     protect?: boolean;
@@ -32,8 +32,8 @@ export declare class FcService extends FcDeploy<ServiceConfig> {
     setStatefulAutoConfig(): Promise<void>;
     generateServiceLog(): Promise<LogConfig>;
     generateServiceVpc(isNasAuto: boolean): Promise<VpcConfig>;
-    generateServiceNas(vpcConfig: VpcConfig, roleArn: string, assumeYes?: boolean): Promise<NasConfig>;
-    makeService(assumeYes?: boolean): Promise<ServiceConfig>;
+    generateServiceNas(vpcConfig: VpcConfig, roleArn: string, assumeYes?: boolean, escapeNasCheck?: boolean): Promise<NasConfig>;
+    makeService(assumeYes?: boolean, escapeNasCheck?: boolean): Promise<ServiceConfig>;
     initLocal(): Promise<void>;
     private initLocalConfig;
 }
