@@ -25,7 +25,10 @@ export const FC_DEFAULT_ROLE = 'AliyunFCDefaultRole';
 export const FC_DEFAULT_ROLE_POLICY = 'AliyunFCDefaultRolePolicy';
 export const FC_DEFAULT_ROLE_POLICY_STATEMENT = [
   {
-    Action: ['vpc:DescribeVSwitchAttributes'],
+    Action: [
+      'vpc:DescribeVSwitchAttributes',
+      'vpc:DescribeVpcAttribute',
+    ],
     Resource: '*',
     Effect: 'Allow',
   },
