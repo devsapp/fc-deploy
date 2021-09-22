@@ -4,8 +4,8 @@ import { TriggerConfig } from './lib/fc/trigger';
 import { CustomDomainConfig } from './lib/fc/custom-domain';
 import { ServerlessProfile } from './lib/profile';
 export interface IInputs extends ServerlessProfile {
-    props: IProperties;
-    args: string;
+    props?: IProperties;
+    args?: string;
     path: {
         configPath: string;
     };
@@ -14,7 +14,7 @@ export interface IInputs extends ServerlessProfile {
 export interface IProperties {
     region: string;
     service: ServiceConfig;
-    function: FunctionConfig;
-    triggers: TriggerConfig[];
-    customDomains: CustomDomainConfig[];
+    function?: FunctionConfig;
+    triggers?: TriggerConfig[];
+    customDomains?: CustomDomainConfig[];
 }
