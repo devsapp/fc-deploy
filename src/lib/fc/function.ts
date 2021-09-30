@@ -31,6 +31,7 @@ export interface FunctionConfig {
   customContainerConfig?: CustomContainerConfig;
   handler?: string;
   memorySize?: number;
+  gpuMemorySize?: number;
   runtime: string;
   timeout?: number;
   layers?: string[];
@@ -196,6 +197,7 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
       description: this.localConfig?.description || FUNCTION_CONF_DEFAULT.description,
       handler: this.localConfig?.handler || FUNCTION_CONF_DEFAULT.handler,
       memorySize: this.localConfig?.memorySize || FUNCTION_CONF_DEFAULT.memorySize,
+      gpuMemorySize: this.localConfig?.gpuMemorySize,
       timeout: this.localConfig?.timeout || FUNCTION_CONF_DEFAULT.timeout,
       instanceConcurrency: this.localConfig?.instanceConcurrency || FUNCTION_CONF_DEFAULT.instanceConcurrency,
       instanceType: this.localConfig?.instanceType || FUNCTION_CONF_DEFAULT.instanceType,
