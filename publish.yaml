@@ -179,6 +179,12 @@ Properties:
             Description: function的内存规格
             Type:
               - Number
+          gpuMemorySize:
+            Required: false
+            Default: 8192
+            Description: function的显存规格
+            Type:
+              - Number
           runtime:
             Required: false
             Default: Nodejs10
