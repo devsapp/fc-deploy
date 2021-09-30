@@ -11,6 +11,7 @@ export interface LogConfig {
   logstore: string;
   enableRequestMetrics?: boolean;
   enableInstanceMetrics?: boolean;
+  logBeginRule?: string;
 }
 
 export const generateProjectName = (accountID, region: string) => {

@@ -252,6 +252,7 @@ export class FcService extends FcDeploy<ServiceConfig> {
         logstore: logConfig.logstore,
         enableRequestMetrics: logConfig.enableRequestMetrics || false,
         enableInstanceMetrics: logConfig.enableInstanceMetrics || false,
+        logBeginRule: logConfig.logBeginRule,
       };
     }
     return resolvedLogConfig;

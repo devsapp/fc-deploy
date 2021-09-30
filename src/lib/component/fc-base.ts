@@ -145,6 +145,10 @@ export class FcBaseComponent extends Component {
       this.logger.error('enableRequestMetrics is temporarily not supported, delete this field.');
       delete prop.service.logConfig?.enableRequestMetrics;
     }
+    if (_.isString(prop.service.logConfig?.logBeginRule)) {
+      this.logger.error('logBeginRule is temporarily not supported, delete this field.');
+      delete prop.service.logConfig?.logBeginRule;
+    }
 
     return prop;
   }
