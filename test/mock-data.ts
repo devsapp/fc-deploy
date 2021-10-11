@@ -20,6 +20,7 @@ export const FUNCTION_CONFIG: FunctionConfig = {
   name: 'testFunction',
   description: 'This is for fc-deploy test',
   memorySize: 128,
+  gpuMemorySize: undefined,
   handler: 'index.handler',
   runtime: 'nodejs12',
   codeUri: path.join(MOCK_PROJECT_PATH, 'code'),
