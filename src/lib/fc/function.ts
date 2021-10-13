@@ -348,10 +348,12 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
 
   async makeFunctionCode(baseDir: string, pushRegistry?: string, assumeYes?: boolean): Promise<{ codeZipPath?: string; codeOssObject?: string }> {
     this.logger.debug('waiting for making function code.');
-    if (await this.needPushRegistry(pushRegistry)) {
-      const alicloudAcr = new AlicloudAcr(pushRegistry, this.serverlessProfile, this.credentials, this.region);
+    if (isCustomContainerRuntime(this.localConfig?.runtime)) {
       try {
-        await alicloudAcr.pushImage(this.localConfig?.customContainerConfig.image, assumeYes);
+        if (await this.needPushRegistry(pushRegistry)) {
+          const alicloudAcr = new AlicloudAcr(pushRegistry, this.serverlessProfile, this.credentials, this.region);
+          await alicloudAcr.pushImage(this.localConfig?.customContainerConfig.image, assumeYes);
+        }
       } catch (e) {
         handleKnownErrors(e);
         this.logger.warn(`Push image ${this.localConfig.customContainerConfig.image} failed.`);
