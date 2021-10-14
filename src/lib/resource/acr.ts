@@ -131,7 +131,7 @@ export class AlicloudAcr extends AlicloudClient {
   }
 
   static isAcrRegistry(registry: string): boolean {
-    return registry.startsWith('registry') && registry.endsWith('.aliyuncs.com');
+    return registry.includes('registry') && registry.endsWith('.aliyuncs.com');
   }
   static extractRegionFromAcrRegistry(registry: string): string {
     return extract(/^registry(|-vpc).([^.]+).aliyuncs.com$/, registry, 2);
@@ -142,6 +142,6 @@ export class AlicloudAcr extends AlicloudClient {
   }
 
   static isVpcAcrRegistry(registry: string): boolean {
-    return registry.startsWith('registry-vpc');
+    return registry.includes('registry-vpc');
   }
 }
