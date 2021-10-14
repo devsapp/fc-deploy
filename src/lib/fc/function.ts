@@ -89,7 +89,8 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
 
   static readonly DEFAULT_BUILD_ARTIFACTS_PATH_SUFFIX: string = path.join('.s', 'build', 'artifacts');
   static readonly DEFAULT_SYNC_CODE_PATH: string = path.join(os.homedir(), '.s', 'cache', 'fc-deploy', 'remote-code');
-  static readonly MAX_CODE_SIZE_WITH_OSS: number = !isNaN(parseInt(process.env.FC_CODE_SIZE_WITH_OSS, 10)) ? parseInt(process.env.FC_CODE_SIZE_WITH_OSS, 10) : 104857600; // 100M
+  static readonly MAX_CODE_SIZE_WITH_OSS: number = !isNaN(parseInt(process.env.FC_CODE_SIZE_WITH_OSS, 10)) ? parseInt(process.env.FC_CODE_SIZE_WITH_OSS, 10) : 104857600; // 100M，弹性实例
+  static readonly MAX_CODE_SIZE_WITH_OSS_OF_C1: number = !isNaN(parseInt(process.env.FC_CODE_SIZE_WITH_OSS_OF_C1, 10)) ? parseInt(process.env.FC_CODE_SIZE_WITH_OSS_OF_C1, 10) : 524288000; // 500M，性能实例
   static readonly MAX_CODE_SIZE_WITH_CODEURI: number = !isNaN(parseInt(process.env.FC_CODE_SIZE_WITH_CODEURI, 10)) ? parseInt(process.env.FC_CODE_SIZE_WITH_CODEURI, 10) : 52428800; // 50M
   constructor(functionConf: FunctionConfig, serviceName: string, serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string) {
     super(functionConf, serverlessProfile, region, credentials, curPath);
@@ -107,6 +108,16 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
   private async initLocal(assumeYes?: boolean): Promise<void> {
     this.validateConfig();
     await this.initLocalConfig(assumeYes);
+  }
+
+  private isElasticInstance(): boolean {
+    // 弹性实例
+    return (this.localConfig.instanceType === 'e1' || _.isNil(this.localConfig.instanceType));
+  }
+
+  private isEnhancedInstance(): boolean {
+    // 性能实例
+    return this.localConfig.instanceType === 'c1';
   }
 
   async getCodeUriWithBuildPath(): Promise<any> {
@@ -383,29 +394,38 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
       const zipCodeFileSize: number = zippedCode?.fileSizeInBytes;
       const zipCodeFileHash: string = zippedCode?.fileHash;
       this.logger.debug(`zipped code path: ${zipCodeFilePath}, zipped code size: ${zipCodeFileSize}`);
-      if (zipCodeFileSize > FcFunction.MAX_CODE_SIZE_WITH_OSS) {
+      if (this.isElasticInstance() && zipCodeFileSize > FcFunction.MAX_CODE_SIZE_WITH_OSS) {
         // >100M
         throw new Error(`Size of zipped code: ${zipCodeFilePath} is greater than code size: 100M.You can use:\n1. layers: https://help.aliyun.com/document_detail/193057.html\n2. custom container: https://help.aliyun.com/document_detail/179368.html`);
+      }
+      if (this.isEnhancedInstance() && zipCodeFileSize > FcFunction.MAX_CODE_SIZE_WITH_OSS_OF_C1) {
+        // >500M
+        throw new Error(`Size of zipped code: ${zipCodeFilePath} is greater than code size: 500M.You can use:\n1. layers: https://help.aliyun.com/document_detail/193057.html\n2. custom container: https://help.aliyun.com/document_detail/179368.html`);
       }
       if (zipCodeFileSize <= FcFunction.MAX_CODE_SIZE_WITH_CODEURI) {
         // <= 50M
         return { codeZipPath: zipCodeFilePath };
       }
-      // 50M < zipCodeFileSize <= 100M
-      this.logger.info(`Size of zipped code: ${zipCodeFilePath} is between (50M, 100M], fc will upload code to oss.`);
+      // 50M < zipCodeFileSize <= 100M 或者 50M < zipCodeFileSize <= 500M
+      this.logger.info(`Size of zipped code: ${zipCodeFilePath} is allowed, fc will upload code to oss.`);
       if (!this.localConfig?.ossBucket) {
-        throw new Error('Please provide ossBucket attribute under function property when code size is between (50M, 100M].');
+        throw new Error('Please provide ossBucket attribute under function property when code size is greater than 50M.');
       }
       const alicloudOss: AlicloudOss = new AlicloudOss(this.localConfig?.ossBucket, this.credentials, this.region);
       if (!await alicloudOss.isBucketExists() && !await alicloudOss.tryCreatingBucket()) {
-        throw new Error('Please provide existed ossBucket under your account when code size is between (50M, 100M].');
+        throw new Error('Please provide existed ossBucket under your account when code size is greater than 50M.');
       }
       // upload code to oss
       const defaultObjectName = `fcComponentGeneratedDir/${this.serviceName}-${this.name}-${zipCodeFileHash.substring(0, 5)}`;
       const uploadVm = core.spinner(`Uploading zipped code: ${zipCodeFilePath} to oss://${this.localConfig?.ossBucket}/${defaultObjectName}`);
       try {
-        await alicloudOss.putFileToOss(zipCodeFilePath, defaultObjectName);
-        uploadVm.succeed(`Upload zipped code: ${zipCodeFilePath} to oss://${this.localConfig?.ossBucket}/${defaultObjectName} success.`);
+        if (!await alicloudOss.isObjectExists(defaultObjectName)) {
+          await alicloudOss.putFileToOss(zipCodeFilePath, defaultObjectName);
+          uploadVm.succeed(`Upload zipped code: ${zipCodeFilePath} to oss://${this.localConfig?.ossBucket}/${defaultObjectName} success.`);
+        } else {
+          uploadVm.succeed(`Zipped code: ${zipCodeFilePath} already exists on oss, object name is oss://${this.localConfig?.ossBucket}/${defaultObjectName}.`);
+        }
+
         return {
           codeZipPath: zipCodeFilePath,
           codeOssObject: defaultObjectName,

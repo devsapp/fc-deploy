@@ -38,6 +38,19 @@ export class AlicloudOss {
     }
   }
 
+  async isObjectExists(objectName: string): Promise<boolean> {
+    // https://help.aliyun.com/document_detail/111392.html
+    try {
+      await this.client.head(objectName, {});
+      return true;
+    } catch (e) {
+      // 若获取 object 失败或者 object 不存在，返回 false
+      logger.debug(`Get oss object: ${objectName} failed, error: ${e}`);
+      return false;
+    }
+
+  }
+
   async tryCreatingBucket(): Promise<boolean> {
     try {
       logger.info(`Fc is trying to create bucket: ${this.bucket} in region:${this.region} for you to store the code.`);
