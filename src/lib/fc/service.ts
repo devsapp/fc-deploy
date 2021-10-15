@@ -398,11 +398,18 @@ export class FcService extends FcDeploy<ServiceConfig> {
     if (isAutoConfig(this.localConfig.logConfig) ||
       isAutoConfig(this.localConfig.nasConfig) ||
       isAutoConfig(this.localConfig.vpcConfig) ||
-      (_.isEmpty(this.localConfig.role) && !_.isEmpty(resolvedAutoConfigInState.role))) {
+      isAutoConfig(this.localConfig.role)) {
       this.localConfig.logConfig = (isAutoConfig(this.localConfig.logConfig) && !_.isEmpty(resolvedAutoConfigInState.logConfig)) ? resolvedAutoConfigInState.logConfig : this.localConfig.logConfig;
       this.localConfig.vpcConfig = ((isAutoConfig(this.localConfig.vpcConfig) || isAutoConfig(this.localConfig.nasConfig)) && !_.isEmpty(resolvedAutoConfigInState.vpcConfig)) ? resolvedAutoConfigInState.vpcConfig : this.localConfig.vpcConfig;
       this.localConfig.nasConfig = (isAutoConfig(this.localConfig.nasConfig) && !_.isEmpty(resolvedAutoConfigInState.nasConfig)) ? resolvedAutoConfigInState.nasConfig : this.localConfig.nasConfig;
-      this.localConfig.role = (_.isEmpty(this.localConfig.role) && !_.isEmpty(resolvedAutoConfigInState.role)) ? resolvedAutoConfigInState.role : this.localConfig.role;
+
+      // 如果 role: auto，赋于缓存的角色或者默认的角色
+      // 如果 role 不存在，则说明配置需要服务拥有一定的权限，赋于缓存的角色或者传入的角色
+      if (isAutoConfig(this.localConfig.role)) {
+        this.localConfig.role = !_.isEmpty(resolvedAutoConfigInState.role) ? resolvedAutoConfigInState.role : FC_DEFAULT_ROLE;
+      } else {
+        this.localConfig.role = (_.isEmpty(this.localConfig.role) && !_.isEmpty(resolvedAutoConfigInState.role)) ? resolvedAutoConfigInState.role : this.localConfig.role;
+      }
     }
 
     if (this.existOnline) {
