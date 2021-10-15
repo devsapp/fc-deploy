@@ -550,7 +550,6 @@ export default class FcDeployComponent {
 
     this.curPath = inputs?.path?.configPath;
     const projectName: string = project?.projectName;
-    this.region = properties?.region;
     const parsedArgs: {[key: string]: any} = core.commandParse(inputs, {
       boolean: ['help'],
       alias: { help: 'h' } });
@@ -561,6 +560,7 @@ export default class FcDeployComponent {
       };
     }
 
+    this.region = argsData?.region || properties?.region;
     this.logger.info(StdoutFormatter.stdoutFormatter.using('region', this.region));
     this.logger.info(StdoutFormatter.stdoutFormatter.using('access alias', this.access));
     this.logger.info(StdoutFormatter.stdoutFormatter.using('accessKeyID', mark(String(this.credentials.AccessKeyID))));
@@ -574,8 +574,9 @@ export default class FcDeployComponent {
       appName,
     };
 
-    const serviceConf: ServiceConfig = properties?.service;
-    const functionConf: FunctionConfig = properties?.function;
+    const serviceConf: ServiceConfig = Object.assign(properties?.service || {}, { name: argsData['service-name'] });
+    // @ts-ignore
+    const functionConf: FunctionConfig = Object.assign(properties?.function || {}, { name: argsData['function-name'] });
     const triggerConfs: TriggerConfig[] = properties?.triggers;
     const customDomainConfs: CustomDomainConfig[] = properties?.customDomains;
 
