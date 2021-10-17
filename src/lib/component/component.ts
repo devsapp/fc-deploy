@@ -14,7 +14,7 @@ export abstract class Component extends IInputsBase {
     });
 
     if (!_.isNil(this.curPath)) {
-      Object.assign(inputs, { path: this.curPath });
+      Object.assign(inputs, { path: { configPath: this.curPath } });
     }
     if (!_.isNil(args)) {
       Object.assign(inputs, { args });

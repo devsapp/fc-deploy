@@ -331,7 +331,7 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
 
     // make role
     this.logger.debug(`invocation role name: ${roleName}, service of principle: ${serviceOfAssumeRolePolicy}, assume role policy: \n${JSON.stringify(assumeRolePolicy, null, '  ')}, policy: ${policyConf}`);
-    const alicloudRam = new AlicloudRam(this.serverlessProfile, this.credentials, this.region);
+    const alicloudRam = new AlicloudRam(this.serverlessProfile, this.credentials, this.region, this.curPath);
     const roleArn = await alicloudRam.makeRole(roleName, undefined, DESCRIPTION, serviceOfAssumeRolePolicy || undefined, assumeRolePolicy || undefined, [policyConf]);
     return roleArn;
   }

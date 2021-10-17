@@ -1,5 +1,7 @@
+import * as core from '@serverless-devs/core';
 import { green, white } from 'colors';
 import ProgressBar from 'progress';
+import path from 'path';
 import crypto from 'crypto';
 
 export function createProgressBar(format, options) {
@@ -48,4 +50,18 @@ export function generateResourceName(serviceName: string, region: string, accoun
 export function formatArgs(args: string): string | null {
   // 去除 args 的行首以及行尾的空格
   return (args ? args.replace(/(^\s*)|(\s*$)/g, '') : '');
+}
+
+/**
+ * 检测 build 是否可用
+ * @param serviceName 服务名称
+ * @param functionName 函数名称
+ */
+export async function checkBuildAvailable(serviceName: string, functionName: string, baseDir = process.cwd()) {
+  const statusId = `${serviceName}-${functionName}-build`;
+  const statusPath = path.join(baseDir, '.s', 'fc-build');
+  const { status } = await core.getState(statusId, statusPath) || {};
+  if (status === 'unavailable') {
+    throw new Error(`${serviceName}/${functionName} build status is unavailable.Please re-execute 's build'`);
+  }
 }
