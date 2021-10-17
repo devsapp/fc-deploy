@@ -57,9 +57,9 @@ export function formatArgs(args: string): string | null {
  * @param serviceName 服务名称
  * @param functionName 函数名称
  */
-export async function checkBuildAvailable(serviceName: string, functionName: string) {
+export async function checkBuildAvailable(serviceName: string, functionName: string, baseDir = process.cwd()) {
   const statusId = `${serviceName}-${functionName}-build`;
-  const statusPath = path.join(process.cwd(), '.s', 'fc-build');
+  const statusPath = path.join(baseDir, '.s', 'fc-build');
   const { status } = await core.getState(statusId, statusPath) || {};
   if (status === 'unavailable') {
     throw new Error(`${serviceName}/${functionName} build status is unavailable.Please re-execute 's build'`);

@@ -137,7 +137,7 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
       };
     }
 
-    await checkBuildAvailable(this.serviceName, this.name);
+    await checkBuildAvailable(this.serviceName, this.name, baseDir);
 
     this.logger.info(`Fc detects that you have run build command for function: ${this.name}.`);
     this.logger.info(StdoutFormatter.stdoutFormatter.using('codeUri', buildCodeUri));

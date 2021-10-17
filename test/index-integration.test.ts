@@ -23,7 +23,6 @@ import * as _ from 'lodash';
 import { ServiceConfig } from "../src/lib/fc/service";
 import { generateProjectName, LogConfig, generateLogstoreName } from "../src/lib/resource/sls";
 import { AlicloudNas, NasConfig } from "../src/lib/resource/nas";
-import { FC_NAS_SERVICE_PREFIX } from "../src/lib/static";
 import fs from "fs-extra";
 
 dotenv.config({path: path.join(__dirname, '.env')});
@@ -165,7 +164,7 @@ describe('Integration::deploy', () => {
         console.log(e);
       }
       try {
-        await removeNas(accessKeyId, accessKeySecret, REGION, `${FC_NAS_SERVICE_PREFIX}${SERVICE_CONFIG.name}`, resolvedNasConfig, vpcConfig);
+        await removeNas(accessKeyId, accessKeySecret, REGION, SERVICE_CONFIG.name, resolvedNasConfig, vpcConfig);
       } catch (e) {
         console.log(e);
       }

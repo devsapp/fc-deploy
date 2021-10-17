@@ -1,7 +1,7 @@
 import { AlicloudClient } from './client';
 import * as core from '@serverless-devs/core';
 import { AlicloudVpc, VpcConfig } from './vpc';
-import { NasComponent } from '../component/nas';
+import { NasComponent, MountPoint } from '../component/nas';
 import { replaceProjectName } from '../profile';
 import * as path from 'path';
 
@@ -9,12 +9,6 @@ export interface NasConfig {
   userId?: number;
   groupId?: number;
   mountPoints: MountPoint[];
-}
-
-export interface MountPoint {
-  serverAddr?: string;
-  nasDir: string;
-  fcDir: string;
 }
 
 // TODO
@@ -60,12 +54,13 @@ export class AlicloudNas extends AlicloudClient {
     return zones.Zones.Zone;
   }
 
-  async ensureNasDir(nasServiceName: string, nasDir: string, nasGid: number, nasUid: number, vpcConfig: VpcConfig, role: string, mountPointDomain: string): Promise<void> {
+  async ensureNasDir(nasServiceName: string, mountPoints: any[], nasGid: number, nasUid: number, vpcConfig: VpcConfig, role: string): Promise<void> {
     const profileOfNas = replaceProjectName(this.serverlessProfile, `${this.serverlessProfile?.project.projectName}-nas-project`);
 
     const nasComponent = new NasComponent(profileOfNas, {
+      mountPoints,
       nasName: null,
-      nasDir,
+      nasDir: '',
       nasGid,
       nasUid,
       vpcConfig,
@@ -73,18 +68,16 @@ export class AlicloudNas extends AlicloudClient {
       storageType: null,
       zoneId: null,
       assistServiceName: nasServiceName,
-      mountPointDomain,
-      vSwitchId: vpcConfig.vSwitchIds,
     }, this.region, this.credentials, this.curPath);
     const nasComponentInputs = nasComponent.genComponentInputs('nas');
-    const nasComponentIns = await core.load('devsapp/nas');
+    const nasComponentIns = await core.load('devsapp/nas@dev');
     await nasComponentIns.ensureNasDir(nasComponentInputs);
   }
 
 
   async createDefaultNas(nasServiceName: string, vpcConfig: VpcConfig, nasDir: string, roleArn: string, assumeYes?: boolean): Promise<NasConfig> {
     const nasZones = await this.describeNasZones();
-    const alicloudVpc = new AlicloudVpc(this.serverlessProfile, this.credentials, this.region);
+    const alicloudVpc = new AlicloudVpc(this.serverlessProfile, this.credentials, this.region, this.curPath);
     const { zoneId, vswitchId, storageType } = await alicloudVpc.getAvailableVSwitchId(vpcConfig.vSwitchIds, nasZones, assumeYes);
     this.logger.debug(`getAvailableVSwitchId done, available vswitchID: ${vswitchId}, zoneId: ${zoneId}, storageType: ${storageType}`);
     const defaultNasUid = 10003;
@@ -106,23 +99,16 @@ export class AlicloudNas extends AlicloudClient {
       storageType,
       zoneId,
       assistServiceName: nasServiceName,
-      mountPointDomain: null,
-      vSwitchId: null,
+      mountPoints: null,
     }, this.region, this.credentials, this.curPath);
     const nasComponentInputs = nasComponent.genComponentInputs('nas', assumeYes ? '-y' : null);
-    const nasComponentIns = await core.load('devsapp/nas');
+    const nasComponentIns = await core.load('devsapp/nas@dev');
     const nasDeployRes = await nasComponentIns.deploy(nasComponentInputs);
 
     return {
       userId: defaultNasUid,
       groupId: defaultNasGid,
-      mountPoints: [
-        {
-          serverAddr: nasDeployRes.mountPointDomain,
-          nasDir,
-          fcDir: '/mnt/auto',
-        },
-      ],
+      mountPoints: nasDeployRes.mountPoints,
     };
   }
 }

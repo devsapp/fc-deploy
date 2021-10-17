@@ -12,7 +12,7 @@ import { VpcConfig, AlicloudVpc } from '../resource/vpc';
 import { NasConfig, AlicloudNas } from '../resource/nas';
 import * as definition from '../definition';
 import * as _ from 'lodash';
-import { FC_NAS_SERVICE_PREFIX, FC_DEFAULT_ROLE, FC_DEFAULT_ROLE_POLICY_STATEMENT, FC_DEFAULT_ROLE_POLICY } from '../static';
+import { FC_DEFAULT_ROLE, FC_DEFAULT_ROLE_POLICY_STATEMENT, FC_DEFAULT_ROLE_POLICY } from '../static';
 import { ServerlessProfile, ICredentials } from '../profile';
 import FcDeploy from './fc-deploy';
 import { isAutoConfig } from '../definition';
@@ -182,7 +182,7 @@ export class FcService extends FcDeploy<ServiceConfig> {
     if (_.isEmpty(attachedPolicies) && _.isEmpty(serviceRole)) { return undefined; }
     this.logger.info(StdoutFormatter.stdoutFormatter.set('role', roleName));
     this.hasAutoConfig = true;
-    const alicloudRam = new AlicloudRam(this.serverlessProfile, this.credentials, this.region);
+    const alicloudRam = new AlicloudRam(this.serverlessProfile, this.credentials, this.region, this.curPath);
     try {
       const roleArn = await alicloudRam.makeRole(roleName, undefined, roleDescription, undefined, assumeRolePolicy, attachedPolicies);
       return roleArn;
@@ -269,7 +269,7 @@ export class FcService extends FcDeploy<ServiceConfig> {
       this.hasAutoConfig = true;
       // vpc auto
       this.logger.info(StdoutFormatter.stdoutFormatter.using('vpcConfig: auto', 'fc will try to generate related vpc resources automatically'));
-      const alicloudVpc = new AlicloudVpc(this.serverlessProfile, this.credentials, this.region);
+      const alicloudVpc = new AlicloudVpc(this.serverlessProfile, this.credentials, this.region, this.curPath);
       const vpcDeployRes = await alicloudVpc.createDefaultVpc();
       this.logger.info(`Generated vpcConfig: \n${yaml.dump(vpcDeployRes, {
         styles: {
@@ -288,12 +288,12 @@ export class FcService extends FcDeploy<ServiceConfig> {
 
   async generateServiceNas(vpcConfig: VpcConfig, roleArn: string, assumeYes?: boolean, escapeNasCheck?: boolean): Promise<NasConfig> {
     const { nasConfig } = this.localConfig;
-    const alicloudNas = new AlicloudNas(this.serverlessProfile, this.credentials, this.region);
+    const alicloudNas = new AlicloudNas(this.serverlessProfile, this.credentials, this.region, this.curPath);
     if (_.isString(nasConfig)) {
       if (definition.isAutoConfig(nasConfig)) {
         this.hasAutoConfig = true;
         this.logger.info(StdoutFormatter.stdoutFormatter.using('nasConfig: auto', 'fc will try to generate related nas file system automatically'));
-        const nasDefaultConfig = await alicloudNas.createDefaultNas(`${FC_NAS_SERVICE_PREFIX}${this.name}`, vpcConfig, `/${this.name}`, roleArn, assumeYes);
+        const nasDefaultConfig = await alicloudNas.createDefaultNas(this.name, vpcConfig, `/${this.name}`, roleArn, assumeYes);
         this.logger.info(`Generated nasConfig: \n${yaml.dump(nasDefaultConfig, {
           styles: {
             '!!null': 'canonical', // dump null as ~
@@ -307,15 +307,13 @@ export class FcService extends FcDeploy<ServiceConfig> {
     }
     if (!escapeNasCheck) {
       // user-defined nasConfig
-      for (const mountPoint of nasConfig?.mountPoints) {
-        const ensureVm = core.spinner(`Ensuring nas dir: ${mountPoint.nasDir} in mount point: ${mountPoint.serverAddr}...`);
-        try {
-          await alicloudNas.ensureNasDir(`${FC_NAS_SERVICE_PREFIX}${this.name}`, mountPoint.nasDir, nasConfig.groupId, nasConfig.userId, vpcConfig, roleArn, mountPoint.serverAddr);
-          ensureVm.succeed(`Nas dir: ${mountPoint.nasDir} in mount point: ${mountPoint.serverAddr} exists.`);
-        } catch (e) {
-          ensureVm.fail(`Ensure nas dir: ${mountPoint.nasDir} in mount point: ${mountPoint.serverAddr} failed.`);
-          this.logger.debug(`Ensure nas dir: ${mountPoint.nasDir} in mount point: ${mountPoint.serverAddr} failed, error: ${e}`);
-        }
+      const ensureVm = core.spinner('Ensuring nas dir...');
+      try {
+        await alicloudNas.ensureNasDir(this.name, nasConfig?.mountPoints, nasConfig.groupId, nasConfig.userId, vpcConfig, roleArn);
+        ensureVm.stop();
+      } catch (e) {
+        ensureVm.fail();
+        this.logger.debug(`Ensure nas dir failed: error: ${e}`);
       }
     }
 

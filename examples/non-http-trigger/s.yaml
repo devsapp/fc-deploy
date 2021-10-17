@@ -45,6 +45,11 @@ services:
               Key:
                 Prefix: source/
                 Suffix: .png
+        - name: otsTrigger
+          type: tablestore
+          config:
+            instanceName: ${instanceName}
+            tableName: ${tableName}
         - name: logTrigger
           type: log
           config:
