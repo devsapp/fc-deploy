@@ -574,9 +574,16 @@ export default class FcDeployComponent {
       appName,
     };
 
-    const serviceConf: ServiceConfig = Object.assign(properties?.service || {}, { name: argsData['service-name'] });
     // @ts-ignore
-    const functionConf: FunctionConfig = Object.assign(properties?.function || {}, { name: argsData['function-name'] });
+    const serviceConf: ServiceConfig = properties?.service || {};
+    if (!_.isNil(argsData['service-name'])) {
+      serviceConf.name = argsData['service-name'];
+    }
+    // @ts-ignore
+    const functionConf: FunctionConfig = properties?.function || {};
+    if (!_.isNil(argsData['function-name'])) {
+      functionConf.name = argsData['function-name'];
+    }
     const triggerConfs: TriggerConfig[] = properties?.triggers;
     const customDomainConfs: CustomDomainConfig[] = properties?.customDomains;
 
