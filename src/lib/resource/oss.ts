@@ -48,7 +48,6 @@ export class AlicloudOss {
       logger.debug(`Get oss object: ${objectName} failed, error: ${e}`);
       return false;
     }
-
   }
 
   async tryCreatingBucket(): Promise<boolean> {
