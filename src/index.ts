@@ -43,7 +43,7 @@ export default class FcDeployComponent {
   async deploy(inputs: IInputs): Promise<any> {
     const {
       isHelp,
-    } = await this.handlerInputs(inputs);
+    } = await this.handlerInputs(_.cloneDeep(inputs));
     if (isHelp) {
       core.help(DEPLOY_HELP_INFO);
       return;
@@ -330,7 +330,7 @@ export default class FcDeployComponent {
   async remove(inputs: IInputs): Promise<any> {
     const {
       isHelp,
-    } = await this.handlerInputs(inputs);
+    } = await this.handlerInputs(_.cloneDeep(inputs));
     if (isHelp) {
       core.help(REMOVE_HELP_INFO);
       return;
@@ -421,7 +421,7 @@ export default class FcDeployComponent {
   async deployAutoNas(inputs: IInputs): Promise<any> {
     const {
       isHelp,
-    } = await this.handlerInputs(inputs);
+    } = await this.handlerInputs(_.cloneDeep(inputs));
     if (isHelp) {
       this.logger.info('There is no help info for deployAutoNas method.');
       return;
