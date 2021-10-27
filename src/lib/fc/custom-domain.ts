@@ -73,7 +73,7 @@ export class FcCustomDomain extends IInputsBase {
     if (!this.hasHttpTrigger) {
       throw new Error('There should be http trigger when custom domain exists');
     }
-    if (this.customDomainConf.protocol.toLocaleLowerCase().indexOf('https')) {
+    if (this.customDomainConf.protocol.toLocaleLowerCase().includes('https')) {
       if (!Object.prototype.hasOwnProperty.call(this.customDomainConf, 'certConfig')) {
         throw new Error('Must config "CertConfig" for CustomDomain when using "HTTP,HTTPS" protocol\nYou can refer to https://help.aliyun.com/document_detail/90759.html?spm=a2c4g.11186623.6.665.446a1bae462uKK for help');
       }
