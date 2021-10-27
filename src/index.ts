@@ -378,7 +378,7 @@ export default class FcDeployComponent {
 
       const profileOfFcBase = replaceProjectName(this.serverlessProfile, `${this.serverlessProfile?.project.projectName}-fc-base-project`);
       const { fcBaseComponentIns, BaseComponent, componentName } = await this.handlerBase();
-      if (!await this.checkIfResourceExistOnline(nonOptionsArg, targetTriggerNameArr)) { return; }
+      await this.checkIfResourceExistOnline(nonOptionsArg, targetTriggerNameArr);
 
       const fcBaseComponent = new BaseComponent(profileOfFcBase, this.fcService.localConfig, this.region, this.credentials, this.curPath, this.fcFunction?.localConfig, this.fcTriggers.filter((t) => (t?.localConfig)).map((t) => (t?.localConfig)));
       const fcBaseComponentInputs = fcBaseComponent.genComponentInputs(componentName, this.args);
