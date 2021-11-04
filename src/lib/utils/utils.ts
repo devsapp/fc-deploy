@@ -3,6 +3,7 @@ import { green, white } from 'colors';
 import ProgressBar from 'progress';
 import path from 'path';
 import crypto from 'crypto';
+import fse from 'fs-extra';
 
 export function createProgressBar(format, options) {
   const opts = Object.assign({
@@ -64,4 +65,20 @@ export async function checkBuildAvailable(serviceName: string, functionName: str
   if (status === 'unavailable') {
     throw new Error(`${serviceName}/${functionName} build status is unavailable.Please re-execute 's build'`);
   }
+}
+
+/**
+ * 获取缓存文件保存的路径（需要和core.setState的路径实现保持一致）
+ * @param id stateId
+ * @param dirPath 保存路径
+ * @returns 缓存文件路径
+ */
+export function getStateFilePath(id: any, dirPath?: string): string {
+  const { templateFile } = process.env;
+  const spath = fse.existsSync(templateFile)
+    ? path.join(path.dirname(templateFile), '.s')
+    : path.join(process.cwd(), '.s');
+  fse.ensureDirSync(spath);
+  const temp = dirPath ? path.resolve(spath, dirPath) : spath;
+  return path.join(temp, `${id}.json`);
 }

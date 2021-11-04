@@ -6,6 +6,7 @@ import * as core from '@serverless-devs/core';
 import { DomainComponent } from '../component/domain';
 import * as fse from 'fs-extra';
 import StdoutFormatter from '../component/stdout-formatter';
+import { getStateFilePath } from '../utils/utils';
 
 export interface CustomDomainConfig {
   domainName: string;
@@ -116,7 +117,9 @@ export class FcCustomDomain extends IInputsBase {
   async delStatedCustomDomainConf(): Promise<void> {
     const state = await core.getState(this.stateId);
     if (_.isEmpty(state)) { return; }
+    // 预期是删除掉这个文件，但是预防后面 core 修改逻辑导致问题，先清空内容再删除文件。
     await core.setState(this.stateId, {});
+    await fse.remove(getStateFilePath(this.stateId));
   }
 
   async getStatedCustomDomainConf(): Promise<string> {

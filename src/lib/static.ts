@@ -241,7 +241,7 @@ export const REMOVE_HELP_INFO = [
       '$ s <ProjectName> {bold remove}',
       '$ s {bold remove} {underline service}',
       '$ s {bold remove} {underline domain} [{bold --name} {underline name}]',
-      '$ s exec -- {bold remove} {underline domain} [{bold --name} {underline name}]',
+      '$ s {bold remove} {underline domain} [{bold --name} {underline name}]',
     ],
   },
   {
