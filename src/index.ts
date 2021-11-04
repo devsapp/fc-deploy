@@ -585,7 +585,16 @@ export default class FcDeployComponent {
       functionConf.name = argsData['function-name'];
     }
     const triggerConfs: TriggerConfig[] = properties?.triggers;
-    const customDomainConfs: CustomDomainConfig[] = properties?.customDomains;
+    const customDomainConfs: CustomDomainConfig[] = properties?.customDomains || [];
+    // cli 支持 domain --domain-name <domainName>
+    if (parsedArgs?.data?._?.[0] === 'domain' && _.isEmpty(customDomainConfs) && !_.isNil(argsData['domain-name'])) {
+      // 模拟一个真实的配置，绕过一系列的校验后面
+      customDomainConfs.push({
+        domainName: argsData['domain-name'],
+        protocol: argsData.protocol || 'HTTP',
+        routeConfigs: [{ path: '/*' }],
+      });
+    }
 
     this.fcTriggers = [];
     this.fcCustomDomains = [];
