@@ -619,12 +619,18 @@ export default class FcDeployComponent {
 
   // 调用 fc-base/fc-base-sdk 组件部署资源
   private async deployWithRetry(fcBaseComponentIns, fcBaseComponentInputs): Promise<any> {
+    // logConfig 配置是auto时重试部署 40 次,否则按照正常的逻辑重试
+    const logConfigIsAuto = isAutoConfig(this.fcService?.localConfig?.logConfig);
     await promiseRetry(async (retry: any, times: number): Promise<any> => {
       try {
-        await retryDeployUntilSlsCreated(fcBaseComponentIns, fcBaseComponentInputs);
+        if (logConfigIsAuto) {
+          await retryDeployUntilSlsCreated(fcBaseComponentIns, fcBaseComponentInputs);
+        } else {
+          await fcBaseComponentIns.deploy(fcBaseComponentInputs);
+        }
         return;
       } catch (ex) {
-        if (ex.code === 'AccessDenied' || isSlsNotExistException(ex)) {
+        if (ex.code === 'AccessDenied' || (logConfigIsAuto && isSlsNotExistException(ex))) {
           throw ex;
         }
         this.logger.debug(`error when create service/function/trigger or update service/function/trigger, error is: \n${ex}`);

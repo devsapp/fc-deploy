@@ -10,6 +10,7 @@ module.exports = {
     'max-len': 'off',
     '@typescript-eslint/ban-ts-comment': 'off',
     '@typescript-eslint/member-ordering': 'off',
-    'no-param-reassign': 'off'
+    'no-param-reassign': 'off',
+    'no-bitwise': 'off',
   },
 };

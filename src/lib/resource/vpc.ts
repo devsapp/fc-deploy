@@ -69,6 +69,7 @@ export class AlicloudVpc extends AlicloudClient {
   }
 
   async selectAllowedVSwitchZone() {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { AlicloudNas } = require('./nas');
     const alicloudNas = new AlicloudNas(this.serverlessProfile, this.credentials, this.region);
 

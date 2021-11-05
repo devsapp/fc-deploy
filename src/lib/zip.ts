@@ -6,6 +6,7 @@ import { createProgressBar } from './utils/utils';
 import { green, grey } from 'colors';
 import archiver from 'archiver';
 import { readLines, getFileHash } from './utils/file';
+import logger from '../common/logger';
 
 
 const isWindows: boolean = process.platform === 'win32';
@@ -54,9 +55,9 @@ async function packTo(file: string, codeignore: any, targetPath: string, prefix 
       total: progress.entries.processed,
     });
   }).on('warning', (err) => {
-    console.warn(err);
+    logger.log(err, 'yellow');
   }).on('error', (err) => {
-    console.error(`    ${green('x')} ${targetPath} - ${grey('zip error')}`);
+    logger.log(`    ${green('x')} ${targetPath} - ${grey('zip error')}`, 'red');
     throw err;
   });
 
@@ -182,8 +183,9 @@ async function zipFolder(zipArchiver, folder, folders, codeignore, codeUri, pref
     } else if (s.isDirectory()) {
       return await zipFolder(zipArchiver, f, folders.slice(), codeignore, codeUri, prefix);
     }
-    console.error(`Ignore file ${absFilePath}, because it isn't a file, symbolic link or directory`);
+    logger.log(`Ignore file ${absFilePath}, because it isn't a file, symbolic link or directory`, 'red');
     return 0;
+  // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
   }))).reduce(((sum: any, curr: any) => sum + curr), 0);
 }
 
