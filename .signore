@@ -19,6 +19,7 @@ package-lock.json
 README.md
 ./examples
 ./test
+./src
 ./Makefile
 ./f2elint.config.js
 ./commitlint.config.js
