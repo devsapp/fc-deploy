@@ -11,10 +11,10 @@ s cli fc-default set deploy-type sdk
 
 ```shell
 # 部署资源
-$ s exec -- deploy -y --use-local
+$ s deploy -y --use-local
 
 # 删除资源
-$ s exec -- remove service
-$ s exec -- remove function
-$ s exec -- remove trigger [-n name]
+$ s remove service
+$ s remove function
+$ s remove trigger [-n name]
 ```

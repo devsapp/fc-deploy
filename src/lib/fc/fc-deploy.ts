@@ -1,9 +1,10 @@
 import { ServerlessProfile, ICredentials, IInputsBase, replaceProjectName } from '../profile';
 import * as core from '@serverless-devs/core';
 import * as _ from 'lodash';
+import fse from 'fs-extra';
 import { promptForConfirmOrDetails } from '../utils/prompt';
 import FcInfo from '../component/fc-info';
-import { capitalizeFirstLetter } from '../utils/utils';
+import { capitalizeFirstLetter, getStateFilePath } from '../utils/utils';
 import StdoutFormatter from '../component/stdout-formatter';
 
 export default abstract class FcDeploy<T> extends IInputsBase {
@@ -35,7 +36,10 @@ export default abstract class FcDeploy<T> extends IInputsBase {
   async unsetState(): Promise<void> {
     const state: any = await this.getState();
     if (!_.isEmpty(state)) {
-      await core.setState(this.genStateID(), {});
+      const stateId = this.genStateID();
+      // 预期是删除掉这个文件，但是预防后面 core 修改逻辑导致问题，先清空内容再删除文件。
+      await core.setState(stateId, {});
+      await fse.remove(getStateFilePath(stateId));
     }
   }
 
