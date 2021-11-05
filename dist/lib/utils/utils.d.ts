@@ -10,3 +10,10 @@ export declare function formatArgs(args: string): string | null;
  * @param functionName 函数名称
  */
 export declare function checkBuildAvailable(serviceName: string, functionName: string, baseDir?: string): Promise<void>;
+/**
+ * 获取缓存文件保存的路径（需要和core.setState的路径实现保持一致）
+ * @param id stateId
+ * @param dirPath 保存路径
+ * @returns 缓存文件路径
+ */
+export declare function getStateFilePath(id: any, dirPath?: string): string;

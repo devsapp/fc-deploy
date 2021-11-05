@@ -31,7 +31,7 @@ export async function retryDeployUntilSlsCreated(componentInstance: any, compone
           throw e;
         }
 
-        logger.log(`Retrying service: It takes some effective time to create a log for the first time, retry ${slsRetry} time`);
+        logger.info(`Retrying service: It takes some effective time to create a log for the first time, retry ${slsRetry} time`);
         await sleep(3000);
       } else { throw e; }
     }
