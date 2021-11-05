@@ -1,8 +1,8 @@
 import inquirer from 'inquirer';
-import { Logger } from '@serverless-devs/core';
 import yaml from 'js-yaml';
 import diff from 'variable-diff';
 import _ from 'lodash';
+import logger from '../../common/logger';
 
 function isInteractiveEnvironment(): boolean {
   return process.stdin.isTTY;
@@ -34,10 +34,10 @@ export async function promptForConfirmOrDetails(message: string, details: any, s
   let result = details;
   try {
     result = yaml.dump(result);
-  } catch (e) { console.log(e); }
+  } catch (e) { logger.log(e); }
 
   let outputSentence = '\nDetail: ';
-  if (JSON.stringify(source) == '{}') {
+  if (JSON.stringify(source) === '{}') {
     outputSentence = 'Online status: ';
   } else if (source) {
     result = diff(source, details).text;
@@ -48,7 +48,7 @@ export async function promptForConfirmOrDetails(message: string, details: any, s
     outputSentence = '\nLocal Last Deploy status => Online status';
   }
 
-  Logger.log(`
+  logger.log(`
 ${outputSentence}
 
 ${result}`);

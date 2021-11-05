@@ -17,9 +17,8 @@ export async function promiseRetry(fn: any): Promise<any> {
   return retry(fn, retryOptions);
 }
 
-export async function retryDeployUntilSlsCreated(componentInstance: any, componentInputs: any) {
+export async function retryDeployUntilSlsCreated(componentInstance: any, componentInputs: any, retryTimes = 40) {
   let slsRetry = 0;
-  const retryTimes = 40;
   do {
     try {
       await componentInstance.deploy(componentInputs);

@@ -1,4 +1,6 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 import Pop from '@alicloud/pop-core';
+import FC from '@alicloud/fc2';
 import osLocale from 'os-locale';
 import { throwProcessedFCPermissionError, throwProcessedPopPermissionError } from '../error';
 import * as p from 'path';
@@ -7,10 +9,7 @@ import * as _ from 'lodash';
 import StdoutFormatter from '../component/stdout-formatter';
 
 const { ROAClient } = require('@alicloud/pop-core');
-
-
 const hashedMachineId = require('node-machine-id').machineId;
-const FC = require('@alicloud/fc2');
 
 const baseName: string = p.basename(__dirname);
 let pkg;
