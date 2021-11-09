@@ -383,6 +383,7 @@ export default class FcDeployComponent {
       const fcBaseComponent = new BaseComponent(profileOfFcBase, this.fcService.localConfig, this.region, this.credentials, this.curPath, this.fcFunction?.localConfig, this.fcTriggers.filter((t) => (t?.localConfig)).map((t) => (t?.localConfig)));
       const fcBaseComponentInputs = fcBaseComponent.genComponentInputs(componentName, this.args);
 
+      const removeRes = await fcBaseComponentIns.remove(fcBaseComponentInputs);
       // unset state
       if (!_.isEmpty(this.fcTriggers)) {
         for (let i = 0; i < this.fcTriggers.length; i++) {
@@ -399,7 +400,15 @@ export default class FcDeployComponent {
         if (!_.isEmpty(this.fcService)) { await this.fcService.unsetState(); }
       }
 
-      return await fcBaseComponentIns.remove(fcBaseComponentInputs);
+      // 尝试删除辅助函数
+      try {
+        const alicloudNas = new AlicloudNas(this.serverlessProfile, this.credentials, this.region, this.curPath);
+        await alicloudNas.removeHelperService(this.fcService.name);
+      } catch (e) {
+        this.logger.debug(e);
+      }
+
+      return removeRes;
     }
     // remove domain
     if (_.isEmpty(this.fcCustomDomains)) { throw new Error('Please add custom domain config in s.yml/yaml'); }
