@@ -539,6 +539,7 @@ export default class FcDeployComponent {
       );
       const fcBaseComponentInputs = fcBaseComponent.genComponentInputs(componentName, this.args);
 
+      const removeRes = await fcBaseComponentIns.remove(fcBaseComponentInputs);
       // unset state
       if (!_.isEmpty(this.fcTriggers)) {
         for (let i = 0; i < this.fcTriggers.length; i++) {
@@ -562,7 +563,15 @@ export default class FcDeployComponent {
         }
       }
 
-      return await fcBaseComponentIns.remove(fcBaseComponentInputs);
+      // 尝试删除辅助函数
+      try {
+        const alicloudNas = new AlicloudNas(this.serverlessProfile, this.credentials, this.region, this.curPath);
+        await alicloudNas.removeHelperService(this.fcService.name);
+      } catch (e) {
+        this.logger.debug(e);
+      }
+
+      return removeRes;
     }
     // remove domain
     if (_.isEmpty(this.fcCustomDomains)) {

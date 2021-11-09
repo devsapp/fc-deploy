@@ -74,6 +74,17 @@ export class AlicloudNas extends AlicloudClient {
     await nasComponentIns.ensureNasDir(nasComponentInputs);
   }
 
+  async removeHelperService(serviceName: string) {
+    const profileOfNas = replaceProjectName(this.serverlessProfile, `${this.serverlessProfile?.project.projectName}-nas-project`);
+    // @ts-ignore 构建删除 nas 辅助函数的入参数
+    const nasComponent = new NasComponent(profileOfNas, {
+      vpcConfig: {},
+      assistServiceName: serviceName,
+    }, this.region, this.credentials, this.curPath);
+    const nasComponentInputs = nasComponent.genComponentInputs('nas');
+    const nasComponentIns = await core.load('devsapp/nas');
+    await nasComponentIns.removeHelperService(nasComponentInputs);
+  }
 
   async createDefaultNas(nasServiceName: string, vpcConfig: VpcConfig, nasDir: string, roleArn: string, assumeYes?: boolean): Promise<NasConfig> {
     const nasZones = await this.describeNasZones();
