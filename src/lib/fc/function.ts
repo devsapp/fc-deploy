@@ -94,7 +94,7 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
   isBuild = false; // 是否执行了 build
 
   static readonly DEFAULT_BUILD_ARTIFACTS_PATH_SUFFIX: string = path.join('.s', 'build', 'artifacts');
-  static readonly DEFAULT_SYNC_CODE_PATH: string = path.join(os.homedir(), '.s', 'cache', 'fc-deploy', 'remote-code');
+  static readonly DEFAULT_SYNC_CODE_PATH: string = core.getRootHome ? path.join(core.getRootHome(), 'cache', 'fc-deploy', 'remote-code') : path.join(os.homedir(), '.s', 'cache', 'fc-deploy', 'remote-code');
   static readonly MAX_CODE_SIZE_WITH_OSS: number = !isNaN(parseInt(process.env.FC_CODE_SIZE_WITH_OSS, 10)) ? parseInt(process.env.FC_CODE_SIZE_WITH_OSS, 10) : 104857600; // 100M，弹性实例
   static readonly MAX_CODE_SIZE_WITH_OSS_OF_C1: number = !isNaN(parseInt(process.env.FC_CODE_SIZE_WITH_OSS_OF_C1, 10)) ? parseInt(process.env.FC_CODE_SIZE_WITH_OSS_OF_C1, 10) : 524288000; // 500M，性能实例
   static readonly MAX_CODE_SIZE_WITH_CODEURI: number = !isNaN(parseInt(process.env.FC_CODE_SIZE_WITH_CODEURI, 10)) ? parseInt(process.env.FC_CODE_SIZE_WITH_CODEURI, 10) : 52428800; // 50M
