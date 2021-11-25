@@ -6,16 +6,16 @@ services:
   fc-deploy-test: #  服务名称
     component: ${path(../..)}
     props: #  组件的属性值
-      region: cn-shanghai
+      region: cn-hangzhou
       service:
         name: fc-deploy-service
         description: demo for fc-deploy component
         internetAccess: true
       function:
-        name: test-function
+        name: code-on-oss
         description: this is a test
         runtime: nodejs10
-        ossBucket: fc-deploy-bucket
+        ossBucket: shl-blog
         ossKey: code.zip
         handler: index.handler
         memorySize: 128
@@ -24,3 +24,5 @@ services:
         instanceType: e1
         environmentVariables:
           testEnv: true
+      
+      

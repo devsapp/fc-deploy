@@ -25,11 +25,11 @@ services:
             methods:
               - GET
       customDomains:
-        - domainName: test.shoushuai.top
+        - domainName: app.shihuali.top
           protocol: HTTP,HTTPS
           certConfig:
             certName: test
-            certificate: ./cret.pem
-            privateKey: ./key.pem
+            certificate: ./5681004_app.shihuali.top_other/key.pem
+            privateKey: ./5681004_app.shihuali.top_other/cert.pem
           routeConfigs:
             - path: /*

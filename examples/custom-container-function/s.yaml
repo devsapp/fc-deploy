@@ -6,7 +6,7 @@ services:
   fc-deploy-test: #  服务名称
     component: ${path(../..)}  # 组件名称
     props: #  组件的属性值
-      region: cn-shanghai
+      region: cn-hangzhou
       service:
         name: fc-deploy-service
         description: 'demo for fc-deploy component'
@@ -23,7 +23,7 @@ services:
         timeout: 60
         customContainerConfig:
           # image: ${env(image)}
-          image: registry.cn-shanghai.aliyuncs.com/fc-demo/node-express:v1
+          image: registry.cn-hangzhou.aliyuncs.com/shl-test/express:v5
           command: '["node"]'
           args: '["server.js"]'
         environmentVariables:
