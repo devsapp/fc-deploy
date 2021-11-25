@@ -37,7 +37,7 @@ services:
         - name: ossTrigger
           type: oss
           config:
-            bucketName: fassdemo
+            bucketName: shl-bucket
             events:
               - oss:ObjectCreated:*
               - oss:ObjectRemoved:DeleteObject
@@ -48,26 +48,26 @@ services:
         - name: otsTrigger
           type: tablestore
           config:
-            instanceName: ${instanceName}
-            tableName: ${tableName}
+            instanceName: s-table-01
+            tableName: dk_user
         - name: logTrigger
           type: log
           config:
             logConfig:
-              project: fass-demo
-              logstore: fc-log
+              project: shl-sls
+              logstore: shl-logstore
             jobConfig:
               maxRetryTime: 1
               triggerInterval: 30
             sourceConfig:
-              logstore: function-log
+              logstore: fun-log
             functionParameter:
               key: val
             enable: true
         - name: mnsTrigger
           type: mns_topic
           config:
-            topicName: test-topic
+            topicName: shl-test
             region: cn-hangzhou
             notifyContentFormat: 'JSON'
             notifyStrategy: 'BACKOFF_RETRY'

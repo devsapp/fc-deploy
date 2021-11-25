@@ -42,7 +42,16 @@ export class FcCustomDomain extends IInputsBase {
   readonly stateId: string;
   isDomainNameAuto: boolean;
 
-  constructor(customDomainConf: CustomDomainConfig, serviceName: string, functionName: string, triggerConfs: TriggerConfig[], serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string) {
+  constructor(
+    customDomainConf: CustomDomainConfig,
+    serviceName: string,
+    functionName: string,
+    triggerConfs: TriggerConfig[],
+    serverlessProfile: ServerlessProfile,
+    region: string,
+    credentials: ICredentials,
+    curPath?: string,
+  ) {
     super(serverlessProfile, region, credentials, curPath);
     this.customDomainConf = customDomainConf;
     this.serviceName = serviceName;
@@ -70,13 +79,17 @@ export class FcCustomDomain extends IInputsBase {
   }
 
   validateConfig(): void {
-    if (_.isEmpty(this.customDomainConf)) { return; }
+    if (_.isEmpty(this.customDomainConf)) {
+      return;
+    }
     if (!this.hasHttpTrigger) {
       throw new Error('There should be http trigger when custom domain exists');
     }
     if (this.customDomainConf.protocol?.toLocaleLowerCase().includes('https')) {
       if (!Object.prototype.hasOwnProperty.call(this.customDomainConf, 'certConfig')) {
-        throw new Error('Must config "CertConfig" for CustomDomain when using "HTTP,HTTPS" protocol\nYou can refer to https://help.aliyun.com/document_detail/90759.html?spm=a2c4g.11186623.6.665.446a1bae462uKK for help');
+        throw new Error(
+          'Must config "CertConfig" for CustomDomain when using "HTTP,HTTPS" protocol\nYou can refer to https://help.aliyun.com/document_detail/90759.html?spm=a2c4g.11186623.6.665.446a1bae462uKK for help',
+        );
       }
     }
     if (!instanceOfCustomDomainConfig(this.customDomainConf)) {
@@ -88,12 +101,20 @@ export class FcCustomDomain extends IInputsBase {
       } else if (!Object.prototype.hasOwnProperty.call(this.customDomainConf, 'routeConfigs')) {
         lackedAttr = 'routeConfigs';
       }
-      throw new Error(`Lack of ${lackedAttr} in custom domain: \n${JSON.stringify(this.customDomainConf, null, '  ')}`);
+      throw new Error(
+        `Lack of ${lackedAttr} in custom domain: \n${JSON.stringify(
+          this.customDomainConf,
+          null,
+          '  ',
+        )}`,
+      );
     }
   }
 
   async initLocalConfig(): Promise<void> {
-    if (_.isEmpty(this.customDomainConf)) { return; }
+    if (_.isEmpty(this.customDomainConf)) {
+      return;
+    }
     let state;
     try {
       state = await core.getState(this.stateId);
@@ -103,8 +124,12 @@ export class FcCustomDomain extends IInputsBase {
       }
     }
     this.logger.debug(`state of key: ${this.stateId}`);
-    if (_.isEmpty(state)) { return; }
-    if (this.isDomainNameAuto) { this.customDomainConf.domainName = state.domainName; }
+    if (_.isEmpty(state)) {
+      return;
+    }
+    if (this.isDomainNameAuto) {
+      this.customDomainConf.domainName = state.domainName;
+    }
   }
 
   async setStatedCustomDomainConf(resolvedCustomDomainConf: CustomDomainConfig): Promise<void> {
@@ -116,7 +141,9 @@ export class FcCustomDomain extends IInputsBase {
 
   async delStatedCustomDomainConf(): Promise<void> {
     const state = await core.getState(this.stateId);
-    if (_.isEmpty(state)) { return; }
+    if (_.isEmpty(state)) {
+      return;
+    }
     // 预期是删除掉这个文件，但是预防后面 core 修改逻辑导致问题，先清空内容再删除文件。
     await core.setState(this.stateId, {});
     await fse.remove(getStateFilePath(this.stateId));
@@ -124,10 +151,11 @@ export class FcCustomDomain extends IInputsBase {
 
   async getStatedCustomDomainConf(): Promise<string> {
     const state = await core.getState(this.stateId);
-    if (_.isEmpty(state)) { return ''; }
+    if (_.isEmpty(state)) {
+      return '';
+    }
     return state.domainName;
   }
-
 
   async makeCustomDomain(args: string): Promise<CustomDomainConfig> {
     const resolvedCustomDomainConf: CustomDomainConfig = _.cloneDeep(this.customDomainConf);
@@ -157,7 +185,9 @@ export class FcCustomDomain extends IInputsBase {
         });
       }
       if (!Object.prototype.hasOwnProperty.call(routeConfig, 'methods')) {
-        this.logger.debug(`set default methods: ${this.httpMethods} for domain: ${this.customDomainConf.domainName}`);
+        this.logger.debug(
+          `set default methods: ${this.httpMethods} for domain: ${this.customDomainConf.domainName}`,
+        );
         Object.assign(routeConfig, {
           methods: this.httpMethods,
         });
@@ -172,15 +202,29 @@ export class FcCustomDomain extends IInputsBase {
       let generatedDomain = await this.getStatedCustomDomainConf();
       if (_.isEmpty(generatedDomain)) {
         // generate domain via domain component
-        this.logger.debug('Auto domain name');
-        this.logger.info(StdoutFormatter.stdoutFormatter.using('customDomain: auto', 'fc will try to generate related custom domain resources automatically'));
-        const profileOfDomain: ServerlessProfile = replaceProjectName(this.serverlessProfile, `${this.serverlessProfile?.project.projectName}-domain-project`);
-        const domainComponent = new DomainComponent(profileOfDomain, this.serviceName, this.functionName, this.region, this.credentials, this.curPath);
+        this.logger.debug(
+          StdoutFormatter.stdoutFormatter.using(
+            'customDomain: auto',
+            'fc will try to generate related custom domain resources automatically',
+          ),
+        );
+        const profileOfDomain: ServerlessProfile = replaceProjectName(
+          this.serverlessProfile,
+          `${this.serverlessProfile?.project.projectName}-domain-project`,
+        );
+        const domainComponent = new DomainComponent(
+          profileOfDomain,
+          this.serviceName,
+          this.functionName,
+          this.region,
+          this.credentials,
+          this.curPath,
+        );
         const domainComponentInputs = domainComponent.genComponentInputs('domain', args);
         const domainComponentIns = await core.load('devsapp/domain');
         generatedDomain = await domainComponentIns.get(domainComponentInputs);
       }
-      this.logger.info(`Generated auto custom domain: ${generatedDomain}`);
+      this.logger.debug(`Generated auto custom domain: ${generatedDomain}`);
       Object.assign(resolvedCustomDomainConf, {
         domainName: generatedDomain,
       });
