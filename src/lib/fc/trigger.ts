@@ -16,7 +16,14 @@ export interface TriggerConfig {
   sourceArn?: string;
   import?: boolean;
   protect?: boolean;
-  config: OssTriggerConfig | LogTriggerConfig | TimerTriggerConfig | HttpTriggerConfig | MnsTriggerConfig | CdnTriggerConfig | TablestoreConfig;
+  config:
+    | OssTriggerConfig
+    | LogTriggerConfig
+    | TimerTriggerConfig
+    | HttpTriggerConfig
+    | MnsTriggerConfig
+    | CdnTriggerConfig
+    | TablestoreConfig;
 }
 
 export interface TablestoreConfig {
@@ -126,7 +133,15 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
   isRoleAuto: boolean;
   readonly name: string;
 
-  constructor(triggerConf: TriggerConfig, serviceName: string, functionName: string, serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string) {
+  constructor(
+    triggerConf: TriggerConfig,
+    serviceName: string,
+    functionName: string,
+    serverlessProfile: ServerlessProfile,
+    region: string,
+    credentials: ICredentials,
+    curPath?: string,
+  ) {
     super(triggerConf, serverlessProfile, region, credentials, curPath);
     this.serviceName = serviceName;
     this.functionName = functionName;
@@ -148,7 +163,9 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
   private async initLocal(): Promise<void> {
     this.validateConfig();
     await this.initLocalConfig();
-    this.logger.debug(`local trigger config is: ${JSON.stringify(this.localConfig, null, '  ')} after init.`);
+    this.logger.debug(
+      `local trigger config is: ${JSON.stringify(this.localConfig, null, '  ')} after init.`,
+    );
   }
 
   validateConfig() {
@@ -167,7 +184,9 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
       });
     }
 
-    if (_.isEmpty(this.statefulConfig)) { return; }
+    if (_.isEmpty(this.statefulConfig)) {
+      return;
+    }
     if (_.isEmpty(this.localConfig?.role) && !this.isHttpTrigger() && !this.isTimerTrigger()) {
       this.localConfig.role = this.statefulConfig?.role;
     }
@@ -183,9 +202,15 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
 
   async makeInvocationRole(): Promise<string> {
     const accountID = this.credentials.AccountID;
-    const roleName: string = generateRamResourceName('FcDeployCreateRole-', `${this.serviceName}-${this.functionName}`, accountID);
-    this.logger.info(StdoutFormatter.stdoutFormatter.set(`invocation role for trigger: ${this.name}`, roleName));
-    let assumeRolePolicy: {[key: string]: any};
+    const roleName: string = generateRamResourceName(
+      'FcDeployCreateRole-',
+      `${this.serviceName}-${this.functionName}`,
+      accountID,
+    );
+    this.logger.debug(
+      StdoutFormatter.stdoutFormatter.set(`invocation role for trigger: ${this.name}`, roleName),
+    );
+    let assumeRolePolicy: { [key: string]: any };
     let serviceOfAssumeRolePolicy: string;
     let policyConf: CustomPolicyConfig;
     const { config } = this.localConfig;
@@ -195,13 +220,15 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
       serviceOfAssumeRolePolicy = 'log.aliyuncs.com';
 
       policyConf = {
-        name: generateRamResourceName('FcDeployDefaultLogPolicy-', `${this.serviceName}-${this.functionName}`, accountID),
+        name: generateRamResourceName(
+          'FcDeployDefaultLogPolicy-',
+          `${this.serviceName}-${this.functionName}`,
+          accountID,
+        ),
         description: DESCRIPTION,
         statement: [
           {
-            Action: [
-              'fc:InvokeFunction',
-            ],
+            Action: ['fc:InvokeFunction'],
             Effect: 'Allow',
             Resource: [
               `acs:fc:*:*:services/${this.serviceName}.*/functions/*`,
@@ -231,13 +258,15 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
       this.logger.debug('instance of mns trigger config');
       serviceOfAssumeRolePolicy = 'mns.aliyuncs.com';
       policyConf = {
-        name: generateRamResourceName('FcDeployDefaultMnsPolicy-', `${this.serviceName}-${this.functionName}`, accountID),
+        name: generateRamResourceName(
+          'FcDeployDefaultMnsPolicy-',
+          `${this.serviceName}-${this.functionName}`,
+          accountID,
+        ),
         description: DESCRIPTION,
         statement: [
           {
-            Action: [
-              'fc:InvokeFunction',
-            ],
+            Action: ['fc:InvokeFunction'],
             Resource: [
               `acs:fc:*:*:services/${this.serviceName}.*/functions/*`,
               `acs:fc:*:*:services/${this.serviceName}/functions/*`,
@@ -251,13 +280,15 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
       this.logger.debug('instance of oss trigger config');
       serviceOfAssumeRolePolicy = 'oss.aliyuncs.com';
       policyConf = {
-        name: generateRamResourceName('FcDeployDefaultOssPolicy-', `${this.serviceName}-${this.functionName}`, accountID),
+        name: generateRamResourceName(
+          'FcDeployDefaultOssPolicy-',
+          `${this.serviceName}-${this.functionName}`,
+          accountID,
+        ),
         description: DESCRIPTION,
         statement: [
           {
-            Action: [
-              'fc:InvokeFunction',
-            ],
+            Action: ['fc:InvokeFunction'],
             Resource: [
               `acs:fc:*:*:services/${this.serviceName}.*/functions/*`,
               `acs:fc:*:*:services/${this.serviceName}/functions/*`,
@@ -271,13 +302,15 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
       this.logger.debug('instance of cdn trigger config');
       serviceOfAssumeRolePolicy = 'cdn.aliyuncs.com';
       policyConf = {
-        name: generateRamResourceName('FcDeployDefaultCdnPolicy-', `${this.serviceName}-${this.functionName}`, accountID),
+        name: generateRamResourceName(
+          'FcDeployDefaultCdnPolicy-',
+          `${this.serviceName}-${this.functionName}`,
+          accountID,
+        ),
         description: DESCRIPTION,
         statement: [
           {
-            Action: [
-              'fc:InvokeFunction',
-            ],
+            Action: ['fc:InvokeFunction'],
             Resource: [
               `acs:fc:*:*:services/${this.serviceName}.*/functions/*`,
               `acs:fc:*:*:services/${this.serviceName}/functions/*`,
@@ -293,20 +326,20 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
           Action: 'sts:AssumeRole',
           Effect: 'Allow',
           Principal: {
-            RAM: [
-              'acs:ram::1604337383174619:root',
-            ],
+            RAM: ['acs:ram::1604337383174619:root'],
           },
         },
       ];
       policyConf = {
-        name: generateRamResourceName('FcDeployDefaultOtsPolicy-', `${this.serviceName}-${this.functionName}`, accountID),
+        name: generateRamResourceName(
+          'FcDeployDefaultOtsPolicy-',
+          `${this.serviceName}-${this.functionName}`,
+          accountID,
+        ),
         description: DESCRIPTION,
         statement: [
           {
-            Action: [
-              'fc:InvokeFunction',
-            ],
+            Action: ['fc:InvokeFunction'],
             Resource: [
               `acs:fc:*:*:services/${this.serviceName}.*/functions/*`,
               `acs:fc:*:*:services/${this.serviceName}/functions/*`,
@@ -314,12 +347,7 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
             Effect: 'Allow',
           },
           {
-            Action: [
-              'ots:BatchGet*',
-              'ots:Describe*',
-              'ots:Get*',
-              'ots:List*',
-            ],
+            Action: ['ots:BatchGet*', 'ots:Describe*', 'ots:Get*', 'ots:List*'],
             Resource: '*',
             Effect: 'Allow',
           },
@@ -330,9 +358,27 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
     }
 
     // make role
-    this.logger.debug(`invocation role name: ${roleName}, service of principle: ${serviceOfAssumeRolePolicy}, assume role policy: \n${JSON.stringify(assumeRolePolicy, null, '  ')}, policy: ${policyConf}`);
-    const alicloudRam = new AlicloudRam(this.serverlessProfile, this.credentials, this.region, this.curPath);
-    const roleArn = await alicloudRam.makeRole(roleName, undefined, DESCRIPTION, serviceOfAssumeRolePolicy || undefined, assumeRolePolicy || undefined, [policyConf]);
+    this.logger.debug(
+      `invocation role name: ${roleName}, service of principle: ${serviceOfAssumeRolePolicy}, assume role policy: \n${JSON.stringify(
+        assumeRolePolicy,
+        null,
+        '  ',
+      )}, policy: ${policyConf}`,
+    );
+    const alicloudRam = new AlicloudRam(
+      this.serverlessProfile,
+      this.credentials,
+      this.region,
+      this.curPath,
+    );
+    const roleArn = await alicloudRam.makeRole(
+      roleName,
+      undefined,
+      DESCRIPTION,
+      serviceOfAssumeRolePolicy || undefined,
+      assumeRolePolicy || undefined,
+      [policyConf],
+    );
     return roleArn;
   }
 
@@ -358,7 +404,12 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
       });
     }
 
-    const { remoteConfig } = await this.GetRemoteInfo('trigger', this.serviceName, this.functionName, this.name);
+    const { remoteConfig } = await this.GetRemoteInfo(
+      'trigger',
+      this.serviceName,
+      this.functionName,
+      this.name,
+    );
     if (remoteConfig && remoteConfig.lastModifiedTime) {
       delete remoteConfig.lastModifiedTime;
     }

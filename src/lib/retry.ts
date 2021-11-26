@@ -17,7 +17,11 @@ export async function promiseRetry(fn: any): Promise<any> {
   return retry(fn, retryOptions);
 }
 
-export async function retryDeployUntilSlsCreated(componentInstance: any, componentInputs: any, retryTimes = 40) {
+export async function retryDeployUntilSlsCreated(
+  componentInstance: any,
+  componentInputs: any,
+  retryTimes = 40,
+) {
   let slsRetry = 0;
   do {
     try {
@@ -31,9 +35,13 @@ export async function retryDeployUntilSlsCreated(componentInstance: any, compone
           throw e;
         }
 
-        logger.info(`Retrying service: It takes some effective time to create a log for the first time, retry ${slsRetry} time`);
+        logger.debug(
+          `Retrying service: It takes some effective time to create a log for the first time, retry ${slsRetry} time`,
+        );
         await sleep(3000);
-      } else { throw e; }
+      } else {
+        throw e;
+      }
     }
   } while (slsRetry < retryTimes);
 }
