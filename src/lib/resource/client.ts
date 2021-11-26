@@ -19,15 +19,23 @@ if (baseName === 'dist') {
   pkg = require(p.join(p.resolve(__dirname, '../../..'), 'package.json'));
 }
 
-
 const defaultTimeout = 300;
 
 export class AlicloudClient extends IInputsBase {
   readonly timeout?: number;
 
-  constructor(serverlessProfile: ServerlessProfile, credentials: ICredentials, region: string, curPath?: string, args?: string, timeout?: number) {
+  constructor(
+    serverlessProfile: ServerlessProfile,
+    credentials: ICredentials,
+    region: string,
+    curPath?: string,
+    args?: string,
+    timeout?: number,
+  ) {
     super(serverlessProfile, region, credentials, curPath);
-    if (!_.isNil(timeout)) { this.timeout = timeout; }
+    if (!_.isNil(timeout)) {
+      this.timeout = timeout;
+    }
   }
 
   async getPopClient(endpoint: string, apiVersion: string): Promise<Pop> {
@@ -63,7 +71,6 @@ export class AlicloudClient extends IInputsBase {
     });
   }
 
-
   async getFcClient(): Promise<any> {
     const locale: string = await osLocale();
 
@@ -73,13 +80,19 @@ export class AlicloudClient extends IInputsBase {
       return this.get('/account-settings', options, headers);
     };
 
-    const accountId: string = this.credentials?.AccountID ? this.credentials?.AccountID : 'accountId';
-    const accessKeyID: string = this.credentials?.AccessKeyID ? this.credentials?.AccessKeyID : 'accessKeyID';
-    const accessKeySecret: string = this.credentials?.AccessKeySecret ? this.credentials?.AccessKeySecret : 'accessKeySecret';
+    const accountId: string = this.credentials?.AccountID
+      ? this.credentials?.AccountID
+      : 'accountId';
+    const accessKeyID: string = this.credentials?.AccessKeyID
+      ? this.credentials?.AccessKeyID
+      : 'accessKeyID';
+    const accessKeySecret: string = this.credentials?.AccessKeySecret
+      ? this.credentials?.AccessKeySecret
+      : 'accessKeySecret';
     const securityToken: string = this.credentials?.SecurityToken;
 
     const endpoint = await getFcEndpoint();
-    endpoint && this.logger.info(StdoutFormatter.stdoutFormatter.using('fc endpoint', endpoint));
+    endpoint && this.logger.debug(StdoutFormatter.stdoutFormatter.using('fc endpoint', endpoint));
     const fc: any = new FC(accountId, {
       accessKeyID,
       accessKeySecret,
@@ -97,7 +110,11 @@ export class AlicloudClient extends IInputsBase {
       try {
         return await realRequest(method, path, query, body, headers || {}, opts || {});
       } catch (ex) {
-        throwProcessedFCPermissionError(ex, this.region, ...path.split('/').filter((singlep) => !!singlep));
+        throwProcessedFCPermissionError(
+          ex,
+          this.region,
+          ...path.split('/').filter((singlep) => !!singlep),
+        );
         throw ex;
       }
     };
@@ -105,4 +122,3 @@ export class AlicloudClient extends IInputsBase {
     return fc;
   }
 }
-

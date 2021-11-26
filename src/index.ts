@@ -1,4 +1,3 @@
-/* eslint-disable no-await-in-loop */
 import * as core from '@serverless-devs/core';
 import { FcService, ServiceConfig } from './lib/fc/service';
 import { FcFunction, FunctionConfig } from './lib/fc/function';
@@ -115,9 +114,10 @@ export default class FcDeployComponent {
       (needDeployAll && type !== 'code') || (!command && type !== 'code') || command === 'trigger';
     let needDeployAllTriggers = true;
 
-    await logger.task('Checking Service, Function, Trigger', [
+    await logger.task('Checking', [
       {
         title: `Checking Service ${this.fcService.name} exists`,
+        id: 'Service',
         enabled: needDeployService,
         task: async () => {
           await this.fcService.init(useLocal);
@@ -135,6 +135,7 @@ export default class FcDeployComponent {
       },
       {
         title: `Checking Function ${this.fcFunction.name} exists`,
+        id: 'Function',
         enabled: !_.isNil(this.fcFunction) && needDeployFunction,
         task: async () => {
           const pushRegistry = parsedArgs.data ? parsedArgs.data['push-registry'] : undefined;
@@ -168,6 +169,7 @@ export default class FcDeployComponent {
       },
       {
         title: `Checking Trigger`,
+        id: 'Trigger',
         enabled: !_.isEmpty(this.fcTriggers) && needDeployTrigger,
         task: async () => {
           let existTriggersUseLocal = false;
@@ -221,7 +223,7 @@ export default class FcDeployComponent {
     } else {
       // 部署部分资源
       if (needDeployService) {
-        logger.info(StdoutFormatter.stdoutFormatter.create('service', resolvedServiceConf.name));
+        logger.debug(StdoutFormatter.stdoutFormatter.create('service', resolvedServiceConf.name));
         let resolvedArgs: string;
         if (command === 'service') {
           // deploy service
@@ -238,7 +240,7 @@ export default class FcDeployComponent {
         await this.deployWithRetry(fcBaseComponentIns, fcBaseComponentInputs);
       }
       if (needDeployFunction) {
-        logger.info(StdoutFormatter.stdoutFormatter.create('function', resolvedFunctionConf.name));
+        logger.debug(StdoutFormatter.stdoutFormatter.create('function', resolvedFunctionConf.name));
         let resolvedArgs: string;
         if (command === 'function') {
           // deploy function
@@ -257,9 +259,9 @@ export default class FcDeployComponent {
 
       if (needDeployTrigger) {
         if (_.isEmpty(resolvedTriggerConfs) && command === 'trigger') {
-          logger.info('No trigger need to be deloyed.');
+          logger.debug('No trigger need to be deloyed.');
         } else if (!_.isEmpty(resolvedTriggerConfs)) {
-          logger.info(
+          logger.debug(
             StdoutFormatter.stdoutFormatter.create(
               'triggers',
               JSON.stringify(resolvedTriggerConfs.map((t) => t.name)),
@@ -616,7 +618,7 @@ export default class FcDeployComponent {
     await this.fcService.initStatefulAutoConfig();
     await this.fcService.initLocal();
     if (!isAutoConfig(this.fcService.localConfig?.nasConfig)) {
-      logger.info('You have created auto nas config before.');
+      logger.debug('You have created auto nas config before.');
       return this.fcService.localConfig.nasConfig;
     }
     const parsedArgs: { [key: string]: any } = core.commandParse(inputs, {
@@ -905,7 +907,7 @@ export default class FcDeployComponent {
           logger.debug(
             `error when create service/function/trigger or update service/function/trigger, error is: \n${ex}`,
           );
-          logger.info(StdoutFormatter.stdoutFormatter.retry('fc', 'create', '', times));
+          logger.debug(StdoutFormatter.stdoutFormatter.retry('fc', 'create', '', times));
           retry(ex);
         }
       },

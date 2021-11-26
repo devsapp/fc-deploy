@@ -17,7 +17,11 @@ export async function promiseRetry(fn: any): Promise<any> {
   return retry(fn, retryOptions);
 }
 
-export async function retryDeployUntilSlsCreated(componentInstance: any, componentInputs: any, retryTimes = 40) {
+export async function retryDeployUntilSlsCreated(
+  componentInstance: any,
+  componentInputs: any,
+  retryTimes = 40,
+) {
   let slsRetry = 0;
   let retryNoPermission = slsRetry;
   do {
@@ -36,7 +40,9 @@ export async function retryDeployUntilSlsCreated(componentInstance: any, compone
           throw e;
         }
 
-        logger.info(`Retrying service: It takes some effective time to create a log for the first time, retry ${slsRetry} time`);
+        logger.debug(
+          `Retrying service: It takes some effective time to create a log for the first time, retry ${slsRetry} time`,
+        );
         await sleep(3000);
       } else if (e?.message.includes('No permission to access the logstore')) {
         slsRetry++;
@@ -44,7 +50,7 @@ export async function retryDeployUntilSlsCreated(componentInstance: any, compone
           throw e;
         }
 
-        logger.info(`Retrying service: It takes some effective time to create a log for the first time, retry ${slsRetry} time`);
+        logger.debug(`Retrying service: It takes some effective time to create a log for the first time, retry ${slsRetry} time`);
         await sleep(3000);
       } else { throw e; }
     }
