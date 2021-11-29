@@ -1,8 +1,9 @@
-import inquirer from 'inquirer';
-import yaml from 'js-yaml';
 import diff from 'variable-diff';
 import _ from 'lodash';
 import logger from '../../common/logger';
+import * as core from '@serverless-devs/core';
+
+const { inquirer, jsyaml: yaml } = core;
 
 function isInteractiveEnvironment(): boolean {
   return process.stdin.isTTY;

@@ -1,8 +1,9 @@
 import { ICredentials } from '../profile';
 import OSS from 'ali-oss';
 import logger from '../../common/logger';
-import * as fse from 'fs-extra';
+import * as core from '@serverless-devs/core';
 
+const { fse } = core;
 export class AlicloudOss {
   private readonly bucket: string;
   private readonly region: string;

@@ -1,9 +1,10 @@
 import * as core from '@serverless-devs/core';
-import { green, white } from 'colors';
 import ProgressBar from 'progress';
 import path from 'path';
 import crypto from 'crypto';
-import fse from 'fs-extra';
+
+const { fse, colors } = core;
+const { green, white } = colors;
 
 export function createProgressBar(format, options) {
   const opts = Object.assign({
