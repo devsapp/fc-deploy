@@ -58,7 +58,7 @@ export async function promptForConfirmOrDetails(
     } catch (e) {}
     outputSentence = '\nLocal Last Deploy status => Online status';
   }
-  logger.spinner.stop();
+  logger.spinner?.stop();
   logger.log(`
 ${outputSentence}
 

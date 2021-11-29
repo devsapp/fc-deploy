@@ -6,6 +6,7 @@ import * as core from '@serverless-devs/core';
 import { DomainComponent } from '../component/domain';
 import StdoutFormatter from '../component/stdout-formatter';
 import { getStateFilePath } from '../utils/utils';
+import logger from '../../common/logger';
 
 const { fse } = core;
 
@@ -222,6 +223,7 @@ export class FcCustomDomain extends IInputsBase {
           this.curPath,
         );
         const domainComponentInputs = domainComponent.genComponentInputs('domain', args);
+        logger.spinner?.stop();
         const domainComponentIns = await core.load('devsapp/domain@dev');
         generatedDomain = await domainComponentIns.get(domainComponentInputs);
       }
