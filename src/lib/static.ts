@@ -155,8 +155,6 @@ export const DEPLOY_HELP_INFO = [
       '$ s {bold deploy}',
       '$ s <ProjectName> {bold deploy}',
       '$ s {bold deploy} {underline --use-local}',
-      '$ s {bold exec} -- {bold deploy} {underline --use-local}',
-      '$ s {bold exec} <ProjectName> -- {bold deploy} {underline --use-local}',
     ],
   },
   {
