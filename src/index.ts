@@ -116,7 +116,7 @@ export default class FcDeployComponent {
 
     await logger.task('Checking', [
       {
-        title: `Checking Service ${this.fcService.name} exists`,
+        title: `Checking Service ${this.fcService?.name} exists`,
         id: 'Service',
         enabled: needDeployService,
         task: async () => {
@@ -134,7 +134,7 @@ export default class FcDeployComponent {
         },
       },
       {
-        title: `Checking Function ${this.fcFunction.name} exists`,
+        title: `Checking Function ${this.fcFunction?.name} exists`,
         id: 'Function',
         enabled: !_.isNil(this.fcFunction) && needDeployFunction,
         task: async () => {
@@ -168,7 +168,7 @@ export default class FcDeployComponent {
         },
       },
       {
-        title: `Checking Trigger`,
+        title: 'Checking Trigger',
         id: 'Trigger',
         enabled: !_.isEmpty(this.fcTriggers) && needDeployTrigger,
         task: async () => {
@@ -276,8 +276,8 @@ export default class FcDeployComponent {
             const triggerNamesInArgs: string = needDeployAllTriggers
               ? ''
               : resolvedTriggerConfs
-                  .map((triggerConf) => `--trigger-name ${triggerConf.name}`)
-                  .join(' ');
+                .map((triggerConf) => `--trigger-name ${triggerConf.name}`)
+                .join(' ');
             resolvedArgs =
               command === 'all' ? this.args.replace(/all/g, 'trigger') : `trigger ${this.args}`;
             resolvedArgs = triggerNamesInArgs
@@ -643,8 +643,7 @@ export default class FcDeployComponent {
           serverAddr: item.serverAddr,
           nasDir: item.nasDir,
           fcDir: item.fcDir,
-        }),
-      ),
+        })),
     };
     this.fcService.statefulConfig = {};
     Object.assign(this.fcService.statefulConfig, {
@@ -891,26 +890,24 @@ export default class FcDeployComponent {
   private async deployWithRetry(fcBaseComponentIns, fcBaseComponentInputs): Promise<any> {
     // logConfig 配置是auto时重试部署 40 次,否则按照正常的逻辑重试
     const logConfigIsAuto = isAutoConfig(this.fcService?.localConfig?.logConfig);
-    await promiseRetry(
-      async (retry: any, times: number): Promise<any> => {
-        try {
-          if (logConfigIsAuto) {
-            await retryDeployUntilSlsCreated(fcBaseComponentIns, fcBaseComponentInputs);
-          } else {
-            await fcBaseComponentIns.deploy(fcBaseComponentInputs);
-          }
-          return;
-        } catch (ex) {
-          if (ex.code === 'AccessDenied' || (logConfigIsAuto && isSlsNotExistException(ex))) {
-            throw ex;
-          }
-          logger.debug(
-            `error when create service/function/trigger or update service/function/trigger, error is: \n${ex}`,
-          );
-          logger.debug(StdoutFormatter.stdoutFormatter.retry('fc', 'create', '', times));
-          retry(ex);
+    await promiseRetry(async (retry: any, times: number): Promise<any> => {
+      try {
+        if (logConfigIsAuto) {
+          await retryDeployUntilSlsCreated(fcBaseComponentIns, fcBaseComponentInputs);
+        } else {
+          await fcBaseComponentIns.deploy(fcBaseComponentInputs);
         }
-      },
-    );
+        return;
+      } catch (ex) {
+        if (ex.code === 'AccessDenied' || (logConfigIsAuto && isSlsNotExistException(ex))) {
+          throw ex;
+        }
+        logger.debug(
+          `error when create service/function/trigger or update service/function/trigger, error is: \n${ex}`,
+        );
+        logger.debug(StdoutFormatter.stdoutFormatter.retry('fc', 'create', '', times));
+        retry(ex);
+      }
+    });
   }
 }
