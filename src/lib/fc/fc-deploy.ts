@@ -5,6 +5,7 @@ import { promptForConfirmOrDetails } from '../utils/prompt';
 import FcInfo from '../component/fc-info';
 import { capitalizeFirstLetter, getStateFilePath } from '../utils/utils';
 import StdoutFormatter from '../component/stdout-formatter';
+import logger from '../../common/logger';
 
 const { fse } = core;
 
@@ -128,6 +129,7 @@ export default abstract class FcDeploy<T> extends IInputsBase {
       triggerName ? [triggerName] : null,
     );
     const fcInfoComponentInputs: any = await fcInfo.genComponentInputs('fc-info');
+    logger.spinner.stop();
     const fcInfoComponentIns: any = await core.load('devsapp/fc-info');
     this.logger.debug(StdoutFormatter.stdoutFormatter.check(type, resourceName));
     let remoteConfig: T;
