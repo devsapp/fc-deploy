@@ -4,7 +4,6 @@ import { AlicloudAcr } from '../resource/acr';
 import path from 'path';
 import { isIgnored, isIgnoredInCodeUri } from '../ignore';
 import { pack } from '../zip';
-import * as fse from 'fs-extra';
 import { ServerlessProfile, ICredentials, replaceProjectName } from '../profile';
 import FcDeploy from './fc-deploy';
 import FcSync from '../component/fc-sync';
@@ -19,6 +18,8 @@ import { AlicloudOss } from '../resource/oss';
 import { imageExist } from '../utils/docker';
 import { handleKnownErrors } from '../error';
 import { checkBuildAvailable } from '../utils/utils';
+
+const { fse } = core;
 
 export interface FunctionConfig {
   functionName?: string;

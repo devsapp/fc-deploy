@@ -4,9 +4,10 @@ import { TriggerConfig } from './trigger';
 import { isAutoConfig } from '../definition';
 import * as core from '@serverless-devs/core';
 import { DomainComponent } from '../component/domain';
-import * as fse from 'fs-extra';
 import StdoutFormatter from '../component/stdout-formatter';
 import { getStateFilePath } from '../utils/utils';
+
+const { fse } = core;
 
 export interface CustomDomainConfig {
   domainName: string;

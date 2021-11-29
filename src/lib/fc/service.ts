@@ -22,10 +22,10 @@ import { ServerlessProfile, ICredentials } from '../profile';
 import FcDeploy from './fc-deploy';
 import { isAutoConfig } from '../definition';
 import StdoutFormatter from '../component/stdout-formatter';
-import * as yaml from 'js-yaml';
 import * as core from '@serverless-devs/core';
 import logger from '../../common/logger';
 
+const { jsyaml: yaml } = core;
 export interface ServiceConfig {
   name: string;
   serviceName?: string;

@@ -1,11 +1,12 @@
 import { ServerlessProfile, ICredentials, IInputsBase, replaceProjectName } from '../profile';
 import * as core from '@serverless-devs/core';
 import * as _ from 'lodash';
-import fse from 'fs-extra';
 import { promptForConfirmOrDetails } from '../utils/prompt';
 import FcInfo from '../component/fc-info';
 import { capitalizeFirstLetter, getStateFilePath } from '../utils/utils';
 import StdoutFormatter from '../component/stdout-formatter';
+
+const { fse } = core;
 
 export default abstract class FcDeploy<T> extends IInputsBase {
   localConfig: T;
