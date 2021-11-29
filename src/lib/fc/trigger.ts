@@ -11,7 +11,7 @@ export interface TriggerConfig {
   triggerName?: string;
   lastModifiedTime?: any;
   name: string;
-  type: 'oss' | 'log' | 'timer' | 'http' | 'mnsTopic' | 'cdnEvents' | 'tablestore';
+  type: 'oss' | 'log' | 'timer' | 'http' | 'mns_topic' | 'cdn_events' | 'tablestore';
   role?: string;
   sourceArn?: string;
   import?: boolean;
@@ -30,19 +30,12 @@ export interface TablestoreConfig {
   instanceName: string;
   tableName: string;
 }
-export function instanceOfTablestoreTriggerConfig(data: any): data is CdnTriggerConfig {
-  return 'instanceName' in data && 'tableName' in data;
-}
 
 export interface CdnTriggerConfig {
   eventName: string;
   eventVersion: string;
   notes: string;
   filter: CdnFilterConfig;
-}
-
-export function instanceOfCdnTriggerConfig(data: any): data is CdnTriggerConfig {
-  return 'eventName' in data && 'eventVersion' in data && 'notes' in data && 'filter' in data;
 }
 
 export interface CdnFilterConfig {
@@ -76,10 +69,6 @@ export interface MnsTriggerConfig {
   filterTag?: string;
 }
 
-export function instanceOfMnsTriggerConfig(data: any): data is MnsTriggerConfig {
-  return 'topicName' in data;
-}
-
 export interface LogTriggerConfig {
   jobConfig: LogTriggerJobConfig;
   logConfig: {
@@ -93,10 +82,6 @@ export interface LogTriggerConfig {
   enable: boolean;
 }
 
-export function instanceOfLogTriggerConfig(data: any): data is LogTriggerConfig {
-  return 'jobConfig' in data && 'logConfig' in data && 'sourceConfig' in data && 'enable' in data;
-}
-
 export interface LogTriggerJobConfig {
   maxRetryTime?: string;
   triggerInterval?: string;
@@ -107,12 +92,9 @@ export interface LogTriggerSourceConfig {
 }
 
 export interface OssTriggerConfig {
-  bucketName: string;
+  bucketName?: string;
   events: string[];
   filter: filterConfig;
-}
-export function instanceOfOssTriggerConfig(data: any): data is OssTriggerConfig {
-  return 'bucketName' in data && 'events' in data && 'filter' in data;
 }
 export interface filterConfig {
   Key: {
@@ -213,8 +195,8 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
     let assumeRolePolicy: { [key: string]: any };
     let serviceOfAssumeRolePolicy: string;
     let policyConf: CustomPolicyConfig;
-    const { config } = this.localConfig;
-    if (instanceOfLogTriggerConfig(config)) {
+    const { type } = this.localConfig;
+    if (type === 'log') {
       // log trigger
       this.logger.debug('instance of log trigger config');
       serviceOfAssumeRolePolicy = 'log.aliyuncs.com';
@@ -253,7 +235,7 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
           },
         ],
       };
-    } else if (instanceOfMnsTriggerConfig(config)) {
+    } else if (type === 'mns_topic') {
       // mns trigger
       this.logger.debug('instance of mns trigger config');
       serviceOfAssumeRolePolicy = 'mns.aliyuncs.com';
@@ -275,7 +257,7 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
           },
         ],
       };
-    } else if (instanceOfOssTriggerConfig(config)) {
+    } else if (type === 'oss') {
       // oss
       this.logger.debug('instance of oss trigger config');
       serviceOfAssumeRolePolicy = 'oss.aliyuncs.com';
@@ -297,7 +279,7 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
           },
         ],
       };
-    } else if (instanceOfCdnTriggerConfig(config)) {
+    } else if (type === 'cdn_events') {
       // cdn
       this.logger.debug('instance of cdn trigger config');
       serviceOfAssumeRolePolicy = 'cdn.aliyuncs.com';
@@ -319,7 +301,7 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
           },
         ],
       };
-    } else if (instanceOfTablestoreTriggerConfig(config)) {
+    } else if (type === 'tablestore') {
       this.logger.debug('instance of tablestore trigger config');
       assumeRolePolicy = [
         {
