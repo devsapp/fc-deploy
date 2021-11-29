@@ -222,7 +222,7 @@ export class FcCustomDomain extends IInputsBase {
           this.curPath,
         );
         const domainComponentInputs = domainComponent.genComponentInputs('domain', args);
-        const domainComponentIns = await core.load('devsapp/domain');
+        const domainComponentIns = await core.load('devsapp/domain@dev');
         generatedDomain = await domainComponentIns.get(domainComponentInputs);
       }
       this.logger.debug(`Generated auto custom domain: ${generatedDomain}`);

@@ -685,7 +685,7 @@ export default class FcDeployComponent {
     }
 
     return {
-      fcBaseComponentIns: await core.loadComponent('devsapp/fc-base-sdk'),
+      fcBaseComponentIns: await core.loadComponent('devsapp/fc-base-sdk@dev'),
       BaseComponent: FcBaseSdkComponent,
       componentName: 'fc-base-sdk',
     };
