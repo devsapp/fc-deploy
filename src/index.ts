@@ -49,13 +49,14 @@ export default class FcDeployComponent {
       return;
     }
     const parsedArgs: {[key: string]: any} = core.commandParse(inputs, {
-      boolean: ['help', 'assume-yes', 'use-local', 'escape-nas-check'],
+      boolean: ['help', 'assume-yes', 'use-remote', 'use-local', 'escape-nas-check'],
       string: ['type'],
       alias: { help: 'h', 'assume-yes': 'y' } });
     const argsData: any = parsedArgs?.data || {};
 
     const assumeYes: boolean = argsData.y || argsData.assumeYes || argsData['assume-yes'];
     const useLocal: boolean = argsData['use-local'];
+    const useRemote: boolean = argsData['use-remote'];
     // 指定 --escape-nas-check 参数后，当用户使用自定义的 nasConfig，不会进行 nasDir 的检查
     const escapeNasCheck: boolean = argsData['escape-nas-check'];
     let { type } = argsData;
@@ -100,7 +101,7 @@ export default class FcDeployComponent {
     let resolvedServiceConf: ServiceConfig = this.fcService?.localConfig;
     let needDeployService = (needDeployAll && type !== 'code') || ((!command && type !== 'code') || command === 'service');
     if (needDeployService) {
-      await this.fcService.init(useLocal);
+      await this.fcService.init(useLocal, useRemote);
       if (this.fcService.useRemote) {
         this.logger.info(`Service ${this.fcService.name} using online config, skip it.`);
         needDeployService = false;
@@ -118,7 +119,7 @@ export default class FcDeployComponent {
       if (pushRegistry) {
         this.logger.warn(StdoutFormatter.stdoutFormatter.warn('--push-registry', 'will be deprecated soon.'));
       }
-      await this.fcFunction.init(type, useLocal, assumeYes);
+      await this.fcFunction.init(type, useLocal, useRemote, assumeYes);
       if (this.fcFunction.useRemote) {
         this.logger.info(`Function ${this.fcFunction.name} using online config, skip it.`);
         needDeployFunction = false;
@@ -142,7 +143,7 @@ export default class FcDeployComponent {
         if (!_.isEmpty(targetTriggerNameArr) && targetTriggerNameArr.includes(this.fcTriggers[i].name)) {
           continue;
         }
-        await this.fcTriggers[i].init(useLocal);
+        await this.fcTriggers[i].init(useLocal, useRemote);
         if (this.fcTriggers[i].useRemote) {
           this.logger.info(`Trigger ${this.fcTriggers[i].name} using online config, skip it.`);
           needDeployAllTriggers = false;
@@ -495,7 +496,7 @@ export default class FcDeployComponent {
     }
 
     return {
-      fcBaseComponentIns: await core.loadComponent('devsapp/fc-base-sdk'),
+      fcBaseComponentIns: await core.loadComponent('/Users/wb447188/Desktop/new-repo/fc-base-sdk'),
       BaseComponent: FcBaseSdkComponent,
       componentName: 'fc-base-sdk',
     };

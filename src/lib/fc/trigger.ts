@@ -120,11 +120,11 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
     return `${this.credentials.AccountID}-${this.region}-${this.serviceName}-${this.functionName}-${this.name}`;
   }
 
-  async init(useLocal?: boolean): Promise<void> {
+  async init(useLocal: boolean, useRemote: boolean): Promise<void> {
     await this.initRemote('trigger', this.serviceName, this.functionName, this.name);
     await this.initStateful();
     await this.initLocal();
-    await this.setUseRemote(this.name, 'trigger', useLocal);
+    await this.setUseRemote(this.name, 'trigger', useLocal, useRemote);
   }
 
   private async initLocal(): Promise<void> {

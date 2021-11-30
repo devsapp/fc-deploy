@@ -93,7 +93,7 @@ export default abstract class FcDeploy<T> extends IInputsBase {
     const profileOfFcInfo = replaceProjectName(this.serverlessProfile, `${this.serverlessProfile?.project.projectName}-fc-info-project`);
     const fcInfo: FcInfo = new FcInfo(serviceName, profileOfFcInfo, this.region, this.credentials, this.curPath, functionName, triggerName ? [triggerName] : null);
     const fcInfoComponentInputs: any = await fcInfo.genComponentInputs('fc-info');
-    const fcInfoComponentIns: any = await core.load('devsapp/fc-info');
+    const fcInfoComponentIns: any = await core.load('/Users/wb447188/Desktop/new-repo/fc-info');
     this.logger.info(StdoutFormatter.stdoutFormatter.check(type, resourceName));
     let remoteConfig: T;
     try {
@@ -135,7 +135,7 @@ export default abstract class FcDeploy<T> extends IInputsBase {
     await this.setKVInState(stateID, 'statefulConfig', this.statefulConfig);
   }
 
-  async setUseRemote(name: string, resourceType: string, useLocalFlag?: boolean, type?: string): Promise<void> {
+  async setUseRemote(name: string, resourceType: string, useLocalFlag: boolean, useRemoteFlag: boolean, type = ''): Promise<void> {
     if (useLocalFlag || _.isEmpty(this.remoteConfig)) {
       // 强制使用线下
       this.useRemote = false;
@@ -162,6 +162,11 @@ export default abstract class FcDeploy<T> extends IInputsBase {
         codeSize: clonedStatefulConfig.codeSize,
         codeChecksum: clonedStatefulConfig.codeChecksum,
       };
+    }
+
+    if (useRemoteFlag) {
+      this.useRemote = useRemoteFlag;
+      return;
     }
 
     if (_.isEmpty(clonedStatefulConfig)) {
