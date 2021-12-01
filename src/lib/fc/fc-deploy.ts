@@ -93,7 +93,7 @@ export default abstract class FcDeploy<T> extends IInputsBase {
     const profileOfFcInfo = replaceProjectName(this.serverlessProfile, `${this.serverlessProfile?.project.projectName}-fc-info-project`);
     const fcInfo: FcInfo = new FcInfo(serviceName, profileOfFcInfo, this.region, this.credentials, this.curPath, functionName, triggerName ? [triggerName] : null);
     const fcInfoComponentInputs: any = await fcInfo.genComponentInputs('fc-info');
-    const fcInfoComponentIns: any = await core.load('/Users/wb447188/Desktop/new-repo/fc-info');
+    const fcInfoComponentIns: any = await core.load('devsapp/fc-info');
     this.logger.info(StdoutFormatter.stdoutFormatter.check(type, resourceName));
     let remoteConfig: T;
     try {
