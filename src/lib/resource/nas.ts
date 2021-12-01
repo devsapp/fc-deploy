@@ -70,7 +70,7 @@ export class AlicloudNas extends AlicloudClient {
       assistServiceName: nasServiceName,
     }, this.region, this.credentials, this.curPath);
     const nasComponentInputs = nasComponent.genComponentInputs('nas');
-    const nasComponentIns = await core.load('devsapp/nas');
+    const nasComponentIns = await core.load('devsapp/nas@dev');
     await nasComponentIns.ensureNasDir(nasComponentInputs);
   }
 
@@ -102,7 +102,7 @@ export class AlicloudNas extends AlicloudClient {
       mountPoints: null,
     }, this.region, this.credentials, this.curPath);
     const nasComponentInputs = nasComponent.genComponentInputs('nas', assumeYes ? '-y' : null);
-    const nasComponentIns = await core.load('devsapp/nas');
+    const nasComponentIns = await core.load('devsapp/nas@dev');
     const nasDeployRes = await nasComponentIns.deploy(nasComponentInputs);
 
     return {

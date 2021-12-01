@@ -2,11 +2,10 @@ import * as path from 'path';
 import * as core from '@serverless-devs/core';
 import * as _ from 'lodash';
 import { createProgressBar } from './utils/utils';
-import archiver from 'archiver';
 import { readLines, getFileHash } from './utils/file';
 import logger from '../common/logger';
 
-const { fse, colors } = core;
+const { fse, colors, archiver } = core;
 const { green, grey } = colors;
 
 

@@ -72,7 +72,7 @@ ${result}`);
       choices: choices || ['yes', 'no'],
     },
   ]);
-  logger.spinner.succeed();
+  logger.spinner?.succeed();
   return _.isNil(trueChoice) ? answers.prompt === 'yes' : answers.prompt === trueChoice;
 }
 

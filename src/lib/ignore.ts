@@ -1,8 +1,7 @@
 
 import parser from 'git-ignore-parser';
-import ignore from 'ignore';
 import path from 'path';
-import { Logger, fse } from '@serverless-devs/core';
+import { Logger, fse, ignore } from '@serverless-devs/core';
 
 const ignoredFile = ['.git', '.svn', '.env', '.DS_Store', 'template.packaged.yml', '.nas.yml', '.s/nas', '.s/tmp', '.s/package'];
 
