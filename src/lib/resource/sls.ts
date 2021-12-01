@@ -39,7 +39,7 @@ export class AlicloudSls extends AlicloudClient {
 
     const slsComponent = new SlsComponent(profileOfSls, defaultProject, defaultLogstore, this.region, this.credentials, this.curPath, defaultDescription);
     const slsComponentInputs = slsComponent.genComponentInputs('sls');
-    const slsComponentIns = await core.load('devsapp/sls');
+    const slsComponentIns = await core.load('devsapp/sls@dev');
     await slsComponentIns.create(slsComponentInputs);
 
     const fcDefault = await core.loadComponent('devsapp/fc-default');
