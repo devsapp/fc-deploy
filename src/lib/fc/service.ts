@@ -74,12 +74,12 @@ export class FcService extends FcDeploy<ServiceConfig> {
     this.name = serviceConf?.name;
   }
 
-  async init(useLocal?: boolean): Promise<void> {
+  async init(useLocal: boolean, useRemote: boolean): Promise<void> {
     await this.initRemote('service', this.name);
     await this.initStateful();
     await this.initStatefulAutoConfig();
     await this.initLocal();
-    await this.setUseRemote(this.name, 'service', useLocal);
+    await this.setUseRemote(this.name, 'service', useLocal, useRemote);
   }
 
   genStateID(): string {
@@ -495,8 +495,7 @@ export class FcService extends FcDeploy<ServiceConfig> {
           userId: resolvedAutoConfigInState.nasConfig.userId,
           groupId: resolvedAutoConfigInState.nasConfig.groupId,
           mountPoints: resolvedAutoConfigInState.nasConfig.mountPoints.map((item) =>
-            AlicloudNas.transformMountpointFromRemoteToLocal(item),
-          ),
+            AlicloudNas.transformMountpointFromRemoteToLocal(item)),
         },
       });
     }
