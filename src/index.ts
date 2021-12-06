@@ -45,8 +45,8 @@ export default class FcDeployComponent {
       core.help(DEPLOY_HELP_INFO);
       return;
     }
-    const parsedArgs: { [key: string]: any } = core.commandParse(inputs, {
-      boolean: ['help', 'assume-yes', 'use-local', 'escape-nas-check'],
+    const parsedArgs: {[key: string]: any} = core.commandParse(inputs, {
+      boolean: ['help', 'assume-yes', 'use-remote', 'use-local', 'escape-nas-check'],
       string: ['type'],
       alias: { help: 'h', 'assume-yes': 'y' },
     });
@@ -54,6 +54,7 @@ export default class FcDeployComponent {
 
     const assumeYes: boolean = argsData.y || argsData.assumeYes || argsData['assume-yes'];
     const useLocal: boolean = argsData['use-local'];
+    const useRemote: boolean = argsData['use-remote'];
     // 指定 --escape-nas-check 参数后，当用户使用自定义的 nasConfig，不会进行 nasDir 的检查
     const escapeNasCheck: boolean = argsData['escape-nas-check'];
     let { type } = argsData;
@@ -120,7 +121,7 @@ export default class FcDeployComponent {
         id: 'Service',
         enabled: needDeployService,
         task: async () => {
-          await this.fcService.init(useLocal);
+          await this.fcService.init(useLocal, useRemote);
           if (this.fcService.useRemote) {
             logger.debug(`Service ${this.fcService.name} using online config, skip it.`);
             needDeployService = false;
@@ -144,7 +145,7 @@ export default class FcDeployComponent {
               StdoutFormatter.stdoutFormatter.warn('--push-registry', 'will be deprecated soon.'),
             );
           }
-          await this.fcFunction.init(type, useLocal, assumeYes);
+          await this.fcFunction.init(type, useLocal, useRemote, assumeYes);
           if (this.fcFunction.useRemote) {
             logger.debug(`Function ${this.fcFunction.name} using online config, skip it.`);
             needDeployFunction = false;
@@ -180,7 +181,7 @@ export default class FcDeployComponent {
             ) {
               continue;
             }
-            await this.fcTriggers[i].init(useLocal);
+            await this.fcTriggers[i].init(useLocal, useRemote);
             if (this.fcTriggers[i].useRemote) {
               logger.debug(`Trigger ${this.fcTriggers[i].name} using online config, skip it.`);
               needDeployAllTriggers = false;
@@ -568,7 +569,7 @@ export default class FcDeployComponent {
         const alicloudNas = new AlicloudNas(this.serverlessProfile, this.credentials, this.region, this.curPath);
         await alicloudNas.removeHelperService(this.fcService.name);
       } catch (e) {
-        this.logger.debug(e);
+        logger.debug(e);
       }
 
       return removeRes;
