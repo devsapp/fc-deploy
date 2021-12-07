@@ -1,18 +1,25 @@
 edition: 1.0.0          #  命令行YAML规范版本，遵循语义化版本（Semantic Versioning）规范
 name: fcDeployApp       #  项目名称
-access: default  #  秘钥别名
+access: default-1  #  秘钥别名
+
+vars:
+  component: ${path(../..)}
+  # component: devsapp/fc
+  region: cn-hangzhou
+  service:
+    name: demo-wss
+    description: demo for fc-deploy component233
+    internetAccess: true
+    vpcConfig: auto
 
 services:
-  fc-deploy-test: #  服务名称
-    component: ${path(../..)}
-    props: #  组件的属性值
-      region: cn-shanghai
-      service:
-        name: fc-deploy-service
-        description: demo for fc-deploy component
-        internetAccess: true
+  t1:
+    component: ${vars.component}
+    props:
+      region: ${vars.region}
+      service: ${vars.service}
       function:
-        name: test-function
+        name: node-demo
         description: this is a test
         runtime: nodejs10
         codeUri: ./code
@@ -33,15 +40,97 @@ services:
               - POST
       customDomains:
         - domainName: auto
-          protocol: HTTP  # HTTP 或 HTTP,HTTPS
+          protocol: HTTP
           routeConfigs:
-            - path: /*
-              serviceName: fc-deploy-service
-              functionName: test-function
-              methods:
-                - GET
-                - POST
-          # certConfig:
-          #   certName: xxx
-          #   certificate: xxx
-          #   privateKey: xxx
+            - path: '/*'
+  # t2:
+  #   component: ${vars.component}
+  #   props:
+  #     region: ${vars.region}
+  #     service: ${vars.service}
+  #     function:
+  #       name: con
+  #       runtime: custom-container
+  #       handler: index.handler
+  #       timeout: 60
+  #       memorySize: 512
+  #       environmentVariables: {}
+  #       instanceConcurrency: 1
+  #       customContainerConfig:
+  #         image: registry-vpc.cn-hangzhou.aliyuncs.com/fc-demo2/custom-container-repository:app-v1
+  #       caPort: 9000
+  #       instanceType: e1
+  # t3:
+  #   component: ${vars.component}
+  #   props:
+  #     region: ${vars.region}
+  #     service: ${vars.service}
+  #     function:
+  #       runtime: nodejs12
+  #       handler: index.handler
+  #       timeout: 60
+  #       memorySize: 512
+  #       instanceConcurrency: 1
+  #       instanceType: e1
+  #       name: test-node
+  #       codeUri: ./code
+  #     triggers:
+  #       - name: cdn
+  #         description: ''
+  #         sourceArn: acs:cdn:*:1431999136518149
+  #         type: cdn_events
+  #         role: acs:ram::1431999136518149:role/aliyuncdneventnotificationrole
+  #         qualifier: LATEST
+  #         config:
+  #           eventName: CachedObjectsBlocked
+  #           eventVersion: 1.0.0
+  #           notes: test
+  #           filter:
+  #             domain:
+  #               - test.com
+  #       - name: oss
+  #         function: test-node
+  #         service: demo-wss
+  #         description: ''
+  #         sourceArn: acs:oss:cn-hangzhou:1431999136518149:qianfeng-test-hz
+  #         type: oss
+  #         role: acs:ram::1431999136518149:role/aliyunosseventnotificationrole
+  #         qualifier: LATEST
+  #         config:
+  #           events:
+  #             - oss:ObjectCreated:UploadPart
+  #           filter:
+  #             key:
+  #               prefix: testsat/trigger
+  #               suffix: testsat/trigger
+  #       - name: sls
+  #         function: test-node
+  #         service: demo-wss
+  #         description: ''
+  #         sourceArn: >-
+  #           acs:log:cn-hangzhou:1431999136518149:project/1431999136518149-cn-hangzhou-logproject
+  #         type: log
+  #         role: acs:ram::1431999136518149:role/aliyunlogetlrole
+  #         qualifier: LATEST
+  #         config:
+  #           sourceConfig:
+  #             logstore: fc-service-ai-cv-image-prediction-logstore
+  #           jobConfig:
+  #             maxRetryTime: 3
+  #             triggerInterval: 60
+  #           functionParameter: {}
+  #           logConfig:
+  #             project: 1431999136518149-cn-hangzhou-logproject
+  #             logstore: fc-service-fc-deploy-service-ioio-logstore
+  #           enable: true
+  #       - name: timer
+  #         function: test-node
+  #         service: demo-wss
+  #         description: ''
+  #         type: timer
+  #         qualifier: LATEST
+  #         config:
+  #           payload: ''
+  #           cronExpression: '@every 1m'
+  #           enable: false
+      
