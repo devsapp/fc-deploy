@@ -1,9 +1,8 @@
-import diff from 'variable-diff';
 import _ from 'lodash';
 import logger from '../../common/logger';
 import * as core from '@serverless-devs/core';
 
-const { inquirer, jsyaml: yaml } = core;
+const { inquirer } = core;
 
 function isInteractiveEnvironment(): boolean {
   return process.stdin.isTTY;
@@ -31,8 +30,7 @@ export async function promptForConfirmContinue(message: string): Promise<boolean
 
 export async function promptForConfirmOrDetails(
   message: string,
-  details: any,
-  source?: any,
+  diff: string,
   choices?: string[],
   trueChoice?: string,
 ): Promise<boolean> {
@@ -40,29 +38,12 @@ export async function promptForConfirmOrDetails(
     return true;
   }
 
-  let result = details;
-  try {
-    result = yaml.dump(result);
-  } catch (e) {
-    logger.log(e);
-  }
-
-  let outputSentence = '\nDetail: ';
-  if (JSON.stringify(source) === '{}') {
-    outputSentence = 'Online status: ';
-  } else if (source) {
-    result = diff(source, details).text;
-    try {
-      result = result.substring(2, result.length - 1);
-      // eslint-disable-next-line no-empty
-    } catch (e) {}
-    outputSentence = '\nLocal Last Deploy status => Online status';
-  }
   logger.spinner?.stop();
   logger.log(`
-${outputSentence}
 
-${result}`);
+Local Last Deploy status => Online status
+
+${diff}`);
 
   const answers: any = await inquirer.prompt([
     {

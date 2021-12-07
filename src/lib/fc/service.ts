@@ -74,12 +74,17 @@ export class FcService extends FcDeploy<ServiceConfig> {
     this.name = serviceConf?.name;
   }
 
-  async init(useLocal: boolean, useRemote: boolean): Promise<void> {
+  async init(useLocal: boolean, useRemote: boolean, inputs): Promise<void> {
+    const {
+      service: { local, needInteract, diff },
+    } = await this.plan(inputs, 'service');
+    logger.debug(`service plan local::\n${JSON.stringify(local, null, 2)}needInteract:: ${needInteract}\ndiff::\n${diff}`);
+    this.localConfig = local;
     await this.initRemote('service', this.name);
     await this.initStateful();
     await this.initStatefulAutoConfig();
     await this.initLocal();
-    await this.setUseRemote(this.name, 'service', useLocal, useRemote);
+    await this.setUseRemote(this.name, 'service', useLocal, useRemote, needInteract, diff);
   }
 
   genStateID(): string {
@@ -484,52 +489,69 @@ export class FcService extends FcDeploy<ServiceConfig> {
   }
 
   private async initLocalConfig(): Promise<void> {
-    if (_.isEmpty(this.statefulAutoConfig)) {
+    if (_.isEmpty(this.statefulAutoConfig) && _.isEmpty(this.remoteConfig)) {
       return;
     }
+    const {
+      logConfig,
+      vpcConfig,
+      nasConfig,
+      role,
+    } = this.remoteConfig || {};
     const resolvedAutoConfigInState: any = this.statefulAutoConfig || {};
-    // transform nasConfig
-    if (resolvedAutoConfigInState?.nasConfig) {
-      Object.assign(resolvedAutoConfigInState, {
-        nasConfig: {
+    // auto 优先使用线上配置，不存在时再使用缓存配置
+    const logConfigAuto = isAutoConfig(this.localConfig.logConfig);
+    if (logConfigAuto) {
+      // @ts-ignore: check online config
+      if (!_.isNil(logConfig?.project)) {
+        this.localConfig.logConfig = logConfig;
+      } else if (!_.isEmpty(resolvedAutoConfigInState.logConfig)) {
+        this.localConfig.logConfig = resolvedAutoConfigInState.logConfig;
+      }
+    }
+
+    const vpcConfigAuto = (isAutoConfig(this.localConfig.vpcConfig) || (isAutoConfig(this.localConfig.nasConfig) && !_.isEmpty(this.localConfig.vpcConfig)));
+    if (vpcConfigAuto) {
+      // @ts-ignore: check online config
+      if (!_.isNil(vpcConfig?.vpcId)) {
+        this.localConfig.vpcConfig = vpcConfig;
+      } else if (!_.isEmpty(resolvedAutoConfigInState.vpcConfig)) {
+        this.localConfig.vpcConfig = resolvedAutoConfigInState.vpcConfig;
+      }
+    }
+
+    const nasConfigAuto = isAutoConfig(this.localConfig.nasConfig);
+    if (nasConfigAuto) {
+      if (!_.isString(nasConfig) && !_.isEmpty(nasConfig?.mountPoints)) {
+        this.localConfig.nasConfig = {
+          userId: nasConfig.userId,
+          groupId: nasConfig.groupId,
+          mountPoints: nasConfig.mountPoints.map((item) =>
+            // @ts-ignore
+            AlicloudNas.transformMountpointFromRemoteToLocal(item)),
+        };
+      } else if (!_.isEmpty(resolvedAutoConfigInState.nasConfig)) {
+        this.localConfig.nasConfig = {
           userId: resolvedAutoConfigInState.nasConfig.userId,
           groupId: resolvedAutoConfigInState.nasConfig.groupId,
           mountPoints: resolvedAutoConfigInState.nasConfig.mountPoints.map((item) =>
             AlicloudNas.transformMountpointFromRemoteToLocal(item)),
-        },
-      });
+        };
+      }
     }
-    if (
-      isAutoConfig(this.localConfig.logConfig) ||
-      isAutoConfig(this.localConfig.nasConfig) ||
-      isAutoConfig(this.localConfig.vpcConfig) ||
-      isAutoConfig(this.localConfig.role)
-    ) {
-      this.localConfig.logConfig =
-        isAutoConfig(this.localConfig.logConfig) && !_.isEmpty(resolvedAutoConfigInState.logConfig)
-          ? resolvedAutoConfigInState.logConfig
-          : this.localConfig.logConfig;
-      this.localConfig.vpcConfig =
-        (isAutoConfig(this.localConfig.vpcConfig) || isAutoConfig(this.localConfig.nasConfig)) &&
-        !_.isEmpty(resolvedAutoConfigInState.vpcConfig)
-          ? resolvedAutoConfigInState.vpcConfig
-          : this.localConfig.vpcConfig;
-      this.localConfig.nasConfig =
-        isAutoConfig(this.localConfig.nasConfig) && !_.isEmpty(resolvedAutoConfigInState.nasConfig)
-          ? resolvedAutoConfigInState.nasConfig
-          : this.localConfig.nasConfig;
 
-      // 如果 role: auto，赋于缓存的角色或者默认的角色
-      // 如果 role 不存在，则说明配置需要服务拥有一定的权限，赋于缓存的角色或者传入的角色
-      if (isAutoConfig(this.localConfig.role)) {
-        this.localConfig.role = !_.isEmpty(resolvedAutoConfigInState.role)
-          ? resolvedAutoConfigInState.role
-          : FC_DEFAULT_ROLE;
-      } else {
-        this.localConfig.role =
-          _.isEmpty(this.localConfig.role) && !_.isEmpty(resolvedAutoConfigInState.role)
-            ? resolvedAutoConfigInState.role
-            : this.localConfig.role;
+    const roleAuto = isAutoConfig(this.localConfig.role);
+    // 存在需要角色的 auto 配置
+    if (this.hasFunctionAsyncConfig || logConfigAuto || vpcConfigAuto || nasConfigAuto || roleAuto) {
+      // 如果角色为 auto 或者没有配置角色，则复用配置
+      if (roleAuto || _.isEmpty(this.localConfig.role)) {
+        if (!_.isEmpty(role)) {
+          this.localConfig.role = role;
+        } else if (!_.isEmpty(resolvedAutoConfigInState.role)) {
+          this.localConfig.role = resolvedAutoConfigInState.role;
+        } else {
+          this.localConfig.role = _.isEmpty(this.localConfig.role) ? this.localConfig.role : FC_DEFAULT_ROLE;
+        }
       }
     }
 

@@ -135,11 +135,17 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
     return `${this.credentials.AccountID}-${this.region}-${this.serviceName}-${this.functionName}-${this.name}`;
   }
 
-  async init(useLocal: boolean, useRemote: boolean): Promise<void> {
+  async init(useLocal: boolean, useRemote: boolean, inputs): Promise<void> {
+    const { triggers } = await this.plan(inputs, 'trigger');
+    const { local, needInteract, diff } = _.find(triggers, (item) => item.local.name === this.name) || {};
+    if (!_.isEmpty(local)) {
+      this.localConfig = local;
+    }
+    this.logger.debug(`trigger plan local::\n${JSON.stringify(local, null, 2)}needInteract:: ${needInteract}\ndiff::\n${diff}`);
     await this.initRemote('trigger', this.serviceName, this.functionName, this.name);
     await this.initStateful();
     await this.initLocal();
-    await this.setUseRemote(this.name, 'trigger', useLocal, useRemote);
+    await this.setUseRemote(this.name, 'trigger', useLocal, useRemote, needInteract, diff);
   }
 
   private async initLocal(): Promise<void> {
