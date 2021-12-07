@@ -121,7 +121,7 @@ export default class FcDeployComponent {
         id: 'Service',
         enabled: needDeployService,
         task: async () => {
-          await this.fcService.init(useLocal, useRemote);
+          await this.fcService.init(useLocal, useRemote, _.cloneDeep(inputs));
           if (this.fcService.useRemote) {
             logger.debug(`Service ${this.fcService.name} using online config, skip it.`);
             needDeployService = false;
@@ -145,7 +145,7 @@ export default class FcDeployComponent {
               StdoutFormatter.stdoutFormatter.warn('--push-registry', 'will be deprecated soon.'),
             );
           }
-          await this.fcFunction.init(type, useLocal, useRemote, assumeYes);
+          await this.fcFunction.init(type, useLocal, useRemote, assumeYes, _.cloneDeep(inputs));
           if (this.fcFunction.useRemote) {
             logger.debug(`Function ${this.fcFunction.name} using online config, skip it.`);
             needDeployFunction = false;
@@ -181,7 +181,7 @@ export default class FcDeployComponent {
             ) {
               continue;
             }
-            await this.fcTriggers[i].init(useLocal, useRemote);
+            await this.fcTriggers[i].init(useLocal, useRemote, _.cloneDeep(inputs));
             if (this.fcTriggers[i].useRemote) {
               logger.debug(`Trigger ${this.fcTriggers[i].name} using online config, skip it.`);
               needDeployAllTriggers = false;
@@ -220,6 +220,7 @@ export default class FcDeployComponent {
     if (needDeployTrigger && needDeployFunction && needDeployService) {
       // 部署所有资源，则复用传入的 args 执行子组件的 deploy 方法
       const fcBaseComponentInputs = fcBaseComponent.genComponentInputs(componentName, this.args);
+      // console.log(JSON.stringify(fcBaseComponentInputs, null, 2));
       await this.deployWithRetry(fcBaseComponentIns, fcBaseComponentInputs);
     } else {
       // 部署部分资源
@@ -347,7 +348,10 @@ export default class FcDeployComponent {
         enabled: !_.isEmpty(this.fcCustomDomains) && needDeployDomain,
         task: async () => {
           for (let i = 0; i < this.fcCustomDomains.length; i++) {
-            await this.fcCustomDomains[i].initLocal();
+            await this.fcCustomDomains[i].initLocal(useLocal, useRemote, _.cloneDeep(inputs));
+            if (this.fcCustomDomains[i].useRemote) {
+              continue;
+            }
             const resolvedCustomDomainConf: CustomDomainConfig = await this.fcCustomDomains[
               i
             ].makeCustomDomain(this.args);
@@ -362,7 +366,7 @@ export default class FcDeployComponent {
       },
       {
         title: 'Creating custom domain...',
-        enabled: !_.isEmpty(resolvedCustomDomainConfs),
+        // enabled: !_.isEmpty(resolvedCustomDomainConfs),
         task: async () => {
           const profileOfFcDomain = replaceProjectName(
             this.serverlessProfile,
@@ -695,7 +699,7 @@ export default class FcDeployComponent {
     }
 
     return {
-      fcBaseComponentIns: await core.loadComponent('devsapp/fc-base-sdk@dev'),
+      fcBaseComponentIns: await core.loadComponent('devsapp/fc-base-sdk'),
       BaseComponent: FcBaseSdkComponent,
       componentName: 'fc-base-sdk',
     };
@@ -900,6 +904,7 @@ export default class FcDeployComponent {
         }
         return;
       } catch (ex) {
+        console.log('?????');
         if (ex.code === 'AccessDenied' || (logConfigIsAuto && isSlsNotExistException(ex))) {
           throw ex;
         }

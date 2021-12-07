@@ -7,6 +7,7 @@ import { DomainComponent } from '../component/domain';
 import StdoutFormatter from '../component/stdout-formatter';
 import { getStateFilePath } from '../utils/utils';
 import logger from '../../common/logger';
+import { promptForConfirmOrDetails } from '../utils/prompt';
 
 const { fse } = core;
 
@@ -43,6 +44,7 @@ export class FcCustomDomain extends IInputsBase {
   readonly httpMethods?: string[];
   readonly stateId: string;
   isDomainNameAuto: boolean;
+  useRemote: boolean;
 
   constructor(
     customDomainConf: CustomDomainConfig,
@@ -59,9 +61,12 @@ export class FcCustomDomain extends IInputsBase {
     this.serviceName = serviceName;
     this.functionName = functionName;
     this.hasHttpTrigger = false;
+    this.useRemote = false;
     this.isDomainNameAuto = isAutoConfig(this.customDomainConf.domainName);
     if (this.isDomainNameAuto) {
-      this.stateId = `${credentials.AccountID}-${region}-${serviceName}-${functionName}-customDomain-auto`;
+      this.stateId = `${this.functionName}.${this.serviceName}.${credentials.AccountID}.${this.region}.fc.devsapp.net`;
+    } else {
+      this.stateId = this.customDomainConf.domainName;
     }
     if (!_.isEmpty(triggerConfs)) {
       for (const trigger of triggerConfs) {
@@ -75,9 +80,38 @@ export class FcCustomDomain extends IInputsBase {
     }
   }
 
-  async initLocal(): Promise<void> {
+  async initLocal(useLocal, useRemote, inputs): Promise<void> {
     this.validateConfig();
-    await this.initLocalConfig();
+    if (useLocal) {
+      return await this.initLocalConfig();
+    }
+
+    inputs.args = '--sub-command domain --plan-type deploy';
+    if (_.has(inputs, 'ArgsObj')) {
+      delete inputs.ArgsObj;
+    }
+    if (_.has(inputs, 'argsObj')) {
+      delete inputs.argsObj;
+    }
+    const planComponent = await core.loadComponent('/Users/wb447188/Desktop/plan');
+    const { domains } = await planComponent.plan(inputs);
+
+    const { local, needInteract, remote, diff } = _.find(domains, (item) => item.local.domainName === this.customDomainConf.domainName) || {};
+    this.logger.debug(`function plan local::\n${JSON.stringify(local, null, 2)}needInteract:: ${needInteract}\ndiff::\n${diff}`);
+    if (_.isEmpty(remote) || !needInteract) {
+      return await this.initLocalConfig();
+    }
+    if (useRemote) {
+      this.useRemote = useRemote;
+      return;
+    }
+    this.customDomainConf = local;
+    this.useRemote = await promptForConfirmOrDetails(
+      `Remote domain: ${this.customDomainConf.domainName} is inconsistent with the config you deployed last time, deploy it with local config or remote config?`,
+      diff,
+      ['use local', 'use remote'],
+      'use remote',
+    );
   }
 
   validateConfig(): void {

@@ -5,7 +5,7 @@
   "dependencies": {
     "@alicloud/fc2": "^2.3.0",
     "@alicloud/pop-core": "^1.7.10",
-    "@serverless-devs/core": "^0.1.15-beta.3",
+    "@serverless-devs/core": "^0.1.15-beta.4",
     "ali-oss": "^6.1.1",
     "deep-object-diff": "^1.1.0",
     "dockerode": "^3.3.0",

@@ -190,6 +190,18 @@ export default abstract class FcDeploy<T> extends IInputsBase {
     }
   }
 
+  async plan(inputs, subCommand) {
+    inputs.args = `--sub-command ${subCommand} --plan-type deploy`;
+    if (_.has(inputs, 'ArgsObj')) {
+      delete inputs.ArgsObj;
+    }
+    if (_.has(inputs, 'argsObj')) {
+      delete inputs.argsObj;
+    }
+    const planComponent = await core.loadComponent('/Users/wb447188/Desktop/plan');
+    return await planComponent.plan(inputs);
+  }
+
   async setStatefulConfig(): Promise<void> {
     const stateID: string = this.genStateID();
     this.logger.debug(
@@ -198,71 +210,24 @@ export default abstract class FcDeploy<T> extends IInputsBase {
     await this.setKVInState(stateID, 'statefulConfig', this.statefulConfig);
   }
 
-  async setUseRemote(name: string, resourceType: string, useLocalFlag: boolean, useRemoteFlag: boolean, type = ''): Promise<void> {
-    if (useLocalFlag || _.isEmpty(this.remoteConfig)) {
-      // 强制使用线下
+  async setUseRemote(name: string, resourceType: string, useLocalFlag: boolean, useRemoteFlag: boolean, needInteract, diff): Promise<void> {
+    // 强制使用线下
+    if (useLocalFlag || _.isEmpty(this.remoteConfig) || !needInteract) {
       this.useRemote = false;
       return;
     }
-    let clonedRemoteConfig: any = _.cloneDeep(this.remoteConfig);
-    let clonedStatefulConfig: any = _.cloneDeep(this.statefulConfig);
-
-    delete clonedRemoteConfig.import;
-    delete clonedRemoteConfig.protect;
-    delete clonedRemoteConfig.lastModifiedTime;
-
-    if (resourceType === 'function' && type === 'config') {
-      delete clonedRemoteConfig.codeSize;
-      delete clonedRemoteConfig.codeChecksum;
-      delete clonedStatefulConfig.codeSize;
-      delete clonedStatefulConfig.codeChecksum;
-    } else if (resourceType === 'function' && type === 'code') {
-      clonedRemoteConfig = {
-        codeSize: clonedRemoteConfig.codeSize,
-        codeChecksum: clonedRemoteConfig.codeChecksum,
-      };
-      clonedStatefulConfig = {
-        codeSize: clonedStatefulConfig.codeSize,
-        codeChecksum: clonedStatefulConfig.codeChecksum,
-      };
-    }
-
     if (useRemoteFlag) {
       this.useRemote = useRemoteFlag;
       return;
     }
 
-    if (_.isEmpty(clonedStatefulConfig)) {
-      // 无状态
-      if (!this.existOnline) {
-        this.useRemote = false;
-        return;
-      }
-      const msg = `${resourceType}: ${name} exists remotely, deploy it with local config or remote config?`;
-
-      this.useRemote = await promptForConfirmOrDetails(
-        msg,
-        clonedRemoteConfig,
-        clonedStatefulConfig,
-        ['use local', 'use remote'],
-        'use remote',
-      );
-    } else {
-      // 有状态
-      if (_.isEqual(clonedRemoteConfig, clonedStatefulConfig)) {
-        this.useRemote = false;
-        return;
-      }
-      const msg = `Remote ${resourceType}: ${name} is inconsistent with the config you deployed last time, deploy it with local config or remote config?`;
-
-      this.useRemote = await promptForConfirmOrDetails(
-        msg,
-        clonedRemoteConfig,
-        clonedStatefulConfig,
-        ['use local', 'use remote'],
-        'use remote',
-      );
-    }
+    const msg = `Remote ${resourceType}: ${name} is inconsistent with the config you deployed last time, deploy it with local config or remote config?`;
+    this.useRemote = await promptForConfirmOrDetails(
+      msg,
+      diff,
+      ['use local', 'use remote'],
+      'use remote',
+    );
   }
 
   upgradeStatefulConfig(): void {
