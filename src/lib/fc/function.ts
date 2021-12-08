@@ -98,13 +98,7 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
     'build',
     'artifacts',
   );
-  static readonly DEFAULT_SYNC_CODE_PATH: string = path.join(
-    os.homedir(),
-    '.s',
-    'cache',
-    'fc-deploy',
-    'remote-code',
-  );
+  static readonly DEFAULT_SYNC_CODE_PATH: string = core.getRootHome ? path.join(core.getRootHome(), 'cache', 'fc-deploy', 'remote-code') : path.join(os.homedir(), '.s', 'cache', 'fc-deploy', 'remote-code');
   static readonly MAX_CODE_SIZE_WITH_OSS: number = !isNaN(
     parseInt(process.env.FC_CODE_SIZE_WITH_OSS, 10),
   )
