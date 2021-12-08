@@ -3,24 +3,13 @@ name: fcDeployApp       #  项目名称
 access: default  #  秘钥别名
 
 services:
-  fc-build-test: #  服务名称
-    component: fc-build
-    props: #  组件的属性值
-      region: cn-shanghai
-      service:
-        name: fc-deploy-service
-        internetAccess: true
-      function:
-        name: test-function
-        description: this is a test
-        runtime: nodejs10
-        codeUri: ./code
   fc-deploy-test: #  服务名称
     component: ${path(../..)}
+    # component: fc
     props: #  组件的属性值
-      region: cn-shanghai
+      region: cn-shenzhen
       service:
-        name: fc-deploy-service
+        name: fc-deploy-service2
         description: demo for fc-deploy component
         internetAccess: true
       function:
@@ -35,25 +24,29 @@ services:
         instanceType: e1
         environmentVariables:
           testEnv: true
-      triggers:
-        - name: httpTrigger
-          type: http
-          config:
-            authType: anonymous
-            methods:
-              - GET
-              - POST
-      customDomains:
-        - domainName: auto
-          protocol: HTTP  # HTTP 或 HTTP,HTTPS
-          routeConfigs:
-            - path: /*
-              serviceName: fc-deploy-service
-              functionName: test-function
-              methods:
-                - GET
-                - POST
-          # certConfig:
-          #   certName: xxx
-          #   certificate: xxx
-          #   privateKey: xxx
+        customDNS:
+          nameServers:
+            - 8.8.8.8
+            - 114.114.114.114
+          searches:
+            - default.svc.test.example
+            - svc.jqDgWvOo.test.example
+          dnsOptions:
+            - name: ndots
+              value: 6
+            - name: edns
+              value: 79
+        instanceLifecycleConfig:
+          preFreeze:
+            handler: index.aaa
+            timeout: 60
+          preStop:
+            handler: index.preStop
+            preStop: 60
+        asyncConfiguration:
+          # destination:
+          #   onSuccess: acs:fc:::services/ServerlessTool.LATEST/functions/serverless_demo_nodejs8_http
+          #   onFailure: acs:fc:::services/Puppeteer.LATEST/functions/HtmlToPng
+          maxAsyncEventAgeInSeconds: 567
+          maxAsyncRetryAttempts: 3
+          statefulInvocation: false

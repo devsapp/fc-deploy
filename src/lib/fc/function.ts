@@ -47,6 +47,16 @@ export interface FunctionConfig {
   protect?: boolean;
   instanceLifecycleConfig?: InstanceLifecycleConfig;
   asyncConfiguration?: AsyncConfiguration;
+  customDNS?: CustomDNS;
+}
+
+export interface CustomDNS {
+  nameServers?: string[] | null;
+  searches?: string[] | null;
+  dnsOptions?: Array<{
+    name: string;
+    value: string;
+  }> | null;
 }
 
 export interface AsyncConfiguration {
@@ -226,6 +236,11 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
     if (!_.isNil(this.localConfig?.asyncConfiguration)) {
       Object.assign(resolvedFunctionConf, {
         asyncConfiguration: this.localConfig?.asyncConfiguration,
+      });
+    }
+    if (!_.isNil(this.localConfig?.customDNS)) {
+      Object.assign(resolvedFunctionConf, {
+        customDNS: this.localConfig?.customDNS,
       });
     }
     if (!_.isNil(this.localConfig?.instanceLifecycleConfig)) {
