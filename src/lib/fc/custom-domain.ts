@@ -168,13 +168,6 @@ export class FcCustomDomain extends IInputsBase {
     }
   }
 
-  async setStatedCustomDomainConf(resolvedCustomDomainConf: CustomDomainConfig): Promise<void> {
-    if (this.isDomainNameAuto) {
-      this.logger.debug('set resolved custom domain config into state.');
-      await core.setState(this.stateId, resolvedCustomDomainConf);
-    }
-  }
-
   async delStatedCustomDomainConf(): Promise<void> {
     const state = await core.getState(this.stateId);
     if (_.isEmpty(state)) {
