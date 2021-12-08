@@ -399,8 +399,12 @@ export default class FcDeployComponent {
                 'fc-domain',
                 this.args,
               );
-              const fcDoaminComponentIns = await core.load('devsapp/fc-domain');
-              await fcDoaminComponentIns.deploy(fcDomainComponentInputs);
+              const fcDoaminComponentIns = await core.loadComponent('/Users/wb447188/Desktop/new-repo/fc-domain');
+              const domainResData = await fcDoaminComponentIns.deploy(fcDomainComponentInputs) || {};
+              // 将部署结果写入缓存
+              if (!_.isEmpty(domainResData)) {
+                await core.setState(resolvedCustomDomainConf.domainName, domainResData);
+              }
             }
           }
         },
@@ -411,11 +415,6 @@ export default class FcDeployComponent {
       await this.fcFunction.removeZipCode(resolvedFunctionConf?.codeUri);
     }
 
-    if (hasAutoCustomDomainNameInDomains) {
-      for (let i = 0; i < this.fcCustomDomains.length; i++) {
-        await this.fcCustomDomains[i].setStatedCustomDomainConf(resolvedCustomDomainConfs[i]);
-      }
-    }
     const res = {
       region: this.region,
     };
