@@ -285,8 +285,8 @@ export default class FcDeployComponent {
             const triggerNamesInArgs: string = needDeployAllTriggers
               ? ''
               : resolvedTriggerConfs
-                  .map((triggerConf) => `--trigger-name ${triggerConf.name}`)
-                  .join(' ');
+                .map((triggerConf) => `--trigger-name ${triggerConf.name}`)
+                .join(' ');
             resolvedArgs =
               command === 'all' ? this.args.replace(/all/g, 'trigger') : `trigger ${this.args}`;
             resolvedArgs = triggerNamesInArgs
@@ -399,7 +399,7 @@ export default class FcDeployComponent {
                 'fc-domain',
                 this.args,
               );
-              const fcDoaminComponentIns = await core.loadComponent('/Users/wb447188/Desktop/new-repo/fc-domain');
+              const fcDoaminComponentIns = await core.loadComponent('devsapp/fc-domain');
               const domainResData = await fcDoaminComponentIns.deploy(fcDomainComponentInputs) || {};
               // 将部署结果写入缓存
               if (!_.isEmpty(domainResData)) {
@@ -661,8 +661,7 @@ export default class FcDeployComponent {
           serverAddr: item.serverAddr,
           nasDir: item.nasDir,
           fcDir: item.fcDir,
-        }),
-      ),
+        })),
     };
     this.fcService.statefulConfig = {};
     Object.assign(this.fcService.statefulConfig, {
@@ -713,7 +712,7 @@ export default class FcDeployComponent {
     }
 
     return {
-      fcBaseComponentIns: await core.loadComponent('devsapp/fc-base-sdk'),
+      fcBaseComponentIns: await core.loadComponent('devsapp/fc-base-sdk@dev'),
       BaseComponent: FcBaseSdkComponent,
       componentName: 'fc-base-sdk',
     };

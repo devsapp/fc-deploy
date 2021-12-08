@@ -93,7 +93,7 @@ export class FcCustomDomain extends IInputsBase {
     if (_.has(inputs, 'argsObj')) {
       delete inputs.argsObj;
     }
-    const planComponent = await core.loadComponent('/Users/wb447188/Desktop/plan');
+    const planComponent = await core.loadComponent('devsapp/plan');
     const { domains } = await planComponent.plan(inputs);
 
     const { local, needInteract, remote, diff } = _.find(domains, (item) => item.local.domainName === this.customDomainConf.domainName) || {};

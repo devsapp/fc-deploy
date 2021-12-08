@@ -82,7 +82,7 @@ export class AlicloudNas extends AlicloudClient {
       assistServiceName: serviceName,
     }, this.region, this.credentials, this.curPath);
     const nasComponentInputs = nasComponent.genComponentInputs('nas');
-    const nasComponentIns = await core.load('devsapp/nas');
+    const nasComponentIns = await core.load('devsapp/nas@dev');
     await nasComponentIns.removeHelperService(nasComponentInputs);
   }
 
