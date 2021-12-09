@@ -93,11 +93,18 @@ export class FcCustomDomain extends IInputsBase {
     if (_.has(inputs, 'argsObj')) {
       delete inputs.argsObj;
     }
-    const planComponent = await core.loadComponent('devsapp/plan');
+    const planComponent = await core.loadComponent('devsapp/fc-plan');
     const { domains } = await planComponent.plan(inputs);
 
-    const { local, needInteract, remote, diff } = _.find(domains, (item) => item.local.domainName === this.customDomainConf.domainName) || {};
-    this.logger.debug(`function plan local::\n${JSON.stringify(local, null, 2)}needInteract:: ${needInteract}\ndiff::\n${diff}`);
+    const { local, needInteract, remote, diff } =
+      _.find(domains, (item) => item.local.domainName === this.customDomainConf.domainName) || {};
+    this.logger.debug(
+      `function plan local::\n${JSON.stringify(
+        local,
+        null,
+        2,
+      )}needInteract:: ${needInteract}\ndiff::\n${diff}`,
+    );
     if (_.isEmpty(remote) || !needInteract) {
       return await this.initLocalConfig();
     }
@@ -202,7 +209,7 @@ export class FcCustomDomain extends IInputsBase {
     delete resolvedCustomDomainConf.routeConfigs;
 
     const resolvedRouteConfigs: RouteConfig[] = [];
-    for (const routeConfig of (this.customDomainConf?.routeConfigs || [])) {
+    for (const routeConfig of this.customDomainConf?.routeConfigs || []) {
       if (!Object.prototype.hasOwnProperty.call(routeConfig, 'serviceName')) {
         Object.assign(routeConfig, {
           serviceName: this.serviceName,

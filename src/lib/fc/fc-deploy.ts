@@ -198,7 +198,7 @@ export default abstract class FcDeploy<T> extends IInputsBase {
     if (_.has(inputs, 'argsObj')) {
       delete inputs.argsObj;
     }
-    const planComponent = await core.loadComponent('devsapp/plan');
+    const planComponent = await core.loadComponent('devsapp/fc-plan');
     return await planComponent.plan(inputs);
   }
 
@@ -210,7 +210,14 @@ export default abstract class FcDeploy<T> extends IInputsBase {
     await this.setKVInState(stateID, 'statefulConfig', this.statefulConfig);
   }
 
-  async setUseRemote(name: string, resourceType: string, useLocalFlag: boolean, useRemoteFlag: boolean, needInteract, diff): Promise<void> {
+  async setUseRemote(
+    name: string,
+    resourceType: string,
+    useLocalFlag: boolean,
+    useRemoteFlag: boolean,
+    needInteract,
+    diff,
+  ): Promise<void> {
     // 强制使用线下
     if (useLocalFlag || _.isEmpty(this.remoteConfig) || !needInteract) {
       this.useRemote = false;
