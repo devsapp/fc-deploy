@@ -198,7 +198,9 @@ export default abstract class FcDeploy<T> extends IInputsBase {
     if (_.has(inputs, 'argsObj')) {
       delete inputs.argsObj;
     }
+    logger.spinner?.stop();
     const planComponent = await core.loadComponent('devsapp/fc-plan');
+    logger.spinner?.start();
     return await planComponent.plan(inputs);
   }
 

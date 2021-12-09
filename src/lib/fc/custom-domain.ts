@@ -93,8 +93,10 @@ export class FcCustomDomain extends IInputsBase {
     if (_.has(inputs, 'argsObj')) {
       delete inputs.argsObj;
     }
+    logger.spinner?.stop();
     const planComponent = await core.loadComponent('devsapp/fc-plan');
     const { domains } = await planComponent.plan(inputs);
+    logger.spinner?.start();
 
     const { local, needInteract, remote, diff } =
       _.find(domains, (item) => item.local.domainName === this.customDomainConf.domainName) || {};
@@ -260,6 +262,7 @@ export class FcCustomDomain extends IInputsBase {
         logger.spinner?.stop();
         const domainComponentIns = await core.load('devsapp/domain@dev');
         generatedDomain = await domainComponentIns.get(domainComponentInputs);
+        logger.spinner?.start();
       }
       this.logger.debug(`Generated auto custom domain: ${generatedDomain}`);
       Object.assign(resolvedCustomDomainConf, {

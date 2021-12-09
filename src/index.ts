@@ -391,9 +391,11 @@ export default class FcDeployComponent {
               'fc-domain',
               this.args,
             );
+            logger.spinner?.stop();
             const fcDoaminComponentIns = await core.loadComponent('devsapp/fc-domain');
             const domainResData =
               (await fcDoaminComponentIns.deploy(fcDomainComponentInputs)) || {};
+            logger.spinner?.start();
             // 将部署结果写入缓存
             if (!_.isEmpty(domainResData)) {
               await core.setState(resolvedCustomDomainConf.domainName, domainResData);
