@@ -55,6 +55,7 @@ export interface CustomContainerConfig {
     accelerationType?: 'Default' | 'None';
 }
 export declare function isCustomContainerRuntime(runtime: string): boolean;
+export declare function isCustomRuntime(runtime: string): boolean;
 export declare function isBuildInterpretedLanguage(runtime: string): boolean;
 export declare class FcFunction extends FcDeploy<FunctionConfig> {
     readonly serviceName: string;
