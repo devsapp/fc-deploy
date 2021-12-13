@@ -93,6 +93,10 @@ export function isCustomContainerRuntime(runtime: string): boolean {
   return runtime === 'custom-container';
 }
 
+export function isCustomRuntime(runtime: string): boolean {
+  return runtime === 'custom';
+}
+
 export function isBuildInterpretedLanguage(runtime: string) {
   return runtime.startsWith('node') || runtime.startsWith('python') || runtime.startsWith('php');
 }
@@ -331,6 +335,11 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
     if (!_.isEmpty(this.localConfig?.environmentVariables)) {
       Object.assign(resolvedFunctionConf, {
         environmentVariables: this.localConfig?.environmentVariables,
+      });
+    }
+    if (isCustomRuntime(this.localConfig?.runtime)) {
+      Object.assign(resolvedFunctionConf, {
+        caPort: this.localConfig?.caPort || FUNCTION_CONF_DEFAULT.caPort,
       });
     }
     if (isCustomContainerRuntime(this.localConfig?.runtime)) {
