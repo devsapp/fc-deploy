@@ -27,6 +27,15 @@ export interface FunctionConfig {
     protect?: boolean;
     instanceLifecycleConfig?: InstanceLifecycleConfig;
     asyncConfiguration?: AsyncConfiguration;
+    customDNS?: CustomDNS;
+}
+export interface CustomDNS {
+    nameServers?: string[] | null;
+    searches?: string[] | null;
+    dnsOptions?: Array<{
+        name: string;
+        value: string;
+    }> | null;
 }
 export interface AsyncConfiguration {
     destination: {

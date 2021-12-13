@@ -6,7 +6,7 @@ export interface TriggerConfig {
     triggerName?: string;
     lastModifiedTime?: any;
     name: string;
-    type: 'oss' | 'log' | 'timer' | 'http' | 'mnsTopic' | 'cdnEvents' | 'tablestore';
+    type: 'oss' | 'log' | 'timer' | 'http' | 'mns_topic' | 'cdn_events' | 'tablestore';
     role?: string;
     sourceArn?: string;
     import?: boolean;
@@ -17,14 +17,12 @@ export interface TablestoreConfig {
     instanceName: string;
     tableName: string;
 }
-export declare function instanceOfTablestoreTriggerConfig(data: any): data is CdnTriggerConfig;
 export interface CdnTriggerConfig {
     eventName: string;
     eventVersion: string;
     notes: string;
     filter: CdnFilterConfig;
 }
-export declare function instanceOfCdnTriggerConfig(data: any): data is CdnTriggerConfig;
 export interface CdnFilterConfig {
     domain: string[];
 }
@@ -46,7 +44,6 @@ export interface MnsTriggerConfig {
     notifyStrategy?: 'BACKOFF_RETRY' | 'EXPONENTIAL_DECAY_RETRY';
     filterTag?: string;
 }
-export declare function instanceOfMnsTriggerConfig(data: any): data is MnsTriggerConfig;
 export interface LogTriggerConfig {
     jobConfig: LogTriggerJobConfig;
     logConfig: {
@@ -59,7 +56,6 @@ export interface LogTriggerConfig {
     sourceConfig: LogTriggerSourceConfig;
     enable: boolean;
 }
-export declare function instanceOfLogTriggerConfig(data: any): data is LogTriggerConfig;
 export interface LogTriggerJobConfig {
     maxRetryTime?: string;
     triggerInterval?: string;
@@ -68,11 +64,10 @@ export interface LogTriggerSourceConfig {
     logstore: string;
 }
 export interface OssTriggerConfig {
-    bucketName: string;
+    bucketName?: string;
     events: string[];
     filter: filterConfig;
 }
-export declare function instanceOfOssTriggerConfig(data: any): data is OssTriggerConfig;
 export interface filterConfig {
     Key: {
         Prefix: string;
