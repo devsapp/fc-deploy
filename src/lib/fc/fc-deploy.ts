@@ -200,8 +200,9 @@ export default abstract class FcDeploy<T> extends IInputsBase {
     }
     logger.spinner?.stop();
     const planComponent = await core.loadComponent('devsapp/fc-plan');
+    const res = await planComponent.plan(inputs);
     logger.spinner?.start();
-    return await planComponent.plan(inputs);
+    return res;
   }
 
   async setStatefulConfig(): Promise<void> {

@@ -4,6 +4,7 @@ import * as _ from 'lodash';
 import { VpcComponent } from '../component/vpc';
 import { promptForConfirmContinue } from '../utils/prompt';
 import { replaceProjectName } from '../profile';
+import logger from '../../common/logger';
 
 export interface VpcConfig {
   securityGroupId: string;
@@ -103,8 +104,11 @@ export class AlicloudVpc extends AlicloudClient {
     }, this.region, this.credentials, this.curPath);
     const vpcComponentInputs = vpcComponent.genComponentInputs('vpc');
     // load vpc component
+    logger.spinner?.stop();
     const vpcComponentIns = await core.load('devsapp/vpc@dev');
-    return await vpcComponentIns.create(vpcComponentInputs);
+    const res = await vpcComponentIns.create(vpcComponentInputs);
+    logger.spinner?.start();
+    return res;
   }
 
   async describeVSwitchAttributes(vswitchId) {

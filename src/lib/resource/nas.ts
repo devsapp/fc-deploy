@@ -4,6 +4,7 @@ import { AlicloudVpc, VpcConfig } from './vpc';
 import { NasComponent, MountPoint } from '../component/nas';
 import { replaceProjectName } from '../profile';
 import * as path from 'path';
+import logger from '../../common/logger';
 
 export interface NasConfig {
   userId?: number;
@@ -70,8 +71,11 @@ export class AlicloudNas extends AlicloudClient {
       assistServiceName: nasServiceName,
     }, this.region, this.credentials, this.curPath);
     const nasComponentInputs = nasComponent.genComponentInputs('nas');
+    logger.spinner?.stop();
     const nasComponentIns = await core.load('devsapp/nas@dev');
-    await nasComponentIns.ensureNasDir(nasComponentInputs);
+    const res = await nasComponentIns.ensureNasDir(nasComponentInputs);
+    logger.spinner?.start();
+    return res;
   }
 
   async removeHelperService(serviceName: string) {
@@ -113,9 +117,10 @@ export class AlicloudNas extends AlicloudClient {
       mountPoints: null,
     }, this.region, this.credentials, this.curPath);
     const nasComponentInputs = nasComponent.genComponentInputs('nas', assumeYes ? '-y' : null);
+    logger.spinner?.stop();
     const nasComponentIns = await core.load('devsapp/nas@dev');
     const nasDeployRes = await nasComponentIns.deploy(nasComponentInputs);
-
+    logger.spinner?.start();
     return {
       userId: defaultNasUid,
       groupId: defaultNasGid,

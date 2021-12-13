@@ -392,7 +392,7 @@ export default class FcDeployComponent {
               this.args,
             );
             logger.spinner?.stop();
-            const fcDoaminComponentIns = await core.loadComponent('devsapp/fc-domain');
+            const fcDoaminComponentIns = await core.loadComponent('devsapp/fc-domain@dev');
             const domainResData =
               (await fcDoaminComponentIns.deploy(fcDomainComponentInputs)) || {};
             logger.spinner?.start();

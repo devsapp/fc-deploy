@@ -14,6 +14,7 @@ export async function promptForConfirmContinue(message: string): Promise<boolean
   }
   // if (detectMocha()) { return true; }
 
+  logger.spinner?.stop();
   const answers = await inquirer.prompt([
     {
       type: 'confirm',
@@ -21,6 +22,7 @@ export async function promptForConfirmContinue(message: string): Promise<boolean
       message,
     },
   ]);
+  logger.spinner?.start();
 
   if (answers.ok) {
     return true;
