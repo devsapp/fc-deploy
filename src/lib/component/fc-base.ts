@@ -131,6 +131,9 @@ export class FcBaseComponent extends Component {
     if (prop.function.asyncConfiguration) {
       throw new Error(notSupportResourseErrorMessage('asyncConfiguration'));
     }
+    if (prop.function.customDNS) {
+      throw new Error(notSupportResourseErrorMessage('customDNS'));
+    }
 
     if (prop.service.tracingConfig) {
       throw new Error(notSupportResourseErrorMessage('tracingConfig'));
