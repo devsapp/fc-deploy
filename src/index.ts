@@ -119,93 +119,86 @@ export default class FcDeployComponent {
       {
         title: `Checking Service ${this.fcService?.name} exists`,
         id: 'Service',
+        enabled: () => needDeployService,
         task: async () => {
-          if (needDeployService) {
-            await this.fcService.init(useLocal, useRemote, _.cloneDeep(inputs));
-            if (this.fcService.useRemote) {
-              logger.debug(`Service ${this.fcService.name} using online config, skip it.`);
-              needDeployService = false;
-            } else {
-              resolvedServiceConf = await this.fcService.makeService(assumeYes, escapeNasCheck);
-              resolvedServiceConf.name =
-                resolvedServiceConf.name || resolvedServiceConf.serviceName;
-            }
-            logger.debug(
-              `Resolved serviceConf is:\n${JSON.stringify(resolvedServiceConf, null, '  ')}`,
-            );
+          await this.fcService.init(useLocal, useRemote, _.cloneDeep(inputs));
+          if (this.fcService.useRemote) {
+            logger.debug(`Service ${this.fcService.name} using online config, skip it.`);
+            needDeployService = false;
+          } else {
+            resolvedServiceConf = await this.fcService.makeService(assumeYes, escapeNasCheck);
+            resolvedServiceConf.name = resolvedServiceConf.name || resolvedServiceConf.serviceName;
           }
+          logger.debug(
+            `Resolved serviceConf is:\n${JSON.stringify(resolvedServiceConf, null, '  ')}`,
+          );
         },
       },
       {
         title: `Checking Function ${this.fcFunction?.name} exists`,
         id: 'Function',
+        enabled: () => !_.isNil(this.fcFunction) && needDeployFunction,
         task: async () => {
-          if (!_.isNil(this.fcFunction) && needDeployFunction) {
-            const pushRegistry = parsedArgs.data ? parsedArgs.data['push-registry'] : undefined;
-            if (pushRegistry) {
-              logger.debug(
-                StdoutFormatter.stdoutFormatter.warn('--push-registry', 'will be deprecated soon.'),
-              );
-            }
-            await this.fcFunction.init(type, useLocal, useRemote, assumeYes, _.cloneDeep(inputs));
-            if (this.fcFunction.useRemote) {
-              logger.debug(`Function ${this.fcFunction.name} using online config, skip it.`);
-              needDeployFunction = false;
-            } else {
-              const baseDir = path.dirname(this.curPath);
+          const pushRegistry = parsedArgs.data ? parsedArgs.data['push-registry'] : undefined;
+          if (pushRegistry) {
+            logger.debug(
+              StdoutFormatter.stdoutFormatter.warn('--push-registry', 'will be deprecated soon.'),
+            );
+          }
+          await this.fcFunction.init(type, useLocal, useRemote, assumeYes, _.cloneDeep(inputs));
+          if (this.fcFunction.useRemote) {
+            logger.debug(`Function ${this.fcFunction.name} using online config, skip it.`);
+            needDeployFunction = false;
+          } else {
+            const baseDir = path.dirname(this.curPath);
 
-              resolvedFunctionConf = await this.fcFunction.makeFunction(
-                baseDir,
-                type,
-                pushRegistry,
-                assumeYes,
-              );
-              resolvedFunctionConf.name =
-                resolvedFunctionConf.name || resolvedFunctionConf.functionName;
-              resolvedFunctionConf.serviceName =
-                resolvedFunctionConf.serviceName || resolvedServiceConf.name;
-              logger.debug(
-                `Resolved functionConf is:\n${JSON.stringify(resolvedFunctionConf, null, '  ')}`,
-              );
-            }
+            resolvedFunctionConf = await this.fcFunction.makeFunction(
+              baseDir,
+              type,
+              pushRegistry,
+              assumeYes,
+            );
+            resolvedFunctionConf.name =
+              resolvedFunctionConf.name || resolvedFunctionConf.functionName;
+            resolvedFunctionConf.serviceName =
+              resolvedFunctionConf.serviceName || resolvedServiceConf.name;
+            logger.debug(
+              `Resolved functionConf is:\n${JSON.stringify(resolvedFunctionConf, null, '  ')}`,
+            );
           }
         },
       },
       {
         title: 'Checking Triggers',
         id: 'Trigger',
+        enabled: () => !_.isEmpty(this.fcTriggers) && needDeployTrigger,
         task: async () => {
-          if (!_.isEmpty(this.fcTriggers) && needDeployTrigger) {
-            let existTriggersUseLocal = false;
-            for (let i = 0; i < this.fcTriggers.length; i++) {
-              if (
-                !_.isEmpty(targetTriggerNameArr) &&
-                targetTriggerNameArr.includes(this.fcTriggers[i].name)
-              ) {
-                continue;
-              }
-              await this.fcTriggers[i].init(useLocal, useRemote, _.cloneDeep(inputs));
-              if (this.fcTriggers[i].useRemote) {
-                logger.debug(`Trigger ${this.fcTriggers[i].name} using online config, skip it.`);
-                needDeployAllTriggers = false;
-                continue;
-              }
-              existTriggersUseLocal = true;
-              const resolvedTriggerConf: TriggerConfig = await this.fcTriggers[i].makeTrigger();
-              resolvedTriggerConf.name =
-                resolvedTriggerConf.name || resolvedTriggerConf.triggerName;
-              resolvedTriggerConf.serviceName =
-                resolvedTriggerConf.serviceName || resolvedServiceConf?.name;
-              resolvedTriggerConf.functionName =
-                resolvedTriggerConf.functionName || resolvedFunctionConf?.name;
-              hasAutoTriggerRole = hasAutoTriggerRole || this.fcTriggers[i].isRoleAuto;
-              resolvedTriggerConfs.push(resolvedTriggerConf);
-              logger.debug(
-                `Resolved trigger: \n${JSON.stringify(resolvedTriggerConf, null, '  ')}`,
-              );
+          let existTriggersUseLocal = false;
+          for (let i = 0; i < this.fcTriggers.length; i++) {
+            if (
+              !_.isEmpty(targetTriggerNameArr) &&
+              targetTriggerNameArr.includes(this.fcTriggers[i].name)
+            ) {
+              continue;
             }
-            needDeployTrigger = existTriggersUseLocal;
+            await this.fcTriggers[i].init(useLocal, useRemote, _.cloneDeep(inputs));
+            if (this.fcTriggers[i].useRemote) {
+              logger.debug(`Trigger ${this.fcTriggers[i].name} using online config, skip it.`);
+              needDeployAllTriggers = false;
+              continue;
+            }
+            existTriggersUseLocal = true;
+            const resolvedTriggerConf: TriggerConfig = await this.fcTriggers[i].makeTrigger();
+            resolvedTriggerConf.name = resolvedTriggerConf.name || resolvedTriggerConf.triggerName;
+            resolvedTriggerConf.serviceName =
+              resolvedTriggerConf.serviceName || resolvedServiceConf?.name;
+            resolvedTriggerConf.functionName =
+              resolvedTriggerConf.functionName || resolvedFunctionConf?.name;
+            hasAutoTriggerRole = hasAutoTriggerRole || this.fcTriggers[i].isRoleAuto;
+            resolvedTriggerConfs.push(resolvedTriggerConf);
+            logger.debug(`Resolved trigger: \n${JSON.stringify(resolvedTriggerConf, null, '  ')}`);
           }
+          needDeployTrigger = existTriggersUseLocal;
         },
       },
     ]);
@@ -285,8 +278,8 @@ export default class FcDeployComponent {
             const triggerNamesInArgs: string = needDeployAllTriggers
               ? ''
               : resolvedTriggerConfs
-                .map((triggerConf) => `--trigger-name ${triggerConf.name}`)
-                .join(' ');
+                  .map((triggerConf) => `--trigger-name ${triggerConf.name}`)
+                  .join(' ');
             resolvedArgs =
               command === 'all' ? this.args.replace(/all/g, 'trigger') : `trigger ${this.args}`;
             resolvedArgs = triggerNamesInArgs
@@ -352,59 +345,60 @@ export default class FcDeployComponent {
     await logger.task('Creating custom domain', [
       {
         title: 'Generated auto custom domain...',
+        enabled: () => !_.isEmpty(this.fcCustomDomains) && needDeployDomain,
         task: async () => {
-          if (!_.isEmpty(this.fcCustomDomains) && needDeployDomain) {
-            for (let i = 0; i < this.fcCustomDomains.length; i++) {
-              await this.fcCustomDomains[i].initLocal(useLocal, useRemote, _.cloneDeep(inputs));
-              if (this.fcCustomDomains[i].useRemote) {
-                continue;
-              }
-              const resolvedCustomDomainConf: CustomDomainConfig = await this.fcCustomDomains[
-                i
-              ].makeCustomDomain(this.args);
-              hasAutoCustomDomainNameInDomains =
-                hasAutoCustomDomainNameInDomains || this.fcCustomDomains[i].isDomainNameAuto;
-              resolvedCustomDomainConfs.push(resolvedCustomDomainConf);
-              logger.debug(
-                `resolved custom domain: \n${JSON.stringify(resolvedCustomDomainConf, null, '  ')}`,
-              );
+          for (let i = 0; i < this.fcCustomDomains.length; i++) {
+            await this.fcCustomDomains[i].initLocal(useLocal, useRemote, _.cloneDeep(inputs));
+            if (this.fcCustomDomains[i].useRemote) {
+              continue;
             }
+            const resolvedCustomDomainConf: CustomDomainConfig = await this.fcCustomDomains[
+              i
+            ].makeCustomDomain(this.args);
+            hasAutoCustomDomainNameInDomains =
+              hasAutoCustomDomainNameInDomains || this.fcCustomDomains[i].isDomainNameAuto;
+            resolvedCustomDomainConfs.push(resolvedCustomDomainConf);
+            logger.debug(
+              `resolved custom domain: \n${JSON.stringify(resolvedCustomDomainConf, null, '  ')}`,
+            );
           }
         },
       },
       {
         title: 'Creating custom domain...',
+        enabled: () => !_.isEmpty(resolvedCustomDomainConfs),
         task: async () => {
-          if (!_.isEmpty(resolvedCustomDomainConfs)) {
-            const profileOfFcDomain = replaceProjectName(
-              this.serverlessProfile,
-              `${this.serverlessProfile?.project.projectName}-fc-domain-project`,
+          const profileOfFcDomain = replaceProjectName(
+            this.serverlessProfile,
+            `${this.serverlessProfile?.project.projectName}-fc-domain-project`,
+          );
+          for (const resolvedCustomDomainConf of resolvedCustomDomainConfs) {
+            logger.debug(
+              StdoutFormatter.stdoutFormatter.create(
+                'custom domain',
+                resolvedCustomDomainConf.domainName,
+              ),
             );
-            for (const resolvedCustomDomainConf of resolvedCustomDomainConfs) {
-              logger.debug(
-                StdoutFormatter.stdoutFormatter.create(
-                  'custom domain',
-                  resolvedCustomDomainConf.domainName,
-                ),
-              );
 
-              const fcDomainComponent = new FcDomainComponent(
-                profileOfFcDomain,
-                resolvedCustomDomainConf,
-                this.region,
-                this.credentials,
-                this.curPath,
-              );
-              const fcDomainComponentInputs = fcDomainComponent.genComponentInputs(
-                'fc-domain',
-                this.args,
-              );
-              const fcDoaminComponentIns = await core.loadComponent('devsapp/fc-domain');
-              const domainResData = await fcDoaminComponentIns.deploy(fcDomainComponentInputs) || {};
-              // 将部署结果写入缓存
-              if (!_.isEmpty(domainResData)) {
-                await core.setState(resolvedCustomDomainConf.domainName, domainResData);
-              }
+            const fcDomainComponent = new FcDomainComponent(
+              profileOfFcDomain,
+              resolvedCustomDomainConf,
+              this.region,
+              this.credentials,
+              this.curPath,
+            );
+            const fcDomainComponentInputs = fcDomainComponent.genComponentInputs(
+              'fc-domain',
+              this.args,
+            );
+            logger.spinner?.stop();
+            const fcDoaminComponentIns = await core.loadComponent('devsapp/fc-domain');
+            const domainResData =
+              (await fcDoaminComponentIns.deploy(fcDomainComponentInputs)) || {};
+            logger.spinner?.start();
+            // 将部署结果写入缓存
+            if (!_.isEmpty(domainResData)) {
+              await core.setState(resolvedCustomDomainConf.domainName, domainResData);
             }
           }
         },
@@ -661,7 +655,8 @@ export default class FcDeployComponent {
           serverAddr: item.serverAddr,
           nasDir: item.nasDir,
           fcDir: item.fcDir,
-        })),
+        }),
+      ),
     };
     this.fcService.statefulConfig = {};
     Object.assign(this.fcService.statefulConfig, {
