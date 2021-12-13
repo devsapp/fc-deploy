@@ -115,8 +115,10 @@ export class FcCustomDomain extends IInputsBase {
       return;
     }
     this.customDomainConf = local;
+    const msg = `Domain [${this.customDomainConf.domainName}] was changed, please confirm before deployment：
+    * You can also specify to use local configuration through --use-local during deployment) `;
     this.useRemote = await promptForConfirmOrDetails(
-      `Remote domain: ${this.customDomainConf.domainName} is inconsistent with the config you deployed last time, deploy it with local config or remote config?`,
+      msg,
       diff,
       ['use local', 'use remote'],
       'use remote',

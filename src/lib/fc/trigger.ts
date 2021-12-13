@@ -145,7 +145,7 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
     await this.initRemote('trigger', this.serviceName, this.functionName, this.name);
     await this.initStateful();
     await this.initLocal();
-    await this.setUseRemote(this.name, 'trigger', useLocal, useRemote, needInteract, diff);
+    await this.setUseRemote(this.name, 'Trigger', useLocal, useRemote, needInteract, diff);
   }
 
   private async initLocal(): Promise<void> {

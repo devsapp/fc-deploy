@@ -150,7 +150,7 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
     await this.initRemote('function', this.serviceName, this.name);
     await this.initStateful();
     await this.initLocal(assumeYes);
-    await this.setUseRemote(this.name, 'function', useLocal, useRemote, needInteract, diff);
+    await this.setUseRemote(this.name, 'Function', useLocal, useRemote, needInteract, diff);
   }
 
   private async initLocal(assumeYes?: boolean): Promise<void> {
