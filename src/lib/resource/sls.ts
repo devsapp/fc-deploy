@@ -3,6 +3,7 @@ import { SlsComponent } from '../component/sls';
 import { replaceProjectName } from '../profile';
 import { AlicloudClient } from './client';
 import { generateResourceName } from '../utils/utils';
+import logger from '../../common/logger';
 
 const LOGSTROE_NAME_MAX_LENGTH = 64;
 
@@ -39,7 +40,9 @@ export class AlicloudSls extends AlicloudClient {
 
     const slsComponent = new SlsComponent(profileOfSls, defaultProject, defaultLogstore, this.region, this.credentials, this.curPath, defaultDescription);
     const slsComponentInputs = slsComponent.genComponentInputs('sls');
+    logger.spinner?.stop()
     const slsComponentIns = await core.load('devsapp/sls@dev');
+    logger.spinner?.start()
     await slsComponentIns.create(slsComponentInputs);
 
     const fcDefault = await core.loadComponent('devsapp/fc-default');

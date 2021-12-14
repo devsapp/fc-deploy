@@ -5,6 +5,7 @@ import { replaceProjectName } from '../profile';
 import { generateResourceName } from '../utils/utils';
 import _ from 'lodash';
 import { FC_DEFAULT_ROLE } from '../static';
+import logger from '../../common/logger';
 
 export interface RoleConfig {
   name?: string;
@@ -102,7 +103,9 @@ export class AlicloudRam extends AlicloudClient {
       this.curPath,
     );
     const ramComponentInputs = ramComponent.genComponentInputs('ram', args);
+    logger.spinner?.stop();
     const ramComponentIns = await core.load('devsapp/ram@dev');
+    logger.spinner?.start();
     const roleArn = await ramComponentIns.deploy(ramComponentInputs);
     return roleArn;
   }

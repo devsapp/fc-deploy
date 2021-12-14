@@ -170,7 +170,7 @@ export default class FcDeployComponent {
       },
       {
         title: 'Checking Triggers',
-        id: 'Trigger',
+        id: 'Triggers',
         enabled: () => !_.isEmpty(this.fcTriggers) && needDeployTrigger,
         task: async () => {
           let existTriggersUseLocal = false;
@@ -393,9 +393,9 @@ export default class FcDeployComponent {
             );
             logger.spinner?.stop();
             const fcDoaminComponentIns = await core.loadComponent('devsapp/fc-domain@dev');
+            logger.spinner?.start();
             const domainResData =
               (await fcDoaminComponentIns.deploy(fcDomainComponentInputs)) || {};
-            logger.spinner?.start();
             // 将部署结果写入缓存
             if (!_.isEmpty(domainResData)) {
               await core.setState(resolvedCustomDomainConf.domainName, domainResData);

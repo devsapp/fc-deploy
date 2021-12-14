@@ -263,8 +263,8 @@ export class FcCustomDomain extends IInputsBase {
         const domainComponentInputs = domainComponent.genComponentInputs('domain', args);
         logger.spinner?.stop();
         const domainComponentIns = await core.load('devsapp/domain@dev');
-        generatedDomain = await domainComponentIns.get(domainComponentInputs);
         logger.spinner?.start();
+        generatedDomain = await domainComponentIns.get(domainComponentInputs);
       }
       this.logger.debug(`Generated auto custom domain: ${generatedDomain}`);
       Object.assign(resolvedCustomDomainConf, {

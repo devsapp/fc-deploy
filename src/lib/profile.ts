@@ -59,8 +59,8 @@ export function replaceProjectName(
 export async function getFcEndpoint(): Promise<string | undefined> {
   logger.spinner?.stop();
   const fcDefault = await core.loadComponent('devsapp/fc-default');
-  const fcEndpoint: string = await fcDefault.get({ args: 'fc-endpoint' });
   logger.spinner?.start();
+  const fcEndpoint: string = await fcDefault.get({ args: 'fc-endpoint' });
   if (!fcEndpoint) {
     return undefined;
   }
