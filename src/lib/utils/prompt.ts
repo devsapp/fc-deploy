@@ -32,7 +32,7 @@ export async function promptForConfirmContinue(message: string): Promise<boolean
 
 export async function promptForConfirmOrDetails(
   message: string,
-  diff: string,
+  diff?: string,
   choices?: string[],
   trueChoice?: string,
 ): Promise<boolean> {
@@ -41,11 +41,13 @@ export async function promptForConfirmOrDetails(
   }
 
   logger.spinner?.stop();
-  logger.log(`
+  if (diff) {
+    logger.log(`
 
-Local Last Deploy status => Online status
+Local Deploy status => Online status
 
 ${diff}`);
+  }
 
   const answers: any = await inquirer.prompt([
     {
