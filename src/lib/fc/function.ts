@@ -141,7 +141,11 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
     this.name = functionConf?.name;
   }
 
-  async init(type: string, useLocal: boolean, useRemote: boolean, assumeYes: boolean, inputs): Promise<void> {
+  async init(useLocal: boolean, useRemote: boolean, assumeYes: boolean, inputs): Promise<void> {
+    await this.initLocal(assumeYes);
+    if (!_.isEmpty(this.localConfig.environmentVariables)) {
+      inputs.props.function.environmentVariables = this.localConfig.environmentVariables;
+    }
     const {
       function: { local, needInteract, diff },
     } = await this.plan(inputs, 'function');
@@ -149,7 +153,6 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
     this.localConfig = local;
     await this.initRemote('function', this.serviceName, this.name);
     await this.initStateful();
-    await this.initLocal(assumeYes);
     await this.setUseRemote(this.name, 'Function', useLocal, useRemote, needInteract, diff);
   }
 

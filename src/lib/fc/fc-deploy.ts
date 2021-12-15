@@ -232,9 +232,10 @@ export default abstract class FcDeploy<T> extends IInputsBase {
       return;
     }
 
-    // const msg = `Remote ${resourceType}: ${name} is inconsistent with the config you deployed last time, deploy it with local config or remote config?`;
-    const msg = `${resourceType} [${name}] was changed, please confirm before deployment：
-    * You can also specify to use local configuration through --use-local during deployment) `;
+    logger.log(`\n${resourceType} [${name}] was changed, please confirm before deployment：
+    * You can also specify to use local configuration through --use-local during deployment)`);
+
+    const msg = `Remote ${resourceType?.toLocaleLowerCase()}: ${name} is inconsistent with the config you deployed last time, deploy it with local config or remote config?`;
     this.useRemote = await promptForConfirmOrDetails(
       msg,
       diff,

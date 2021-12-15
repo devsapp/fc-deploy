@@ -145,7 +145,7 @@ export default class FcDeployComponent {
               StdoutFormatter.stdoutFormatter.warn('--push-registry', 'will be deprecated soon.'),
             );
           }
-          await this.fcFunction.init(type, useLocal, useRemote, assumeYes, _.cloneDeep(inputs));
+          await this.fcFunction.init(useLocal, useRemote, assumeYes, _.cloneDeep(inputs));
           if (this.fcFunction.useRemote) {
             logger.debug(`Function ${this.fcFunction.name} using online config, skip it.`);
             needDeployFunction = false;
@@ -278,8 +278,8 @@ export default class FcDeployComponent {
             const triggerNamesInArgs: string = needDeployAllTriggers
               ? ''
               : resolvedTriggerConfs
-                  .map((triggerConf) => `--trigger-name ${triggerConf.name}`)
-                  .join(' ');
+                .map((triggerConf) => `--trigger-name ${triggerConf.name}`)
+                .join(' ');
             resolvedArgs =
               command === 'all' ? this.args.replace(/all/g, 'trigger') : `trigger ${this.args}`;
             resolvedArgs = triggerNamesInArgs
@@ -655,8 +655,7 @@ export default class FcDeployComponent {
           serverAddr: item.serverAddr,
           nasDir: item.nasDir,
           fcDir: item.fcDir,
-        }),
-      ),
+        })),
     };
     this.fcService.statefulConfig = {};
     Object.assign(this.fcService.statefulConfig, {
