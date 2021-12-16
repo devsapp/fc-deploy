@@ -74,7 +74,6 @@ export class AlicloudNas extends AlicloudClient {
     logger.spinner?.stop();
     const nasComponentIns = await core.load('devsapp/nas@dev');
     return await nasComponentIns.ensureNasDir(nasComponentInputs);
-     
   }
 
   async removeHelperService(serviceName: string) {

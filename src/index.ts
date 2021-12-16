@@ -568,19 +568,19 @@ export default class FcDeployComponent {
         if (!_.isEmpty(this.fcService)) {
           await this.fcService.unsetState();
         }
-      }
 
-      // 尝试删除辅助函数
-      try {
-        const alicloudNas = new AlicloudNas(
-          this.serverlessProfile,
-          this.credentials,
-          this.region,
-          this.curPath,
-        );
-        await alicloudNas.removeHelperService(this.fcService.name);
-      } catch (e) {
-        logger.debug(e);
+        // 尝试删除辅助函数
+        try {
+          const alicloudNas = new AlicloudNas(
+            this.serverlessProfile,
+            this.credentials,
+            this.region,
+            this.curPath,
+          );
+          await alicloudNas.removeHelperService(this.fcService.name);
+        } catch (e) {
+          logger.debug(e);
+        }
       }
 
       return removeRes;
