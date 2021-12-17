@@ -305,6 +305,8 @@ export default class FcDeployComponent {
       );
       this.fcService.statefulConfig = remoteConfig;
       this.fcService.upgradeStatefulConfig();
+      await this.fcService.setStatefulConfig();
+      await this.fcService.setStatefulAutoConfig();
     }
     if (needDeployFunction && this.fcFunction) {
       const { remoteConfig } = await this.fcFunction.GetRemoteInfo(
@@ -315,6 +317,7 @@ export default class FcDeployComponent {
       );
       this.fcFunction.statefulConfig = remoteConfig;
       this.fcFunction.upgradeStatefulConfig();
+      await this.fcFunction.setStatefulConfig();
     }
     // triggers
     if (needDeployTrigger && !_.isEmpty(this.fcTriggers)) {
@@ -333,10 +336,9 @@ export default class FcDeployComponent {
         );
         this.fcTriggers[i].statefulConfig = remoteConfig;
         this.fcTriggers[i].upgradeStatefulConfig();
+        await this.fcTriggers[i].setStatefulConfig();
       }
     }
-
-    await this.setStatefulConfig();
 
     // deploy custom domain
     let hasAutoCustomDomainNameInDomains = false;
@@ -408,7 +410,6 @@ export default class FcDeployComponent {
     if (!_.isEmpty(resolvedFunctionConf) && needDeployFunction) {
       await this.fcFunction.removeZipCode(resolvedFunctionConf?.codeUri);
     }
-
     const res = {
       region: this.region,
     };
@@ -713,21 +714,6 @@ export default class FcDeployComponent {
       BaseComponent: FcBaseSdkComponent,
       componentName: 'fc-base-sdk',
     };
-  }
-
-  private async setStatefulConfig(): Promise<void> {
-    if (this.fcService) {
-      await this.fcService.setStatefulConfig();
-      await this.fcService.setStatefulAutoConfig();
-    }
-    if (this.fcFunction) {
-      await this.fcFunction.setStatefulConfig();
-    }
-    if (!_.isEmpty(this.fcTriggers)) {
-      for (const fcTrigger of this.fcTriggers) {
-        await fcTrigger.setStatefulConfig();
-      }
-    }
   }
 
   private async checkIfResourceExistOnline(
