@@ -1,7 +1,7 @@
 
 import parser from 'git-ignore-parser';
 import path from 'path';
-import { Logger, fse, ignore } from '@serverless-devs/core';
+import { fse, ignore } from '@serverless-devs/core';
 
 const ignoredFile = ['.git', '.svn', '.env', '.DS_Store', 'template.packaged.yml', '.nas.yml', '.s/nas', '.s/tmp', '.s/package'];
 
@@ -43,7 +43,6 @@ export async function isIgnoredInCodeUri(actualCodeUri: string, runtime: string)
   // const ignoreList = await generateIgnoreFileFromNasYml(baseDir);
 
   const ignoredPaths = parser(`${[...ignoredFile, ...ignoreDependencies, ...fileContentList].join('\n')}`);
-  Logger.debug('FC-DEPLOY', `ignoredPaths is: ${ignoredPaths}`);
   const ig = ignore().add(ignoredPaths);
 
   return function (f) {
@@ -70,7 +69,6 @@ export async function isIgnored(baseDir: string, runtime: string, actualCodeUri:
   // const ignoreList = await generateIgnoreFileFromNasYml(baseDir);
 
   const ignoredPaths = parser(`${[...ignoredFile, ...ignoreDependencies, ...fileContentList].join('\n')}`);
-  Logger.debug('FC-DEPLOY', `ignoredPaths is: ${ignoredPaths}`);
   const ig = ignore().add(ignoredPaths);
 
   return function (f) {
