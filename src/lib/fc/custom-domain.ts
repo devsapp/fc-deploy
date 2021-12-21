@@ -94,12 +94,13 @@ export class FcCustomDomain extends IInputsBase {
       delete inputs.argsObj;
     }
     logger.spinner?.stop();
+
     const planComponent = await core.loadComponent('devsapp/fc-plan');
-    const { domains } = await planComponent.plan(inputs);
+    const { customDomains } = await planComponent.plan(inputs);
     logger.spinner?.start();
 
     const { local, needInteract, remote, diff } =
-      _.find(domains, (item) => item.local.domainName === this.customDomainConf.domainName) || {};
+      _.find(customDomains, (item) => item.local.domainName === this.customDomainConf.domainName) || {};
     this.logger.debug(
       `function plan local::\n${JSON.stringify(
         local,
