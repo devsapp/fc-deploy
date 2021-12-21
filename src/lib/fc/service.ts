@@ -503,23 +503,24 @@ export class FcService extends FcDeploy<ServiceConfig> {
     const logConfigAuto = isAutoConfig(this.localConfig.logConfig);
     if (logConfigAuto) {
       // @ts-ignore: check online config
-      if (!_.isNil(logConfig?.project)) {
+      if (logConfig?.project) {
         this.localConfig.logConfig = logConfig;
-      } else if (!_.isEmpty(resolvedAutoConfigInState.logConfig)) {
+      } else if (resolvedAutoConfigInState?.logConfig?.project) {
         this.localConfig.logConfig = resolvedAutoConfigInState.logConfig;
       }
     }
 
-    const vpcConfigAuto = (isAutoConfig(this.localConfig.vpcConfig) || (isAutoConfig(this.localConfig.nasConfig) && !_.isEmpty(this.localConfig.vpcConfig)));
+    const vpcConfigAuto = (isAutoConfig(this.localConfig.vpcConfig) || (isAutoConfig(this.localConfig.nasConfig) && _.isEmpty(this.localConfig.vpcConfig)));
     if (vpcConfigAuto) {
       // @ts-ignore: check online config
-      if (!_.isNil(vpcConfig?.vpcId)) {
+      if (vpcConfig?.vpcId) {
         this.localConfig.vpcConfig = vpcConfig;
-      } else if (!_.isEmpty(resolvedAutoConfigInState.vpcConfig)) {
+      } else if (resolvedAutoConfigInState?.vpcConfig?.vpcId) {
         this.localConfig.vpcConfig = resolvedAutoConfigInState.vpcConfig;
+      } else {
+        this.localConfig.vpcConfig = 'auto';
       }
     }
-
     const nasConfigAuto = isAutoConfig(this.localConfig.nasConfig);
     if (nasConfigAuto) {
       if (!_.isString(nasConfig) && !_.isEmpty(nasConfig?.mountPoints)) {
@@ -530,7 +531,7 @@ export class FcService extends FcDeploy<ServiceConfig> {
             // @ts-ignore
             AlicloudNas.transformMountpointFromRemoteToLocal(item)),
         };
-      } else if (!_.isEmpty(resolvedAutoConfigInState.nasConfig)) {
+      } else if (!_.isEmpty(resolvedAutoConfigInState.nasConfig?.mountPoints)) {
         this.localConfig.nasConfig = {
           userId: resolvedAutoConfigInState.nasConfig.userId,
           groupId: resolvedAutoConfigInState.nasConfig.groupId,
