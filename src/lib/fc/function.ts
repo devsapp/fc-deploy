@@ -146,6 +146,9 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
     if (!_.isEmpty(this.localConfig.environmentVariables)) {
       inputs.props.function.environmentVariables = this.localConfig.environmentVariables;
     }
+    if (!_.isEmpty(this.localConfig.codeUri)) {
+      inputs.props.function.codeUri = this.localConfig.codeUri;
+    }
     const {
       function: { local, needInteract, diff },
     } = await this.plan(inputs, 'function');
