@@ -140,15 +140,11 @@ async function zipFolder(zipArchiver, folder, folders, codeignore, codeUri, pref
 
   return (await Promise.all(dirItems.map(async (f) => {
     const fPath = path.join(dir, f);
-
-    core.Logger.debug('FC-DEPLOY', `before zip: lstat fPath: ${fPath}, absolute fPath is ${path.resolve(fPath)}`);
-
     let s;
 
     try {
       s = await fse.lstat(fPath);
     } catch (error) {
-      core.Logger.debug('FC-DEPLOY', `before zip: could not found fPath ${fPath}, absolute fPath is ${path.resolve(fPath)}, exception is ${error}, skiping`);
       return 0;
     }
     if (codeignore && codeignore(fPath)) {

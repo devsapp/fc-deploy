@@ -900,7 +900,6 @@ export default class FcDeployComponent {
         }
         return;
       } catch (ex) {
-        console.log('?????');
         if (ex.code === 'AccessDenied' || (logConfigIsAuto && isSlsNotExistException(ex))) {
           throw ex;
         }
