@@ -5,7 +5,7 @@ import { FcTrigger, TriggerConfig } from './lib/fc/trigger';
 import { FcCustomDomain, CustomDomainConfig } from './lib/fc/custom-domain';
 import { FcBaseComponent } from './lib/component/fc-base';
 import { FcDomainComponent } from './lib/component/fc-domain';
-import { FcBaseSdkComponent } from './lib/component/fc-base-sdk';
+import FcBaseSdk from './lib/component/fc-base-sdk';
 import {
   DEPLOY_SUPPORT_COMMAND,
   SUPPORTED_REMOVE_ARGS,
@@ -709,11 +709,7 @@ export default class FcDeployComponent {
       };
     }
 
-    return {
-      fcBaseComponentIns: await core.loadComponent('devsapp/fc-base-sdk@dev'),
-      BaseComponent: FcBaseSdkComponent,
-      componentName: 'fc-base-sdk',
-    };
+    return FcBaseSdk;
   }
 
   private async checkIfResourceExistOnline(
