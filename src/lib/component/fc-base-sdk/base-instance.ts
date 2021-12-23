@@ -1,4 +1,4 @@
-import { ILogger, HLogger, commandParse, help, getCredential, reportComponent } from '@serverless-devs/core';
+import { ILogger, HLogger, commandParse, help, getCredential } from '@serverless-devs/core';
 import { InputProps } from '../../../common/entity';
 import Client from '../../utils/client';
 import _ from 'lodash';
@@ -135,11 +135,6 @@ export default class Component {
     if (_.isEmpty(inputs.credentials)) {
       inputs.credentials = await getCredential(inputs.project?.access);
     }
-
-    reportComponent('FC-BASE-SDK', {
-      command,
-      uid: inputs.credentials.AccountID,
-    });
 
     Client.credentials = inputs.credentials;
     Client.region = region;
