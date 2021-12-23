@@ -63,15 +63,15 @@ export default class Component {
       onlyDelpoyTriggerName: triggerName,
     });
     const reportContent = this.reportNames(newInputs.props.region, deployRes);
-    // try {
-    //   this.__report({
-    //     name: 'fc',
-    //     access: inputs.project?.access,
-    //     content: reportContent,
-    //   });
-    // } catch (e) {
-    //   this.logger.debug(`db report error: ${e.toString()}`);
-    // }
+    try {
+      this.__report({
+        name: 'fc',
+        access: inputs.project?.access,
+        content: reportContent,
+      });
+    } catch (e) {
+      this.logger.debug(`db report error: ${e.toString()}`);
+    }
     return reportContent;
   }
 

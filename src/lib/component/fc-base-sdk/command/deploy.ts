@@ -181,6 +181,7 @@ export default class Component {
       asyncConfiguration,
       instanceLifecycleConfig,
       customDNS,
+      layers,
       environmentVariables = {},
     } = sourceFunctionConfig;
     // 接口仅接受 string 类型，value值需要toString强制转换为字符串
@@ -221,6 +222,10 @@ export default class Component {
     } else {
       // 接口仅接受 string 类型，value值需要toString强制转换为字符串
       functionConfig.customDNS = objectDeepTransfromString(customDNS);
+    }
+
+    if (_.isEmpty(layers)) {
+      functionConfig.layers = [];
     }
 
     if (runtime === 'custom-container') {
