@@ -130,7 +130,7 @@ export default abstract class FcDeploy<T> extends IInputsBase {
     );
     const fcInfoComponentInputs: any = await fcInfo.genComponentInputs('fc-info');
     logger.spinner?.stop();
-    const fcInfoComponentIns: any = await core.load('devsapp/fc-info@dev');
+    const fcInfoComponentIns: any = await core.load('devsapp/fc-info');
     this.logger.debug(StdoutFormatter.stdoutFormatter.check(type, resourceName));
     let remoteConfig: T;
     try {

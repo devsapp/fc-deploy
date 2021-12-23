@@ -263,7 +263,7 @@ export class FcCustomDomain extends IInputsBase {
         );
         const domainComponentInputs = domainComponent.genComponentInputs('domain', args);
         logger.spinner?.stop();
-        const domainComponentIns = await core.load('devsapp/domain@dev');
+        const domainComponentIns = await core.load('devsapp/domain');
         logger.spinner?.start();
         generatedDomain = await domainComponentIns.get(domainComponentInputs);
       }
