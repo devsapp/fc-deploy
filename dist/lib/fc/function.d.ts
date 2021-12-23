@@ -77,7 +77,7 @@ export declare class FcFunction extends FcDeploy<FunctionConfig> {
     static readonly MAX_CODE_SIZE_WITH_OSS_OF_C1: number;
     static readonly MAX_CODE_SIZE_WITH_CODEURI: number;
     constructor(functionConf: FunctionConfig, serviceName: string, serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string);
-    init(type: string, useLocal: boolean, useRemote: boolean, assumeYes: boolean, inputs: any): Promise<void>;
+    init(useLocal: boolean, useRemote: boolean, assumeYes: boolean, inputs: any): Promise<void>;
     private initLocal;
     private isElasticInstance;
     private isEnhancedInstance;

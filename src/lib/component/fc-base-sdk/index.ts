@@ -5,4 +5,4 @@ export default {
   fcBaseComponentIns: new BaseComponent(),
   BaseComponent: FcBaseSdkComponent,
   componentName: 'fc-base-sdk',
-}
+};
