@@ -91,7 +91,8 @@ export class AlicloudNas extends AlicloudClient {
   async createDefaultNas(nasServiceName: string, vpcConfig: VpcConfig, nasDir: string, roleArn: string, assumeYes?: boolean): Promise<NasConfig> {
     const nasZones = await this.describeNasZones();
     const alicloudVpc = new AlicloudVpc(this.serverlessProfile, this.credentials, this.region, this.curPath);
-    const { zoneId, vswitchId, storageType } = await alicloudVpc.getAvailableVSwitchId(vpcConfig.vSwitchIds, nasZones, assumeYes);
+    // @ts-ignore: vSwitchIds 兼容 vswitchIds
+    const { zoneId, vswitchId, storageType } = await alicloudVpc.getAvailableVSwitchId(vpcConfig.vSwitchIds || vpcConfig.vswitchIds, nasZones, assumeYes);
     this.logger.debug(`getAvailableVSwitchId done, available vswitchID: ${vswitchId}, zoneId: ${zoneId}, storageType: ${storageType}`);
     const defaultNasUid = 10003;
     const defaultNasGid = 10003;

@@ -28,7 +28,7 @@ export class AlicloudVpc extends AlicloudClient {
     const fcRs = await fc.getAccountSettings();
     const fcAllowedZones = fcRs.data.availableAZs;
 
-    this.logger.debug('fc allowed zones: %j', fcAllowedZones);
+    // this.logger.debug('fc allowed zones: %j', fcAllowedZones);
 
     if (_.isEqual(fcAllowedZones, [''])) {
       throw new Error(`No fc vswitch zones allowed, you may need login to fc console to apply for VPC feature: https://fc.console.aliyun.com/overview/${this.region}`);
