@@ -27,6 +27,15 @@ export interface FunctionConfig {
     protect?: boolean;
     instanceLifecycleConfig?: InstanceLifecycleConfig;
     asyncConfiguration?: AsyncConfiguration;
+    customDNS?: CustomDNS;
+}
+export interface CustomDNS {
+    nameServers?: string[] | null;
+    searches?: string[] | null;
+    dnsOptions?: Array<{
+        name: string;
+        value: string;
+    }> | null;
 }
 export interface AsyncConfiguration {
     destination: {
@@ -55,6 +64,7 @@ export interface CustomContainerConfig {
     accelerationType?: 'Default' | 'None';
 }
 export declare function isCustomContainerRuntime(runtime: string): boolean;
+export declare function isCustomRuntime(runtime: string): boolean;
 export declare function isBuildInterpretedLanguage(runtime: string): boolean;
 export declare class FcFunction extends FcDeploy<FunctionConfig> {
     readonly serviceName: string;
@@ -67,7 +77,7 @@ export declare class FcFunction extends FcDeploy<FunctionConfig> {
     static readonly MAX_CODE_SIZE_WITH_OSS_OF_C1: number;
     static readonly MAX_CODE_SIZE_WITH_CODEURI: number;
     constructor(functionConf: FunctionConfig, serviceName: string, serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string);
-    init(type: string, useLocal?: boolean, assumeYes?: boolean): Promise<void>;
+    init(useLocal: boolean, useRemote: boolean, assumeYes: boolean, inputs: any): Promise<void>;
     private initLocal;
     private isElasticInstance;
     private isEnhancedInstance;

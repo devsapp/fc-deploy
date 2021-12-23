@@ -4,7 +4,6 @@ import { AlicloudAcr } from '../resource/acr';
 import path from 'path';
 import { isIgnored, isIgnoredInCodeUri } from '../ignore';
 import { pack } from '../zip';
-import * as fse from 'fs-extra';
 import { ServerlessProfile, ICredentials, replaceProjectName } from '../profile';
 import FcDeploy from './fc-deploy';
 import FcSync from '../component/fc-sync';
@@ -19,6 +18,8 @@ import { AlicloudOss } from '../resource/oss';
 import { imageExist } from '../utils/docker';
 import { handleKnownErrors } from '../error';
 import { checkBuildAvailable } from '../utils/utils';
+
+const { fse } = core;
 
 export interface FunctionConfig {
   functionName?: string;
@@ -88,9 +89,12 @@ export interface CustomContainerConfig {
   accelerationType?: 'Default' | 'None';
 }
 
-
 export function isCustomContainerRuntime(runtime: string): boolean {
   return runtime === 'custom-container';
+}
+
+export function isCustomRuntime(runtime: string): boolean {
+  return runtime === 'custom';
 }
 
 export function isBuildInterpretedLanguage(runtime: string) {
@@ -103,22 +107,56 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
   originalCodeUri: string; // build 场景下赋值
   isBuild = false; // 是否执行了 build
 
-  static readonly DEFAULT_BUILD_ARTIFACTS_PATH_SUFFIX: string = path.join('.s', 'build', 'artifacts');
-  static readonly DEFAULT_SYNC_CODE_PATH: string = path.join(os.homedir(), '.s', 'cache', 'fc-deploy', 'remote-code');
-  static readonly MAX_CODE_SIZE_WITH_OSS: number = !isNaN(parseInt(process.env.FC_CODE_SIZE_WITH_OSS, 10)) ? parseInt(process.env.FC_CODE_SIZE_WITH_OSS, 10) : 104857600; // 100M，弹性实例
-  static readonly MAX_CODE_SIZE_WITH_OSS_OF_C1: number = !isNaN(parseInt(process.env.FC_CODE_SIZE_WITH_OSS_OF_C1, 10)) ? parseInt(process.env.FC_CODE_SIZE_WITH_OSS_OF_C1, 10) : 524288000; // 500M，性能实例
-  static readonly MAX_CODE_SIZE_WITH_CODEURI: number = !isNaN(parseInt(process.env.FC_CODE_SIZE_WITH_CODEURI, 10)) ? parseInt(process.env.FC_CODE_SIZE_WITH_CODEURI, 10) : 52428800; // 50M
-  constructor(functionConf: FunctionConfig, serviceName: string, serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string) {
+  static readonly DEFAULT_BUILD_ARTIFACTS_PATH_SUFFIX: string = path.join(
+    '.s',
+    'build',
+    'artifacts',
+  );
+  static readonly DEFAULT_SYNC_CODE_PATH: string = core.getRootHome ? path.join(core.getRootHome(), 'cache', 'fc-deploy', 'remote-code') : path.join(os.homedir(), '.s', 'cache', 'fc-deploy', 'remote-code');
+  static readonly MAX_CODE_SIZE_WITH_OSS: number = !isNaN(
+    parseInt(process.env.FC_CODE_SIZE_WITH_OSS, 10),
+  )
+    ? parseInt(process.env.FC_CODE_SIZE_WITH_OSS, 10)
+    : 104857600; // 100M，弹性实例
+  static readonly MAX_CODE_SIZE_WITH_OSS_OF_C1: number = !isNaN(
+    parseInt(process.env.FC_CODE_SIZE_WITH_OSS_OF_C1, 10),
+  )
+    ? parseInt(process.env.FC_CODE_SIZE_WITH_OSS_OF_C1, 10)
+    : 524288000; // 500M，性能实例
+  static readonly MAX_CODE_SIZE_WITH_CODEURI: number = !isNaN(
+    parseInt(process.env.FC_CODE_SIZE_WITH_CODEURI, 10),
+  )
+    ? parseInt(process.env.FC_CODE_SIZE_WITH_CODEURI, 10)
+    : 52428800; // 50M
+  constructor(
+    functionConf: FunctionConfig,
+    serviceName: string,
+    serverlessProfile: ServerlessProfile,
+    region: string,
+    credentials: ICredentials,
+    curPath?: string,
+  ) {
     super(functionConf, serverlessProfile, region, credentials, curPath);
     this.serviceName = serviceName;
     this.name = functionConf?.name;
   }
 
-  async init(type: string, useLocal?: boolean, assumeYes?: boolean): Promise<void> {
+  async init(useLocal: boolean, useRemote: boolean, assumeYes: boolean, inputs): Promise<void> {
+    await this.initLocal(assumeYes);
+    if (!_.isEmpty(this.localConfig.environmentVariables)) {
+      inputs.props.function.environmentVariables = this.localConfig.environmentVariables;
+    }
+    if (!_.isEmpty(this.localConfig.codeUri)) {
+      inputs.props.function.codeUri = this.localConfig.codeUri;
+    }
+    const {
+      function: { local, needInteract, diff },
+    } = await this.plan(inputs, 'function');
+    this.logger.debug(`function plan local::\n${JSON.stringify(local, null, 2)}needInteract:: ${needInteract}\ndiff::\n${diff}`);
+    this.localConfig = local;
     await this.initRemote('function', this.serviceName, this.name);
     await this.initStateful();
-    await this.initLocal(assumeYes);
-    await this.setUseRemote(this.name, 'function', useLocal, type);
+    await this.setUseRemote(this.name, 'Function', useLocal, useRemote, needInteract, diff);
   }
 
   private async initLocal(assumeYes?: boolean): Promise<void> {
@@ -128,7 +166,7 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
 
   private isElasticInstance(): boolean {
     // 弹性实例
-    return (this.localConfig.instanceType === 'e1' || _.isNil(this.localConfig.instanceType));
+    return this.localConfig.instanceType === 'e1' || _.isNil(this.localConfig.instanceType);
   }
 
   private isEnhancedInstance(): boolean {
@@ -138,9 +176,18 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
 
   async getCodeUriWithBuildPath(): Promise<any> {
     const baseDir: string = path.dirname(this.curPath);
-    const buildBasePath: string = path.join(baseDir, FcFunction.DEFAULT_BUILD_ARTIFACTS_PATH_SUFFIX);
+    const buildBasePath: string = path.join(
+      baseDir,
+      FcFunction.DEFAULT_BUILD_ARTIFACTS_PATH_SUFFIX,
+    );
     const buildCodeUri: string = path.join(buildBasePath, this.serviceName, this.name);
-    if (!fse.pathExistsSync(buildBasePath) || fse.lstatSync(buildBasePath).isFile() || isCustomContainerRuntime(this.localConfig.runtime) || !fse.pathExistsSync(buildCodeUri) || fse.lstatSync(buildCodeUri).isFile()) {
+    if (
+      !fse.pathExistsSync(buildBasePath) ||
+      fse.lstatSync(buildBasePath).isFile() ||
+      isCustomContainerRuntime(this.localConfig.runtime) ||
+      !fse.pathExistsSync(buildCodeUri) ||
+      fse.lstatSync(buildCodeUri).isFile()
+    ) {
       return {
         codeUri: this.localConfig.codeUri,
         isBuild: false,
@@ -149,8 +196,8 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
 
     await checkBuildAvailable(this.serviceName, this.name, baseDir);
 
-    this.logger.info(`Fc detects that you have run build command for function: ${this.name}.`);
-    this.logger.info(StdoutFormatter.stdoutFormatter.using('codeUri', buildCodeUri));
+    this.logger.debug(`Fc detects that you have run build command for function: ${this.name}.`);
+    this.logger.debug(StdoutFormatter.stdoutFormatter.using('codeUri', buildCodeUri));
     return {
       codeUri: buildCodeUri,
       isBuild: true,
@@ -170,11 +217,28 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
       this.isBuild = true;
       this.localConfig.codeUri = codeUri;
       const resolvedEnvs: any = addEnv(this.localConfig.environmentVariables);
-      const message = 'Fc want to add/append some content to your origin environment variables for finding dependencies generated by build command. \nDo you agree with the behavior?';
       const details: any = detailedDiff(this.localConfig.environmentVariables, resolvedEnvs);
-      if (assumeYes || await promptForConfirmOrDetails(message, details)) {
+      if (_.isEmpty(details?.added)) {
+        delete details.added;
+      }
+      if (_.isEmpty(details?.deleted)) {
+        delete details.deleted;
+      }
+      if (_.isEmpty(details?.updated)) {
+        delete details.updated;
+      }
+      if (_.isEmpty(details?.added) && _.isEmpty(details?.deleted) && _.isEmpty(details?.updated)) {
+        return;
+      }
+      this.logger.log('\nDetail:\n');
+      this.logger.output(details);
+      const message =
+        'Fc want to add/append some content to your origin environment variables for finding dependencies generated by build command. \nDo you agree with the behavior?';
+      if (assumeYes || (await promptForConfirmOrDetails(message))) {
         if (assumeYes) {
-          this.logger.info('Fc add/append some content to your origin environment variables for finding dependencies generated by build command.');
+          this.logger.debug(
+            'Fc add/append some content to your origin environment variables for finding dependencies generated by build command.',
+          );
           this.logger.log(JSON.stringify(resolvedEnvs, null, '  '), 'yellow');
         }
         this.localConfig.environmentVariables = resolvedEnvs;
@@ -185,8 +249,20 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
   async syncRemoteCode(): Promise<string> {
     // 基于 fc-sync 获取函数代码
     await fse.mkdirp(FcFunction.DEFAULT_SYNC_CODE_PATH);
-    const profileOfFcSync = replaceProjectName(this.serverlessProfile, `${this.serverlessProfile?.project.projectName}-fc-sync-project`);
-    const fcSync: FcSync = new FcSync(this.serviceName, profileOfFcSync, this.region, this.credentials, this.curPath, this.name, null, FcFunction.DEFAULT_SYNC_CODE_PATH);
+    const profileOfFcSync = replaceProjectName(
+      this.serverlessProfile,
+      `${this.serverlessProfile?.project.projectName}-fc-sync-project`,
+    );
+    const fcSync: FcSync = new FcSync(
+      this.serviceName,
+      profileOfFcSync,
+      this.region,
+      this.credentials,
+      this.curPath,
+      this.name,
+      null,
+      FcFunction.DEFAULT_SYNC_CODE_PATH,
+    );
     const fcSyncComponentInputs: any = await fcSync.genComponentInputs('fc-sync', '--type code -f');
     const fcSyncComponentIns: any = await core.load('devsapp/fc-sync');
     const syncRes: any = await fcSyncComponentIns.sync(fcSyncComponentInputs);
@@ -200,28 +276,43 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
   }
   validateConfig() {
     if (!_.isNil(this.localConfig?.codeUri) && !_.isNil(this.localConfig?.ossKey)) {
-      throw new Error('\'codeUri\' and \'ossKey\' can not both exist in function config.');
+      throw new Error("'codeUri' and 'ossKey' can not both exist in function config.");
     }
-    if (_.isEmpty(this.localConfig?.customContainerConfig) && _.isNil(this.localConfig?.codeUri) && _.isNil(this.localConfig?.ossKey)) {
-      throw new Error('\'codeUri\' and \'ossKey\' can not be empty in function config at the same time.');
+    if (
+      _.isEmpty(this.localConfig?.customContainerConfig) &&
+      _.isNil(this.localConfig?.codeUri) &&
+      _.isNil(this.localConfig?.ossKey)
+    ) {
+      throw new Error(
+        "'codeUri' and 'ossKey' can not be empty in function config at the same time.",
+      );
     }
     if (!_.isEmpty(this.localConfig?.customContainerConfig?.image)) {
-      const imageRegistry: string = AlicloudAcr.extractRegistryFromAcrUrl(this.localConfig?.customContainerConfig?.image);
+      const imageRegistry: string = AlicloudAcr.extractRegistryFromAcrUrl(
+        this.localConfig?.customContainerConfig?.image,
+      );
       if (!AlicloudAcr.isAcrRegistry(imageRegistry)) {
-        throw new Error(`Custom container function only support ACR image.\nPlease use ACR: https://help.aliyun.com/product/60716.html and make the registry in ACR format: registry.${this.region}.aliyuncs.com`);
+        throw new Error(
+          `Custom container function only support ACR image.\nPlease use ACR: https://help.aliyun.com/product/60716.html and make the registry in ACR format: registry.${this.region}.aliyuncs.com`,
+        );
       }
       const regionInImage: string = AlicloudAcr.extractRegionFromAcrRegistry(imageRegistry);
       this.logger.debug(`Region in image is ${regionInImage}`);
       if (regionInImage && regionInImage !== this.region) {
-        throw new Error(`Please make region in custom container image: ${this.localConfig?.customContainerConfig?.image} equal to the region: ${this.region} in props`);
+        throw new Error(
+          `Please make region in custom container image: ${this.localConfig?.customContainerConfig?.image} equal to the region: ${this.region} in props`,
+        );
       }
     }
   }
 
-
   makeFunctionConfig(): FunctionConfig {
-    if (this.useRemote) { return this.remoteConfig; }
-    if (_.isEmpty(this.localConfig)) { return undefined; }
+    if (this.useRemote) {
+      return this.remoteConfig;
+    }
+    if (_.isEmpty(this.localConfig)) {
+      return undefined;
+    }
     const resolvedFunctionConf: FunctionConfig = {
       name: this.name,
       description: this.localConfig?.description || FUNCTION_CONF_DEFAULT.description,
@@ -229,7 +320,8 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
       memorySize: this.localConfig?.memorySize || FUNCTION_CONF_DEFAULT.memorySize,
       gpuMemorySize: this.localConfig?.gpuMemorySize,
       timeout: this.localConfig?.timeout || FUNCTION_CONF_DEFAULT.timeout,
-      instanceConcurrency: this.localConfig?.instanceConcurrency || FUNCTION_CONF_DEFAULT.instanceConcurrency,
+      instanceConcurrency:
+        this.localConfig?.instanceConcurrency || FUNCTION_CONF_DEFAULT.instanceConcurrency,
       instanceType: this.localConfig?.instanceType || FUNCTION_CONF_DEFAULT.instanceType,
       runtime: this.localConfig?.runtime || FUNCTION_CONF_DEFAULT.runtime,
     };
@@ -256,12 +348,18 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
     if (!_.isNil(this.localConfig?.initializer)) {
       Object.assign(resolvedFunctionConf, {
         initializer: this.localConfig?.initializer,
-        initializationTimeout: this.localConfig?.initializationTimeout || FUNCTION_CONF_DEFAULT.timeout,
+        initializationTimeout:
+          this.localConfig?.initializationTimeout || FUNCTION_CONF_DEFAULT.timeout,
       });
     }
     if (!_.isEmpty(this.localConfig?.environmentVariables)) {
       Object.assign(resolvedFunctionConf, {
         environmentVariables: this.localConfig?.environmentVariables,
+      });
+    }
+    if (isCustomRuntime(this.localConfig?.runtime)) {
+      Object.assign(resolvedFunctionConf, {
+        caPort: this.localConfig?.caPort || FUNCTION_CONF_DEFAULT.caPort,
       });
     }
     if (isCustomContainerRuntime(this.localConfig?.runtime)) {
@@ -301,18 +399,33 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
     const relative = path.relative(absBaseDir, absCodeUri);
 
     if (codeUri.startsWith('..') || relative.startsWith('..')) {
-      this.logger.warn(StdoutFormatter.stdoutFormatter.warn('.fcignore', `not supported for the codeUri: ${codeUri}`));
+      this.logger.warn(
+        StdoutFormatter.stdoutFormatter.warn(
+          '.fcignore',
+          `not supported for the codeUri: ${codeUri}`,
+        ),
+      );
       return null;
     }
-    const ignoreFileInCodeUri: string = path.join(path.resolve(baseDir, this.localConfig?.codeUri), '.fcignore');
+    const ignoreFileInCodeUri: string = path.join(
+      path.resolve(baseDir, this.localConfig?.codeUri),
+      '.fcignore',
+    );
     if (fse.pathExistsSync(ignoreFileInCodeUri) && fse.lstatSync(ignoreFileInCodeUri).isFile()) {
       return await isIgnoredInCodeUri(path.resolve(baseDir, this.localConfig?.codeUri), runtime);
     }
     const ignoreFileInBaseDir: string = path.join(baseDir, '.fcignore');
     if (fse.pathExistsSync(ignoreFileInBaseDir) && fse.lstatSync(ignoreFileInBaseDir).isFile()) {
-      this.logger.warn('.fcignore file will be placed under codeUri only in the future. Please update it with the relative path and then move it to the codeUri as soon as possible.');
+      this.logger.warn(
+        '.fcignore file will be placed under codeUri only in the future. Please update it with the relative path and then move it to the codeUri as soon as possible.',
+      );
     }
-    return await isIgnored(baseDir, runtime, path.resolve(baseDir, this.localConfig?.codeUri), path.resolve(baseDir, this.originalCodeUri || this.localConfig?.codeUri));
+    return await isIgnored(
+      baseDir,
+      runtime,
+      path.resolve(baseDir, this.localConfig?.codeUri),
+      path.resolve(baseDir, this.originalCodeUri || this.localConfig?.codeUri),
+    );
   }
 
   async zipCode(baseDir: string): Promise<any> {
@@ -337,7 +450,10 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
 
     // await detectLibrary(codeAbsPath, runtime, baseDir, functionName, '\t');
     await fse.mkdirp(FC_CODE_CACHE_DIR);
-    const zipPath = path.join(FC_CODE_CACHE_DIR, `${this.credentials.AccountID}-${this.region}-${this.serviceName}-${this.name}.zip`);
+    const zipPath = path.join(
+      FC_CODE_CACHE_DIR,
+      `${this.credentials.AccountID}-${this.region}-${this.serviceName}-${this.name}.zip`,
+    );
 
     if (this.isBuild && isBuildInterpretedLanguage(this.localConfig.runtime)) {
       const fcBuildLink = await core.loadComponent('devsapp/fc-build-link');
@@ -358,18 +474,32 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
       try {
         await fse.unlink(codeZipPath);
       } catch (e) {
-        this.logger.warn(StdoutFormatter.stdoutFormatter.warn('remove sync code', `path: ${codeZipPath}, error: ${e.message}`));
+        this.logger.warn(
+          StdoutFormatter.stdoutFormatter.warn(
+            'remove sync code',
+            `path: ${codeZipPath}, error: ${e.message}`,
+          ),
+        );
       }
       return;
     }
     if (!isCustomContainerRuntime(this.localConfig?.runtime) && this.localConfig?.codeUri) {
-      if (!this.localConfig?.codeUri.endsWith('.zip') && !this.localConfig?.codeUri.endsWith('.jar') && !this.localConfig?.codeUri.endsWith('.war')) {
+      if (
+        !this.localConfig?.codeUri.endsWith('.zip') &&
+        !this.localConfig?.codeUri.endsWith('.jar') &&
+        !this.localConfig?.codeUri.endsWith('.war')
+      ) {
         if (!_.isNil(codeZipPath)) {
           this.logger.debug(`removing zip code: ${codeZipPath}`);
           try {
             await fse.unlink(codeZipPath);
           } catch (e) {
-            this.logger.warn(StdoutFormatter.stdoutFormatter.warn('remove zipped code', `path: ${codeZipPath}, error: ${e.message}`));
+            this.logger.warn(
+              StdoutFormatter.stdoutFormatter.warn(
+                'remove zipped code',
+                `path: ${codeZipPath}, error: ${e.message}`,
+              ),
+            );
           }
         }
       }
@@ -378,32 +508,52 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
   async packRemoteCode(): Promise<any> {
     const syncedCodePath: string = await this.syncRemoteCode();
     await fse.mkdirp(FC_CODE_CACHE_DIR);
-    const zipPath = path.join(FC_CODE_CACHE_DIR, `${this.credentials.AccountID}-${this.region}-${this.serviceName}-${this.name}-remote.zip`);
+    const zipPath = path.join(
+      FC_CODE_CACHE_DIR,
+      `${this.credentials.AccountID}-${this.region}-${this.serviceName}-${this.name}-remote.zip`,
+    );
     return await pack(syncedCodePath, null, zipPath);
   }
 
   async needPushRegistry(pushRegistry?: string): Promise<boolean> {
-    if (!isCustomContainerRuntime(this.localConfig?.runtime) || this.useRemote) { return false; }
-    if (!_.isNil(pushRegistry)) { return true; }
-    if (!await imageExist(this.localConfig.customContainerConfig.image)) {
-      this.logger.warn(`Image ${this.localConfig.customContainerConfig.image} dose not exist locally.\nMaybe you need to run 's build' first if it dose not exist remotely.`);
+    if (!isCustomContainerRuntime(this.localConfig?.runtime) || this.useRemote) {
+      return false;
+    }
+    if (!_.isNil(pushRegistry)) {
+      return true;
+    }
+    if (!(await imageExist(this.localConfig.customContainerConfig.image))) {
+      this.logger.debug(
+        `Image ${this.localConfig.customContainerConfig.image} dose not exist locally.\nMaybe you need to run 's build' first if it dose not exist remotely.`,
+      );
       return false;
     }
     return true;
   }
 
-  async makeFunctionCode(baseDir: string, pushRegistry?: string, assumeYes?: boolean): Promise<{ codeZipPath?: string; codeOssObject?: string }> {
+  async makeFunctionCode(
+    baseDir: string,
+    pushRegistry?: string,
+    assumeYes?: boolean,
+  ): Promise<{ codeZipPath?: string; codeOssObject?: string }> {
     this.logger.debug('waiting for making function code.');
     if (isCustomContainerRuntime(this.localConfig?.runtime)) {
       try {
         if (await this.needPushRegistry(pushRegistry)) {
-          const alicloudAcr = new AlicloudAcr(pushRegistry, this.serverlessProfile, this.credentials, this.region);
+          const alicloudAcr = new AlicloudAcr(
+            pushRegistry,
+            this.serverlessProfile,
+            this.credentials,
+            this.region,
+          );
           await alicloudAcr.pushImage(this.localConfig?.customContainerConfig.image, assumeYes);
         }
       } catch (e) {
         handleKnownErrors(e);
         this.logger.warn(`Push image ${this.localConfig.customContainerConfig.image} failed.`);
-        this.logger.debug(`Push image ${this.localConfig.customContainerConfig.image} failed. error is ${e}`);
+        this.logger.debug(
+          `Push image ${this.localConfig.customContainerConfig.image} failed. error is ${e}`,
+        );
       }
       return {};
     }
@@ -428,37 +578,61 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
       const zipCodeFilePath: string = zippedCode?.filePath;
       const zipCodeFileSize: number = zippedCode?.fileSizeInBytes;
       const zipCodeFileHash: string = zippedCode?.fileHash;
-      this.logger.debug(`zipped code path: ${zipCodeFilePath}, zipped code size: ${zipCodeFileSize}`);
+      this.logger.debug(
+        `zipped code path: ${zipCodeFilePath}, zipped code size: ${zipCodeFileSize}`,
+      );
       if (this.isElasticInstance() && zipCodeFileSize > FcFunction.MAX_CODE_SIZE_WITH_OSS) {
         // >100M
-        throw new Error(`Size of zipped code: ${zipCodeFilePath} is greater than code size: 100M.You can use:\n1. layers: https://help.aliyun.com/document_detail/193057.html\n2. custom container: https://help.aliyun.com/document_detail/179368.html`);
+        throw new Error(
+          `Size of zipped code: ${zipCodeFilePath} is greater than code size: 100M.You can use:\n1. layers: https://help.aliyun.com/document_detail/193057.html\n2. custom container: https://help.aliyun.com/document_detail/179368.html`,
+        );
       }
       if (this.isEnhancedInstance() && zipCodeFileSize > FcFunction.MAX_CODE_SIZE_WITH_OSS_OF_C1) {
         // >500M
-        throw new Error(`Size of zipped code: ${zipCodeFilePath} is greater than code size: 500M.You can use:\n1. layers: https://help.aliyun.com/document_detail/193057.html\n2. custom container: https://help.aliyun.com/document_detail/179368.html`);
+        throw new Error(
+          `Size of zipped code: ${zipCodeFilePath} is greater than code size: 500M.You can use:\n1. layers: https://help.aliyun.com/document_detail/193057.html\n2. custom container: https://help.aliyun.com/document_detail/179368.html`,
+        );
       }
       if (zipCodeFileSize <= FcFunction.MAX_CODE_SIZE_WITH_CODEURI) {
         // <= 50M
         return { codeZipPath: zipCodeFilePath };
       }
       // 50M < zipCodeFileSize <= 100M 或者 50M < zipCodeFileSize <= 500M
-      this.logger.info(`Size of zipped code: ${zipCodeFilePath} is allowed, fc will upload code to oss.`);
+      this.logger.debug(
+        `Size of zipped code: ${zipCodeFilePath} is allowed, fc will upload code to oss.`,
+      );
       if (!this.localConfig?.ossBucket) {
-        throw new Error('Please provide ossBucket attribute under function property when code size is greater than 50M.');
+        throw new Error(
+          'Please provide ossBucket attribute under function property when code size is greater than 50M.',
+        );
       }
-      const alicloudOss: AlicloudOss = new AlicloudOss(this.localConfig?.ossBucket, this.credentials, this.region);
-      if (!await alicloudOss.isBucketExists() && !await alicloudOss.tryCreatingBucket()) {
-        throw new Error('Please provide existed ossBucket under your account when code size is greater than 50M.');
+      const alicloudOss: AlicloudOss = new AlicloudOss(
+        this.localConfig?.ossBucket,
+        this.credentials,
+        this.region,
+      );
+      if (!(await alicloudOss.isBucketExists()) && !(await alicloudOss.tryCreatingBucket())) {
+        throw new Error(
+          'Please provide existed ossBucket under your account when code size is greater than 50M.',
+        );
       }
       // upload code to oss
-      const defaultObjectName = `fcComponentGeneratedDir/${this.serviceName}-${this.name}-${zipCodeFileHash.substring(0, 5)}`;
-      const uploadVm = core.spinner(`Uploading zipped code: ${zipCodeFilePath} to oss://${this.localConfig?.ossBucket}/${defaultObjectName}`);
+      const defaultObjectName = `fcComponentGeneratedDir/${this.serviceName}-${
+        this.name
+      }-${zipCodeFileHash.substring(0, 5)}`;
+      const uploadVm = core.spinner(
+        `Uploading zipped code: ${zipCodeFilePath} to oss://${this.localConfig?.ossBucket}/${defaultObjectName}`,
+      );
       try {
-        if (!await alicloudOss.isObjectExists(defaultObjectName)) {
+        if (!(await alicloudOss.isObjectExists(defaultObjectName))) {
           await alicloudOss.putFileToOss(zipCodeFilePath, defaultObjectName);
-          uploadVm.succeed(`Upload zipped code: ${zipCodeFilePath} to oss://${this.localConfig?.ossBucket}/${defaultObjectName} success.`);
+          uploadVm.succeed(
+            `Upload zipped code: ${zipCodeFilePath} to oss://${this.localConfig?.ossBucket}/${defaultObjectName} success.`,
+          );
         } else {
-          uploadVm.succeed(`Zipped code: ${zipCodeFilePath} already exists on oss, object name is oss://${this.localConfig?.ossBucket}/${defaultObjectName}.`);
+          uploadVm.succeed(
+            `Zipped code: ${zipCodeFilePath} already exists on oss, object name is oss://${this.localConfig?.ossBucket}/${defaultObjectName}.`,
+          );
         }
 
         return {
@@ -466,21 +640,32 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
           codeOssObject: defaultObjectName,
         };
       } catch (e) {
-        uploadVm.fail(`Upload zipped code: ${zipCodeFilePath} to oss://${this.localConfig?.ossBucket}/${defaultObjectName} failed.`);
+        uploadVm.fail(
+          `Upload zipped code: ${zipCodeFilePath} to oss://${this.localConfig?.ossBucket}/${defaultObjectName} failed.`,
+        );
         throw e;
       }
     }
     return {};
   }
 
-  async makeFunction(baseDir: string, type: string, pushRegistry?: string, assumeYes?: boolean): Promise<FunctionConfig> {
+  async makeFunction(
+    baseDir: string,
+    type: string,
+    pushRegistry?: string,
+    assumeYes?: boolean,
+  ): Promise<FunctionConfig> {
     if (_.isEmpty(this.localConfig) && _.isEmpty(this.remoteConfig)) {
       this.statefulConfig = null;
       return null;
     }
     const resolvedFunctionConf: any = this.makeFunctionConfig();
     if (type !== 'config') {
-      const { codeZipPath, codeOssObject } = await this.makeFunctionCode(baseDir, pushRegistry, assumeYes);
+      const { codeZipPath, codeOssObject } = await this.makeFunctionCode(
+        baseDir,
+        pushRegistry,
+        assumeYes,
+      );
 
       if (!_.isNil(codeOssObject)) {
         Object.assign(resolvedFunctionConf, {

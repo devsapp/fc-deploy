@@ -9,7 +9,15 @@ import { promptForConfirmContinue, promptForInputContinue } from '../utils/promp
 export class AlicloudAcr extends AlicloudClient {
   readonly registry: string;
   readonly acrClient: any;
-  constructor(pushRegistry: string, serverlessProfile: ServerlessProfile, credentials: ICredentials, region: string, curPath?: string, args?: string, timeout?: number) {
+  constructor(
+    pushRegistry: string,
+    serverlessProfile: ServerlessProfile,
+    credentials: ICredentials,
+    region: string,
+    curPath?: string,
+    args?: string,
+    timeout?: number,
+  ) {
     super(serverlessProfile, credentials, region, curPath, args, timeout);
     if (pushRegistry === 'acr-internet') {
       this.registry = `registry.${this.region}.aliyuncs.com`;
@@ -60,15 +68,23 @@ export class AlicloudAcr extends AlicloudClient {
     try {
       response = await this.getAuthorizationToken();
     } catch (e) {
-      if (e.statusCode === 404 && e.result?.message === 'user is not exist.' && e.result?.code === 'USER_NOT_EXIST') {
+      if (
+        e.statusCode === 404 &&
+        e.result?.message === 'user is not exist.' &&
+        e.result?.code === 'USER_NOT_EXIST'
+      ) {
         // 子账号需要先设置 Regisrty 的登陆密码后才能获取登录 Registry 的临时账号和临时密码
         const msg = `Aliyun ACR need the sub account to set password for logging in the registry ${registry} first if you want fc component to push image automatically. Do you want to continue?`;
-        if (assumeYes || await promptForConfirmContinue(msg)) {
-          const pwd: string = (await promptForInputContinue(`Input password for logging in the registry ${registry}`)).input;
+        if (assumeYes || (await promptForConfirmContinue(msg))) {
+          const pwd: string = (
+            await promptForInputContinue(`Input password for logging in the registry ${registry}`)
+          ).input;
           await this.createUserInfo(pwd);
           response = await this.getAuthorizationToken();
         } else {
-          this.logger.info('Fc component will not push image for you. Please make the image exist online.');
+          this.logger.debug(
+            'Fc component will not push image for you. Please make the image exist online.',
+          );
           return {};
         }
       } else {
@@ -94,17 +110,25 @@ export class AlicloudAcr extends AlicloudClient {
       imageArr[0] = `registry.${this.region}.aliyuncs.com`;
       resolvedImage = imageArr.join('/');
     }
-    this.logger.info(StdoutFormatter.stdoutFormatter.using('image registry', imageArr[0]));
+    this.logger.debug(StdoutFormatter.stdoutFormatter.using('image registry', imageArr[0]));
 
-    const { dockerTmpUser, dockerTmpToken } = await this.getAuthorizationTokenOfRegisrty(imageArr[0], assumeYes);
-    this.logger.info('Try to use a temporary token for docker login');
+    const { dockerTmpUser, dockerTmpToken } = await this.getAuthorizationTokenOfRegisrty(
+      imageArr[0],
+      assumeYes,
+    );
+    this.logger.debug('Try to use a temporary token for docker login');
     try {
       execSync(`docker login --username=${dockerTmpUser} ${imageArr[0]} --password-stdin`, {
         input: dockerTmpToken,
       });
       this.logger.log(`Login to registry: ${imageArr[0]} with user: ${dockerTmpUser}`, 'green');
     } catch (e) {
-      this.logger.warn(StdoutFormatter.stdoutFormatter.warn('registry', `login to ${imageArr[0]} failed with temporary token`));
+      this.logger.warn(
+        StdoutFormatter.stdoutFormatter.warn(
+          'registry',
+          `login to ${imageArr[0]} failed with temporary token`,
+        ),
+      );
     }
     // try to push image
     try {
@@ -112,7 +136,9 @@ export class AlicloudAcr extends AlicloudClient {
       execSync(`docker push ${image}`, { stdio: 'inherit' });
       return;
     } catch (e) {
-      if (image === resolvedImage) { throw e; }
+      if (image === resolvedImage) {
+        throw e;
+      }
       this.logger.warn(StdoutFormatter.stdoutFormatter.warn('failed', `push image: ${image}`));
       this.logger.debug(`Push image: ${image} failed， error is ${e}`);
     }

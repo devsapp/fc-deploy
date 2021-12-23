@@ -25,7 +25,7 @@ export declare class FcService extends FcDeploy<ServiceConfig> {
     hasAutoConfig: boolean;
     name: string;
     constructor(serviceConf: ServiceConfig, functionConf: FunctionConfig, serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string);
-    init(useLocal?: boolean): Promise<void>;
+    init(useLocal: boolean, useRemote: boolean, inputs: any): Promise<void>;
     genStateID(): string;
     validateConfig(): void;
     generateServiceRole(): Promise<string>;

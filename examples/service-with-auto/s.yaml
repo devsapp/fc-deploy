@@ -1,6 +1,6 @@
 edition: 1.0.0          #  命令行YAML规范版本，遵循语义化版本（Semantic Versioning）规范
 name: fcDeployApp       #  项目名称
-access: fcDemo  #  秘钥别名
+access: default  #  秘钥别名
 
 services:
   fc-deploy-test: #  服务名称
@@ -11,7 +11,7 @@ services:
         name: fc-deploy-service
         description: demo for fc-deploy component
         internetAccess: true
-        role: acs:ram::xxx:role/aliyunfcdefaultrole
+        role: acs:ram::1694024725952210:role/aliyunfcdefaultrole
 #        nasConfig: auto
 #        vpcConfig: auto
 #        logConfig: auto

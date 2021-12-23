@@ -1,7 +1,5 @@
-import * as core from '@serverless-devs/core';
 import { IInputs } from './interface';
 export default class FcDeployComponent {
-    logger: core.ILogger;
     private serverlessProfile;
     private fcService;
     private fcFunction;
@@ -18,7 +16,6 @@ export default class FcDeployComponent {
     deployAutoNas(inputs: IInputs): Promise<any>;
     report(componentName: string, command: string, accountID?: string, access?: string): Promise<void>;
     private handlerBase;
-    private setStatefulConfig;
     private checkIfResourceExistOnline;
     private handlerInputs;
     private deployWithRetry;

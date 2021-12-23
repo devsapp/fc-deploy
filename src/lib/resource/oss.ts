@@ -1,8 +1,9 @@
 import { ICredentials } from '../profile';
 import OSS from 'ali-oss';
 import logger from '../../common/logger';
-import * as fse from 'fs-extra';
+import * as core from '@serverless-devs/core';
 
+const { fse } = core;
 export class AlicloudOss {
   private readonly bucket: string;
   private readonly region: string;
@@ -29,8 +30,10 @@ export class AlicloudOss {
       return true;
     } catch (e) {
       // 指定的存储空间不存在或者 bucket 不在该账号下。
-      if (e?.name === 'NoSuchBucketError' ||
-          e?.message.includes('The bucket you access does not belong to you')) {
+      if (
+        e?.name === 'NoSuchBucketError' ||
+        e?.message.includes('The bucket you access does not belong to you')
+      ) {
         logger.debug(`bucket: ${this.bucket} dose not exist in your account.`);
         return false;
       }
@@ -52,19 +55,25 @@ export class AlicloudOss {
 
   async tryCreatingBucket(): Promise<boolean> {
     try {
-      logger.info(`Fc is trying to create bucket: ${this.bucket} in region:${this.region} for you to store the code.`);
+      logger.debug(
+        `Fc is trying to create bucket: ${this.bucket} in region:${this.region} for you to store the code.`,
+      );
       const options = {
         storageClass: 'Standard', // 存储空间的默认存储类型为标准存储，即Standard。如果需要设置存储空间的存储类型为归档存储，请替换为Archive。
         acl: 'private', // 存储空间的默认读写权限为私有，即 private。如果需要设置存储空间的读写权限为公共读，请替换为public-read。
         dataRedundancyType: 'LRS', // 存储空间的默认数据容灾类型为本地冗余存储，即LRS。如果需要设置数据容灾类型为同城冗余存储，请替换为ZRS。
       };
       const result = await this.client.putBucket(this.bucket, options);
-      logger.info(`Bucket:${this.bucket} in region:${this.region} is created`);
-      logger.debug(`Result of creating bucket:${this.bucket} in region:${this.region} is:\n${result}`);
+      logger.debug(`Bucket:${this.bucket} in region:${this.region} is created`);
+      logger.debug(
+        `Result of creating bucket:${this.bucket} in region:${this.region} is:\n${result}`,
+      );
       return true;
     } catch (e) {
-      logger.warning(`Fc tried to create bucket:${this.bucket} in region:${this.region} failed.`);
-      logger.debug(`Try to create bucket: ${this.bucket} in region:${this.region} failed, error: ${e}`);
+      logger.warn(`Fc tried to create bucket:${this.bucket} in region:${this.region} failed.`);
+      logger.debug(
+        `Try to create bucket: ${this.bucket} in region:${this.region} failed, error: ${e}`,
+      );
       return false;
     }
   }
@@ -74,6 +83,10 @@ export class AlicloudOss {
     const stream = fse.createReadStream(filePath);
     const { size } = fse.statSync(filePath);
     const result: any = await this.client.putStream(objectName, stream, { contentLength: size });
-    logger.debug(`Upload ${filePath} to oss bucket: ${this.bucket}, object name: ${objectName} result:\n${JSON.stringify(result, null, '  ')}`);
+    logger.debug(
+      `Upload ${filePath} to oss bucket: ${
+        this.bucket
+      }, object name: ${objectName} result:\n${JSON.stringify(result, null, '  ')}`,
+    );
   }
 }

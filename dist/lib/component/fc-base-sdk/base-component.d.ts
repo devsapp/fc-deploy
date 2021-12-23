@@ -1,8 +1,8 @@
-import { ServiceConfig } from '../fc/service';
-import { FunctionConfig } from '../fc/function';
-import { TriggerConfig } from '../fc/trigger';
-import { ServerlessProfile, ICredentials } from '../profile';
-import { Component } from './component';
+import { ServiceConfig } from '../../fc/service';
+import { FunctionConfig } from '../../fc/function';
+import { TriggerConfig } from '../../fc/trigger';
+import { ServerlessProfile, ICredentials } from '../../profile';
+import { Component } from '../component';
 export declare class FcBaseSdkComponent extends Component {
     readonly serviceConf: ServiceConfig;
     readonly functionConf?: FunctionConfig;

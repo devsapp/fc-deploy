@@ -1,10 +1,10 @@
-import { ServiceConfig } from '../fc/service';
-import { FunctionConfig, isCustomContainerRuntime } from '../fc/function';
-import { TriggerConfig } from '../fc/trigger';
+import { ServiceConfig } from '../../fc/service';
+import { FunctionConfig, isCustomContainerRuntime } from '../../fc/function';
+import { TriggerConfig } from '../../fc/trigger';
 import * as _ from 'lodash';
-import { ServerlessProfile, ICredentials } from '../profile';
-import { Component } from './component';
-import { isAutoConfig } from '../definition';
+import { ServerlessProfile, ICredentials } from '../../profile';
+import { Component } from '../component';
+import { isAutoConfig } from '../../definition';
 
 export class FcBaseSdkComponent extends Component {
   readonly serviceConf: ServiceConfig;

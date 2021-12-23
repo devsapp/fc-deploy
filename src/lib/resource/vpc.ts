@@ -4,6 +4,7 @@ import * as _ from 'lodash';
 import { VpcComponent } from '../component/vpc';
 import { promptForConfirmContinue } from '../utils/prompt';
 import { replaceProjectName } from '../profile';
+import logger from '../../common/logger';
 
 export interface VpcConfig {
   securityGroupId: string;
@@ -27,7 +28,7 @@ export class AlicloudVpc extends AlicloudClient {
     const fcRs = await fc.getAccountSettings();
     const fcAllowedZones = fcRs.data.availableAZs;
 
-    this.logger.debug('fc allowed zones: %j', fcAllowedZones);
+    // this.logger.debug('fc allowed zones: %j', fcAllowedZones);
 
     if (_.isEqual(fcAllowedZones, [''])) {
       throw new Error(`No fc vswitch zones allowed, you may need login to fc console to apply for VPC feature: https://fc.console.aliyun.com/overview/${this.region}`);
@@ -103,8 +104,11 @@ export class AlicloudVpc extends AlicloudClient {
     }, this.region, this.credentials, this.curPath);
     const vpcComponentInputs = vpcComponent.genComponentInputs('vpc');
     // load vpc component
+    logger.spinner?.stop();
     const vpcComponentIns = await core.load('devsapp/vpc');
-    return await vpcComponentIns.create(vpcComponentInputs);
+    const res = await vpcComponentIns.create(vpcComponentInputs);
+    logger.spinner?.start();
+    return res;
   }
 
   async describeVSwitchAttributes(vswitchId) {

@@ -24,5 +24,6 @@ export declare class AlicloudNas extends AlicloudClient {
     getNasPopClient(): Promise<any>;
     describeNasZones(): Promise<any>;
     ensureNasDir(nasServiceName: string, mountPoints: any[], nasGid: number, nasUid: number, vpcConfig: VpcConfig, role: string): Promise<void>;
+    removeHelperService(serviceName: string): Promise<void>;
     createDefaultNas(nasServiceName: string, vpcConfig: VpcConfig, nasDir: string, roleArn: string, assumeYes?: boolean): Promise<NasConfig>;
 }

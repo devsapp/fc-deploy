@@ -1,6 +1,8 @@
 import readline from 'readline';
-import * as fse from 'fs-extra';
 import md5File from 'md5-file';
+import * as core from '@serverless-devs/core';
+
+const { fse } = core;
 
 export function readLines(fileName: string): Promise<any[]> {
   return new Promise((resolve, reject) => {

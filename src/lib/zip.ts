@@ -1,12 +1,12 @@
-import * as fse from 'fs-extra';
 import * as path from 'path';
 import * as core from '@serverless-devs/core';
 import * as _ from 'lodash';
 import { createProgressBar } from './utils/utils';
-import { green, grey } from 'colors';
-import archiver from 'archiver';
 import { readLines, getFileHash } from './utils/file';
 import logger from '../common/logger';
+
+const { fse, colors, archiver } = core;
+const { green, grey } = colors;
 
 
 const isWindows: boolean = process.platform === 'win32';
@@ -140,15 +140,11 @@ async function zipFolder(zipArchiver, folder, folders, codeignore, codeUri, pref
 
   return (await Promise.all(dirItems.map(async (f) => {
     const fPath = path.join(dir, f);
-
-    core.Logger.debug('FC-DEPLOY', `before zip: lstat fPath: ${fPath}, absolute fPath is ${path.resolve(fPath)}`);
-
     let s;
 
     try {
       s = await fse.lstat(fPath);
     } catch (error) {
-      core.Logger.debug('FC-DEPLOY', `before zip: could not found fPath ${fPath}, absolute fPath is ${path.resolve(fPath)}, exception is ${error}, skiping`);
       return 0;
     }
     if (codeignore && codeignore(fPath)) {
