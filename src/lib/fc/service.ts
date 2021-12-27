@@ -84,7 +84,7 @@ export class FcService extends FcDeploy<ServiceConfig> {
     await this.initStateful();
     await this.initStatefulAutoConfig();
     await this.initLocal();
-    await this.setUseRemote(this.name, 'Service', useLocal, useRemote, needInteract, diff);
+    await this.setUseRemote(this.name, 'Service', useLocal, useRemote, needInteract, diff, undefined);
   }
 
   genStateID(): string {

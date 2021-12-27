@@ -30,12 +30,21 @@ export async function promptForConfirmContinue(message: string): Promise<boolean
   return false;
 }
 
-export async function promptForConfirmOrDetails(
-  message: string,
-  diff?: string,
-  choices?: string[],
-  trueChoice?: string,
-): Promise<boolean> {
+interface PromptForConfirmOrDetails {
+  message: string;
+  diff?: string;
+  choices?: string[];
+  trueChoice?: string;
+  codeDiff?: string;
+}
+
+export async function promptForConfirmOrDetails({
+  message,
+  diff,
+  choices,
+  trueChoice,
+  codeDiff,
+}: PromptForConfirmOrDetails): Promise<boolean> {
   if (!isInteractiveEnvironment()) {
     return true;
   }
@@ -43,10 +52,15 @@ export async function promptForConfirmOrDetails(
   logger.spinner?.stop();
   if (diff) {
     logger.log(`
-
-Local Deploy status => Online status
-
+📑 Config check:
+Online status => Target Config
 ${diff}`);
+  }
+
+  if (codeDiff) {
+    logger.log(`
+📦 Code check:
+${codeDiff}\n`);
   }
 
   const answers: any = await inquirer.prompt([
