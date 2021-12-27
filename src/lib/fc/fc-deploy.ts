@@ -220,6 +220,7 @@ export default abstract class FcDeploy<T> extends IInputsBase {
     useRemoteFlag: boolean,
     needInteract,
     diff,
+    codeChecksumDiff,
   ): Promise<void> {
     // 强制使用线下
     if (useLocalFlag || _.isEmpty(this.remoteConfig) || !needInteract) {
@@ -235,12 +236,13 @@ export default abstract class FcDeploy<T> extends IInputsBase {
     * You can also specify to use local configuration through --use-local during deployment)`);
 
     const msg = `Remote ${resourceType?.toLocaleLowerCase()}: ${name} is inconsistent with the config you deployed last time, deploy it with local config or remote config?`;
-    this.useRemote = await promptForConfirmOrDetails(
-      msg,
+    this.useRemote = await promptForConfirmOrDetails({
+      message: msg,
       diff,
-      ['use local', 'use remote'],
-      'use remote',
-    );
+      choices: ['use local', 'use remote'],
+      trueChoice: 'use remote',
+      codeDiff: codeChecksumDiff,
+    });
   }
 
   upgradeStatefulConfig(): void {
