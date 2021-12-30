@@ -11,9 +11,9 @@ export async function makeDestination({
   const { region } = Client;
   const fcClient = await Client.fcClient();
 
-  if (!_.isEmpty(asyncConfiguration)) {
-    const destination = asyncConfiguration.destination || {};
-    const { onSuccess, onFailure } = destination;
+  // 兼容性处理，如果包含了 destinationConfig 则不对 asyncConfiguration 再处理
+  if (!_.isEmpty(asyncConfiguration) && !_.has(asyncConfiguration, 'destinationConfig')) {
+    const { onSuccess, onFailure } = asyncConfiguration.destination || {};
     delete asyncConfiguration.destination;
 
     const destinationConfig: any = {};

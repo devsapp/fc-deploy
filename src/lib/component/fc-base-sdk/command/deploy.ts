@@ -223,7 +223,8 @@ export default class Component {
       functionConfig.customDNS = objectDeepTransfromString(customDNS);
     }
 
-    if (_.isEmpty(layers)) {
+    // 如果自定义 endpoint，layers 配置不能兜底
+    if (_.isEmpty(layers) && !(await Client.getFcEndpoint())) {
       functionConfig.layers = [];
     }
 
