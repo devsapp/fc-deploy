@@ -30,6 +30,7 @@ export interface FunctionConfig {
   ossBucket?: string;
   ossKey?: string; // conflict with codeUri
   caPort?: number;
+  customRuntimeConfig?: CustomRuntimeConfig; 
   customContainerConfig?: CustomContainerConfig;
   handler?: string;
   memorySize?: number;
@@ -49,6 +50,11 @@ export interface FunctionConfig {
   instanceLifecycleConfig?: InstanceLifecycleConfig;
   asyncConfiguration?: AsyncConfiguration;
   customDNS?: CustomDNS;
+}
+
+export interface CustomRuntimeConfig {
+  command: string[];
+  args?: string[];
 }
 
 export interface CustomDNS {
@@ -360,6 +366,7 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
     if (isCustomRuntime(this.localConfig?.runtime)) {
       Object.assign(resolvedFunctionConf, {
         caPort: this.localConfig?.caPort || FUNCTION_CONF_DEFAULT.caPort,
+        customRuntimeConfig: this.localConfig?.customRuntimeConfig || FUNCTION_CONF_DEFAULT.customRuntimeConfig,
       });
     }
     if (isCustomContainerRuntime(this.localConfig?.runtime)) {

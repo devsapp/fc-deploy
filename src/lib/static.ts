@@ -12,6 +12,7 @@ export const FUNCTION_CONF_DEFAULT = {
   instanceConcurrency: 1,
   instanceType: 'e1',
   codeUri: './',
+  customRuntimeConfig: { command: null, args: null },
 };
 
 export const DEPLOY_SUPPORT_COMMAND = ['all', 'domain', 'service', 'function', 'trigger'];
