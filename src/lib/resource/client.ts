@@ -6,7 +6,7 @@ import { throwProcessedFCPermissionError, throwProcessedPopPermissionError } fro
 import * as p from 'path';
 import { ServerlessProfile, ICredentials, IInputsBase, getFcEndpoint } from '../profile';
 import * as _ from 'lodash';
-import StdoutFormatter from '../component/stdout-formatter';
+import * as fcCore from '@serverless-devs/fc-core';
 
 const { ROAClient } = require('@alicloud/pop-core');
 const hashedMachineId = require('node-machine-id').machineId;
@@ -92,7 +92,7 @@ export class AlicloudClient extends IInputsBase {
     const securityToken: string = this.credentials?.SecurityToken;
 
     const endpoint = await getFcEndpoint();
-    endpoint && this.logger.debug(StdoutFormatter.stdoutFormatter.using('fc endpoint', endpoint));
+    endpoint && this.logger.debug(fcCore.formatterOutput.using('fc endpoint', endpoint));
     const fc: any = new FC(accountId, {
       accessKeyID,
       accessKeySecret,

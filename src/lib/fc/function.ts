@@ -12,7 +12,7 @@ import os from 'os';
 import { addEnv } from '../env';
 import { detailedDiff } from 'deep-object-diff';
 import { promptForConfirmOrDetails } from '../utils/prompt';
-import StdoutFormatter from '../component/stdout-formatter';
+import * as fcCore from '@serverless-devs/fc-core';
 import { getFileHash, getFileSize } from '../utils/file';
 import { AlicloudOss } from '../resource/oss';
 import { imageExist } from '../utils/docker';
@@ -197,7 +197,7 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
     await checkBuildAvailable(this.serviceName, this.name, baseDir);
 
     this.logger.debug(`Fc detects that you have run build command for function: ${this.name}.`);
-    this.logger.debug(StdoutFormatter.stdoutFormatter.using('codeUri', buildCodeUri));
+    this.logger.debug(fcCore.formatterOutput.using('codeUri', buildCodeUri));
     return {
       codeUri: buildCodeUri,
       isBuild: true,
@@ -400,7 +400,7 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
 
     if (codeUri.startsWith('..') || relative.startsWith('..')) {
       this.logger.warn(
-        StdoutFormatter.stdoutFormatter.warn(
+        fcCore.formatterOutput.warn(
           '.fcignore',
           `not supported for the codeUri: ${codeUri}`,
         ),
@@ -475,7 +475,7 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
         await fse.unlink(codeZipPath);
       } catch (e) {
         this.logger.warn(
-          StdoutFormatter.stdoutFormatter.warn(
+          fcCore.formatterOutput.warn(
             'remove sync code',
             `path: ${codeZipPath}, error: ${e.message}`,
           ),
@@ -495,7 +495,7 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
             await fse.unlink(codeZipPath);
           } catch (e) {
             this.logger.warn(
-              StdoutFormatter.stdoutFormatter.warn(
+              fcCore.formatterOutput.warn(
                 'remove zipped code',
                 `path: ${codeZipPath}, error: ${e.message}`,
               ),

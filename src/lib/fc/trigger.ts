@@ -3,7 +3,7 @@ import { generateRamResourceName, CustomPolicyConfig, AlicloudRam } from '../res
 import { DESCRIPTION } from '../static';
 import { ServerlessProfile, ICredentials } from '../profile';
 import FcDeploy from './fc-deploy';
-import StdoutFormatter from '../component/stdout-formatter';
+import * as fcCore from '@serverless-devs/fc-core';
 
 export interface TriggerConfig {
   functionName?: string;
@@ -196,7 +196,7 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
       accountID,
     );
     this.logger.debug(
-      StdoutFormatter.stdoutFormatter.set(`invocation role for trigger: ${this.name}`, roleName),
+      fcCore.formatterOutput.set(`invocation role for trigger: ${this.name}`, roleName),
     );
     let assumeRolePolicy: { [key: string]: any };
     let serviceOfAssumeRolePolicy: string;

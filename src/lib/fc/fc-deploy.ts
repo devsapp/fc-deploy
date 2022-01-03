@@ -4,7 +4,7 @@ import * as _ from 'lodash';
 import { promptForConfirmOrDetails } from '../utils/prompt';
 import FcInfo from '../component/fc-info';
 import { capitalizeFirstLetter, getStateFilePath } from '../utils/utils';
-import StdoutFormatter from '../component/stdout-formatter';
+import * as fcCore from '@serverless-devs/fc-core';
 import logger from '../../common/logger';
 
 const { fse } = core;
@@ -68,7 +68,7 @@ export default abstract class FcDeploy<T> extends IInputsBase {
     } catch (e) {
       if (e?.message !== 'The current file does not exist') {
         this.logger.warn(
-          StdoutFormatter.stdoutFormatter.warn(
+          fcCore.formatterOutput.warn(
             'stateful config',
             'initialized failed.Stateful config deployed last time is set to null',
           ),
@@ -89,7 +89,7 @@ export default abstract class FcDeploy<T> extends IInputsBase {
     } catch (e) {
       if (e?.message !== 'The current file does not exist') {
         this.logger.debug(
-          StdoutFormatter.stdoutFormatter.warn(
+          fcCore.formatterOutput.warn(
             'stateful auto config',
             'initialized failed.Stateful config deployed last time is set to null',
           ),
@@ -131,7 +131,7 @@ export default abstract class FcDeploy<T> extends IInputsBase {
     const fcInfoComponentInputs: any = await fcInfo.genComponentInputs('fc-info');
     logger.spinner?.stop();
     const fcInfoComponentIns: any = await core.load('devsapp/fc-info');
-    this.logger.debug(StdoutFormatter.stdoutFormatter.check(type, resourceName));
+    this.logger.debug(fcCore.formatterOutput.check(type, resourceName));
     let remoteConfig: T;
     try {
       const info: any = await fcInfoComponentIns.info(fcInfoComponentInputs);
@@ -143,7 +143,7 @@ export default abstract class FcDeploy<T> extends IInputsBase {
     } catch (e) {
       if (!e.toString().includes('NotFoundError')) {
         this.logger.warn(
-          StdoutFormatter.stdoutFormatter.warn(
+          fcCore.formatterOutput.warn(
             `remote ${type}`,
             `error is: ${e.message}`,
             'Fc will use local config.',

@@ -21,7 +21,7 @@ import * as path from 'path';
 import { formatArgs, hasHttpPrefix } from './lib/utils/utils';
 import { promiseRetry, retryDeployUntilSlsCreated } from './lib/retry';
 import { isSlsNotExistException } from './lib/error';
-import StdoutFormatter from './lib/component/stdout-formatter';
+import * as fcCore from '@serverless-devs/fc-core';
 import { isAutoConfig } from './lib/definition';
 import { VpcConfig } from './lib/resource/vpc';
 import { AlicloudNas, NasConfig } from './lib/resource/nas';
@@ -142,7 +142,7 @@ export default class FcDeployComponent {
           const pushRegistry = parsedArgs.data ? parsedArgs.data['push-registry'] : undefined;
           if (pushRegistry) {
             logger.debug(
-              StdoutFormatter.stdoutFormatter.warn('--push-registry', 'will be deprecated soon.'),
+              fcCore.formatterOutput.warn('--push-registry', 'will be deprecated soon.'),
             );
           }
           await this.fcFunction.init(useLocal, useRemote, assumeYes, _.cloneDeep(inputs));
@@ -225,7 +225,7 @@ export default class FcDeployComponent {
     } else {
       // 部署部分资源
       if (needDeployService) {
-        logger.debug(StdoutFormatter.stdoutFormatter.create('service', resolvedServiceConf.name));
+        logger.debug(fcCore.formatterOutput.create('service', resolvedServiceConf.name));
         let resolvedArgs: string;
         if (command === 'service') {
           // deploy service
@@ -242,7 +242,7 @@ export default class FcDeployComponent {
         await this.deployWithRetry(fcBaseComponentIns, fcBaseComponentInputs);
       }
       if (needDeployFunction) {
-        logger.debug(StdoutFormatter.stdoutFormatter.create('function', resolvedFunctionConf.name));
+        logger.debug(fcCore.formatterOutput.create('function', resolvedFunctionConf.name));
         let resolvedArgs: string;
         if (command === 'function') {
           // deploy function
@@ -264,7 +264,7 @@ export default class FcDeployComponent {
           logger.debug('No trigger need to be deloyed.');
         } else if (!_.isEmpty(resolvedTriggerConfs)) {
           logger.debug(
-            StdoutFormatter.stdoutFormatter.create(
+            fcCore.formatterOutput.create(
               'triggers',
               JSON.stringify(resolvedTriggerConfs.map((t) => t.name)),
             ),
@@ -376,7 +376,7 @@ export default class FcDeployComponent {
           );
           for (const resolvedCustomDomainConf of resolvedCustomDomainConfs) {
             logger.debug(
-              StdoutFormatter.stdoutFormatter.create(
+              fcCore.formatterOutput.create(
                 'custom domain',
                 resolvedCustomDomainConf.domainName,
               ),
@@ -689,7 +689,7 @@ export default class FcDeployComponent {
       })
       .catch((e) => {
         logger.warn(
-          StdoutFormatter.stdoutFormatter.warn(
+          fcCore.formatterOutput.warn(
             'component report',
             `component name: ${componentName}, method: ${command}`,
             e.message,
@@ -747,7 +747,6 @@ export default class FcDeployComponent {
 
   // 解析入参
   private async handlerInputs(inputs: IInputs): Promise<{ [key: string]: any }> {
-    await StdoutFormatter.initStdout();
     const project = inputs?.project;
     this.access = project?.access;
     this.credentials = await core.getCredential(this.access);
@@ -906,7 +905,7 @@ export default class FcDeployComponent {
         logger.debug(
           `error when create service/function/trigger or update service/function/trigger, error is: \n${ex}`,
         );
-        logger.debug(StdoutFormatter.stdoutFormatter.retry('fc', 'create', '', times));
+        logger.debug(fcCore.formatterOutput.retry('fc', 'create', '', times));
         retry(ex);
       }
     });

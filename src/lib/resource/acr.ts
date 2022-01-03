@@ -1,7 +1,7 @@
 import { AlicloudClient } from './client';
 import { execSync } from 'child_process';
 import { ServerlessProfile, ICredentials } from '../profile';
-import StdoutFormatter from '../component/stdout-formatter';
+import * as fcCore from '@serverless-devs/fc-core';
 import { extract } from '../utils/utils';
 import * as core from '@serverless-devs/core';
 import { promptForConfirmContinue, promptForInputContinue } from '../utils/prompt';
@@ -110,7 +110,7 @@ export class AlicloudAcr extends AlicloudClient {
       imageArr[0] = `registry.${this.region}.aliyuncs.com`;
       resolvedImage = imageArr.join('/');
     }
-    this.logger.debug(StdoutFormatter.stdoutFormatter.using('image registry', imageArr[0]));
+    this.logger.debug(fcCore.formatterOutput.using('image registry', imageArr[0]));
 
     const { dockerTmpUser, dockerTmpToken } = await this.getAuthorizationTokenOfRegisrty(
       imageArr[0],
@@ -124,7 +124,7 @@ export class AlicloudAcr extends AlicloudClient {
       this.logger.log(`Login to registry: ${imageArr[0]} with user: ${dockerTmpUser}`, 'green');
     } catch (e) {
       this.logger.warn(
-        StdoutFormatter.stdoutFormatter.warn(
+        fcCore.formatterOutput.warn(
           'registry',
           `login to ${imageArr[0]} failed with temporary token`,
         ),
@@ -139,7 +139,7 @@ export class AlicloudAcr extends AlicloudClient {
       if (image === resolvedImage) {
         throw e;
       }
-      this.logger.warn(StdoutFormatter.stdoutFormatter.warn('failed', `push image: ${image}`));
+      this.logger.warn(fcCore.formatterOutput.warn('failed', `push image: ${image}`));
       this.logger.debug(`Push image: ${image} failed， error is ${e}`);
     }
 

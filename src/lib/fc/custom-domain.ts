@@ -4,7 +4,7 @@ import { TriggerConfig } from './trigger';
 import { isAutoConfig } from '../definition';
 import * as core from '@serverless-devs/core';
 import { DomainComponent } from '../component/domain';
-import StdoutFormatter from '../component/stdout-formatter';
+import * as fcCore from '@serverless-devs/fc-core';
 import { getStateFilePath } from '../utils/utils';
 import logger from '../../common/logger';
 import { promptForConfirmOrDetails } from '../utils/prompt';
@@ -244,7 +244,7 @@ export class FcCustomDomain extends IInputsBase {
       if (_.isEmpty(generatedDomain)) {
         // generate domain via domain component
         this.logger.debug(
-          StdoutFormatter.stdoutFormatter.using(
+          fcCore.formatterOutput.using(
             'customDomain: auto',
             'fc will try to generate related custom domain resources automatically',
           ),
