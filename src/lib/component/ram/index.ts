@@ -1,6 +1,6 @@
 import { HLogger, ILogger, getCredential, commandParse, reportComponent, help } from '@serverless-devs/core';
 import { CONTEXT, HELP, CONTEXT_NAME } from './constant';
-import StdoutFormatter from './common/stdout-formatter';
+import StdoutFormatter from '../stdout-formatter';
 import { IInputs, IProperties } from './interface';
 import Ram from './utils/ram';
 import Base from './common/base';

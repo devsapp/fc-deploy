@@ -4,7 +4,7 @@ import _ from 'lodash';
 import Ram from '@alicloud/ram';
 import retry from 'promise-retry';
 import { CONTEXT, RETRYOPTIONS } from '../constant';
-import StdoutFormatter from '../common/stdout-formatter';
+import StdoutFormatter from '../../stdout-formatter';
 import { ICredentials, IProperties, IPolicy, IRoleDocument } from '../interface';
 
 interface IPolicyName {

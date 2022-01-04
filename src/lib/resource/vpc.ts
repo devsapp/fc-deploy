@@ -1,10 +1,10 @@
 import { AlicloudClient } from './client';
-import * as core from '@serverless-devs/core';
 import * as _ from 'lodash';
 import { VpcComponent } from '../component/vpc';
 import { promptForConfirmContinue } from '../utils/prompt';
 import { replaceProjectName } from '../profile';
 import logger from '../../common/logger';
+import Vpc from '../component/vpc/index'
 
 export interface VpcConfig {
   securityGroupId: string;
@@ -105,7 +105,7 @@ export class AlicloudVpc extends AlicloudClient {
     const vpcComponentInputs = vpcComponent.genComponentInputs('vpc');
     // load vpc component
     logger.spinner?.stop();
-    const vpcComponentIns = await core.load('devsapp/vpc');
+    const vpcComponentIns = new Vpc();
     const res = await vpcComponentIns.create(vpcComponentInputs);
     logger.spinner?.start();
     return res;

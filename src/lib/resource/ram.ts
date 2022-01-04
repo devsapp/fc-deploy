@@ -5,7 +5,7 @@ import { generateResourceName } from '../utils/utils';
 import _ from 'lodash';
 import { FC_DEFAULT_ROLE } from '../static';
 import logger from '../../common/logger';
-import Ram from '../../ram';
+import Ram from '../component/ram/index';
 
 export interface RoleConfig {
   name?: string;
