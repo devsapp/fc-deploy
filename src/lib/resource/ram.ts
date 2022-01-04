@@ -1,11 +1,11 @@
 import { RamComponent } from '../component/ram';
-import * as core from '@serverless-devs/core';
 import { AlicloudClient } from './client';
 import { replaceProjectName } from '../profile';
 import { generateResourceName } from '../utils/utils';
 import _ from 'lodash';
 import { FC_DEFAULT_ROLE } from '../static';
 import logger from '../../common/logger';
+import Ram from '../../ram';
 
 export interface RoleConfig {
   name?: string;
@@ -104,7 +104,7 @@ export class AlicloudRam extends AlicloudClient {
     );
     const ramComponentInputs = ramComponent.genComponentInputs('ram', args);
     logger.spinner?.stop();
-    const ramComponentIns = await core.load('devsapp/ram');
+    const ramComponentIns = new Ram();
     logger.spinner?.start();
     const roleArn = await ramComponentIns.deploy(ramComponentInputs);
     return roleArn;
