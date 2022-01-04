@@ -26,6 +26,7 @@ import { isAutoConfig } from './lib/definition';
 import { VpcConfig } from './lib/resource/vpc';
 import { AlicloudNas, NasConfig } from './lib/resource/nas';
 import logger from './common/logger';
+import FcDomain from './lib/component/fc-domain/index'
 
 export default class FcDeployComponent {
   private serverlessProfile: ServerlessProfile;
@@ -394,7 +395,7 @@ export default class FcDeployComponent {
               this.args,
             );
             logger.spinner?.stop();
-            const fcDoaminComponentIns = await core.loadComponent('devsapp/fc-domain');
+            const fcDoaminComponentIns = new FcDomain();
             logger.spinner?.start();
             const domainResData =
               (await fcDoaminComponentIns.deploy(fcDomainComponentInputs)) || {};
@@ -613,7 +614,7 @@ export default class FcDeployComponent {
         this.curPath,
       );
       const fcDomainComponentInputs = fcDomainComponent.genComponentInputs('fc-domain', this.args);
-      const fcDoaminComponentIns = await core.load('devsapp/fc-domain');
+      const fcDoaminComponentIns = new FcDomain();
       await fcDoaminComponentIns.remove(fcDomainComponentInputs);
       removedCustomDomains.push(resolvedCustomDomainConf.domainName);
       await fcCustomDomain.delStatedCustomDomainConf();
