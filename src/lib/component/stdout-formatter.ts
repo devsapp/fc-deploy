@@ -1,9 +1,10 @@
-import { formatterOutput } from '@serverless-devs/fc-core';
+import { loadComponent } from '@serverless-devs/core';
 
 export default class StdoutFormatter {
   static stdoutFormatter: any;
 
   static async initStdout() {
-    this.stdoutFormatter = formatterOutput;
+    const fcCore = await loadComponent('devsapp/fc-core');
+    this.stdoutFormatter = fcCore.formatterOutput;
   }
 }
