@@ -8,6 +8,10 @@ import { REMOVE_HELP_INFO } from './constants';
 import logger from '../../../common/logger';
 
 const supportCommand = ['all', 'service', 'function', 'trigger'];
+
+interface IDeployOptions {
+  logConfigIsAuto?: boolean
+}
 export default class Component {
   protected __report(reportData: any) {
     if (process && process.send) {
@@ -24,7 +28,7 @@ export default class Component {
     }
   }
 
-  async deploy(inputs: InputProps) {
+  async deploy(inputs: InputProps, deployOptions: IDeployOptions) {
     const newInputs = await this.initInputs(_.cloneDeep(inputs), 'deploy');
     const apts = {
       boolean: ['help'],
@@ -56,11 +60,11 @@ export default class Component {
       return help();
     }
 
-    const deployRes = await Deploy.deploy(newInputs.props, {
+    const deployRes = await Deploy.deploy(newInputs.props, Object.assign({
       command: command === 'all' ? '' : command,
       type: type || 'all',
       onlyDelpoyTriggerName: triggerName,
-    });
+    }, deployOptions));
     const reportContent = this.reportNames(newInputs.props.region, deployRes);
     try {
       this.__report({

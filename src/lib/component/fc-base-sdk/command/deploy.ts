@@ -23,7 +23,7 @@ export default class Component {
    *  onlyDelpoyTriggerName：当 command 为 trigger 时生效，仅部署哪些触发器
    * @returns
    */
-  static async deploy(props: IProperties, { command, type, onlyDelpoyTriggerName }): Promise<any> {
+  static async deploy(props: IProperties, { command, type, onlyDelpoyTriggerName, logConfigIsAuto }: any): Promise<any> {
     const { region, service, function: functionConfig, triggers } = props;
     const deployAllConfig = !command && (type === 'all' || type === 'config');
 
@@ -57,42 +57,65 @@ export default class Component {
     const needDeployService = deployAllConfig || command === 'service';
     const needDeployFunction = !command || commandIsFunction;
 
-    await logger.task('Creating', [
-      {
-        title: `Creating Service ${service?.name}...`,
-        id: 'Service',
-        enabled: () => needDeployService,
-        task: async () => {
-          deployRes.service = await this.makeService(fcClient, service);
+    if (logConfigIsAuto) {
+      if (needDeployService) {
+        deployRes.service = await this.makeService(fcClient, service);
+      }
+      if (needDeployFunction && Boolean(functionConfig)) {
+        deployRes.function = await this.makeFunction(fcClient, functionConfig, type);
+      }
+      if (!_.isEmpty(deployTriggers)) {
+        const triggersRes = [];
+        for (const triggerConfig of deployTriggers) {
+          const triggerRes = await this.makeTrigger(
+            fcClient,
+            triggerConfig.service,
+            triggerConfig.function,
+            transfromTriggerConfig(triggerConfig, region, Client.credentials.AccountID),
+          );
+          triggersRes.push(triggerRes);
+        }
+        deployRes.triggers = triggersRes;
+      }
+    } else {
+      await logger.task('Creating', [
+        {
+          title: `Creating Service ${service?.name}...`,
+          id: 'Service',
+          enabled: () => needDeployService,
+          task: async () => {
+            deployRes.service = await this.makeService(fcClient, service);
+          },
         },
-      },
-      {
-        title: `Creating Function ${functionConfig?.service}/${functionConfig?.name}...`,
-        id: 'Function',
-        enabled: () => needDeployFunction && Boolean(functionConfig),
-        task: async () => {
-          deployRes.function = await this.makeFunction(fcClient, functionConfig, type);
+        {
+          title: `Creating Function ${functionConfig?.service}/${functionConfig?.name}...`,
+          id: 'Function',
+          enabled: () => needDeployFunction && Boolean(functionConfig),
+          task: async () => {
+            deployRes.function = await this.makeFunction(fcClient, functionConfig, type);
+          },
         },
-      },
-      {
-        title: 'Creating Trigger...',
-        id: 'Triggers',
-        enabled: () => !_.isEmpty(deployTriggers),
-        task: async () => {
-          const triggersRes = [];
-          for (const triggerConfig of deployTriggers) {
-            const triggerRes = await this.makeTrigger(
-              fcClient,
-              triggerConfig.service,
-              triggerConfig.function,
-              transfromTriggerConfig(triggerConfig, region, Client.credentials.AccountID),
-            );
-            triggersRes.push(triggerRes);
-          }
-          deployRes.triggers = triggersRes;
+        {
+          title: 'Creating Trigger...',
+          id: 'Triggers',
+          enabled: () => !_.isEmpty(deployTriggers),
+          task: async () => {
+            const triggersRes = [];
+            for (const triggerConfig of deployTriggers) {
+              const triggerRes = await this.makeTrigger(
+                fcClient,
+                triggerConfig.service,
+                triggerConfig.function,
+                transfromTriggerConfig(triggerConfig, region, Client.credentials.AccountID),
+              );
+              triggersRes.push(triggerRes);
+            }
+            deployRes.triggers = triggersRes;
+          },
         },
-      },
-    ]);
+      ]);
+    }
+
     return deployRes;
   }
 

@@ -102,7 +102,7 @@ export class FcCustomDomain extends FcClient {
         this.logger.debug(`error when createCustomDomain or updateCustomDomain, domainName is ${this.name}, options is ${JSON.stringify(options)}, error is: \n${ex}`);
 
         const retryMsg = StdoutFormatter.stdoutFormatter.retry('custom domain', !isDomainExistOnline ? 'create' : 'update', this.name, times);
-        this.logger.log(retryMsg, 'red');
+        this.logger.debug(retryMsg);
         retry(ex);
       }
     });

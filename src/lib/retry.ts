@@ -26,7 +26,7 @@ export async function retryDeployUntilSlsCreated(
   let retryNoPermission = slsRetry;
   do {
     try {
-      await componentInstance.deploy(componentInputs);
+      await componentInstance.deploy(componentInputs, { logConfigIsAuto: true });
       return;
     } catch (e) {
       // 如果是报错日志不存在，则默认重试 40 次

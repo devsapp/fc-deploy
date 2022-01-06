@@ -14,7 +14,7 @@ import {
   DEPLOY_SUPPORT_CONFIG_ARGS,
 } from './lib/static';
 import * as _ from 'lodash';
-import { ServerlessProfile, replaceProjectName, ICredentials } from './lib/profile';
+import { ServerlessProfile, replaceProjectName, ICredentials, IDeployWithRetryOptions } from './lib/profile';
 import { IProperties, IInputs } from './interface';
 import * as path from 'path';
 import { formatArgs, hasHttpPrefix } from './lib/utils/utils';
@@ -217,11 +217,13 @@ export default class FcDeployComponent {
       resolvedTriggerConfs,
     );
 
+    const deployWithRetryOptions = { needDeployService, needDeployFunction, needDeployTrigger }
+
     if (needDeployTrigger && needDeployFunction && needDeployService) {
       // 部署所有资源，则复用传入的 args 执行子组件的 deploy 方法
       const fcBaseComponentInputs = fcBaseComponent.genComponentInputs(componentName, this.args);
       // console.log(JSON.stringify(fcBaseComponentInputs, null, 2));
-      await this.deployWithRetry(fcBaseComponentIns, fcBaseComponentInputs);
+      await this.deployWithRetry(fcBaseComponentIns, fcBaseComponentInputs, deployWithRetryOptions);
     } else {
       // 部署部分资源
       if (needDeployService) {
@@ -239,7 +241,7 @@ export default class FcDeployComponent {
           componentName,
           formatArgs(resolvedArgs),
         );
-        await this.deployWithRetry(fcBaseComponentIns, fcBaseComponentInputs);
+        await this.deployWithRetry(fcBaseComponentIns, fcBaseComponentInputs, deployWithRetryOptions);
       }
       if (needDeployFunction) {
         logger.debug(StdoutFormatter.stdoutFormatter.create('function', resolvedFunctionConf.name));
@@ -256,7 +258,7 @@ export default class FcDeployComponent {
           componentName,
           formatArgs(resolvedArgs),
         );
-        await this.deployWithRetry(fcBaseComponentIns, fcBaseComponentInputs);
+        await this.deployWithRetry(fcBaseComponentIns, fcBaseComponentInputs, deployWithRetryOptions);
       }
 
       if (needDeployTrigger) {
@@ -290,7 +292,7 @@ export default class FcDeployComponent {
             componentName,
             formatArgs(resolvedArgs),
           );
-          await this.deployWithRetry(fcBaseComponentIns, fcBaseComponentInputs);
+          await this.deployWithRetry(fcBaseComponentIns, fcBaseComponentInputs, deployWithRetryOptions);
         }
       }
     }
@@ -874,13 +876,20 @@ export default class FcDeployComponent {
   }
 
   // 调用 fc-base/fc-base-sdk 组件部署资源
-  private async deployWithRetry(fcBaseComponentIns, fcBaseComponentInputs): Promise<any> {
+  private async deployWithRetry(fcBaseComponentIns, fcBaseComponentInputs, deployWithRetryOptions: IDeployWithRetryOptions): Promise<any> {
     // logConfig 配置是auto时重试部署 40 次,否则按照正常的逻辑重试
     const logConfigIsAuto = isAutoConfig(this.fcService?.localConfig?.logConfig);
     await promiseRetry(async (retry: any, times: number): Promise<any> => {
       try {
         if (logConfigIsAuto) {
-          await retryDeployUntilSlsCreated(fcBaseComponentIns, fcBaseComponentInputs);
+          const spin = core.spinner(this.getLogAutoMessage(deployWithRetryOptions))
+          try {
+            await retryDeployUntilSlsCreated(fcBaseComponentIns, fcBaseComponentInputs);
+            spin.succeed();
+          } catch (error) {
+            spin.fail();
+            throw error;
+          }
         } else {
           await fcBaseComponentIns.deploy(fcBaseComponentInputs);
         }
@@ -896,5 +905,21 @@ export default class FcDeployComponent {
         retry(ex);
       }
     });
+  }
+
+  private getLogAutoMessage (deployWithRetryOptions: IDeployWithRetryOptions) {
+    const { needDeployService, needDeployFunction, needDeployTrigger } = deployWithRetryOptions;
+    if (needDeployService && needDeployFunction && needDeployTrigger) {
+      return 'Creating Service, Function, Triggers with logConfig auto...'
+    }
+    if (needDeployService) {
+      return 'Creating Service with logConfig auto...'
+    }
+    if (needDeployService) {
+      return 'Creating Function with logConfig auto...'
+    }
+    if (needDeployService) {
+      return 'Creating Triggers with logConfig auto...'
+    }
   }
 }
