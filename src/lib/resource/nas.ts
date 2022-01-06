@@ -119,7 +119,7 @@ export class AlicloudNas extends AlicloudClient {
     logger.spinner?.stop();
     const nasComponentIns = await core.load('devsapp/nas');
     const nasDeployRes = await nasComponentIns.deploy(nasComponentInputs);
-    logger.spinner?.start();
+    // logger.spinner?.start();
     return {
       userId: defaultNasUid,
       groupId: defaultNasGid,
