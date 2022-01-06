@@ -1,15 +1,14 @@
-import { ILogger, HLogger, commandParse, help, getCredential } from '@serverless-devs/core';
+import { commandParse, help, getCredential } from '@serverless-devs/core';
 import { InputProps } from '../../../common/entity';
 import Client from '../../utils/client';
 import _ from 'lodash';
 import Deploy from './command/deploy';
 import Remove from './command/remove';
 import { REMOVE_HELP_INFO } from './constants';
+import logger from '../../../common/logger';
 
 const supportCommand = ['all', 'service', 'function', 'trigger'];
 export default class Component {
-  @HLogger('FC-BASE-SDK') logger: ILogger;
-
   protected __report(reportData: any) {
     if (process && process.send) {
       const { name, content, access } = reportData;
@@ -40,7 +39,7 @@ export default class Component {
     } = parsedArgs.data || {};
 
     if (nonOptionsArgs.length > 1) {
-      this.logger.error(' error: expects argument.');
+      logger.error(' error: expects argument.');
       return help('');
     }
     if (!_.isEmpty(type) && !['config', 'code'].includes(type)) {
@@ -49,7 +48,7 @@ export default class Component {
 
     const command = nonOptionsArgs[0];
     if (command && !supportCommand.includes(command)) {
-      this.logger.error(` deploy ${command} is not supported now.`);
+      logger.error(` deploy ${command} is not supported now.`);
       return help('');
     }
 
@@ -70,7 +69,7 @@ export default class Component {
         content: reportContent,
       });
     } catch (e) {
-      this.logger.debug(`db report error: ${e.toString()}`);
+      logger.debug(`db report error: ${e.toString()}`);
     }
     return reportContent;
   }
@@ -95,13 +94,13 @@ export default class Component {
     const { y: force, triggerName, 'use-local': useLocal } = parsedArgs.data || {};
 
     if (nonOptionsArgs.length > 1) {
-      this.logger.error(' error: expects argument.');
+      logger.error(' error: expects argument.');
       return help(REMOVE_HELP_INFO);
     }
 
     const command = nonOptionsArgs[0] || 'service';
     if (!supportCommand.includes(command)) {
-      this.logger.error(` remove ${command} is not supported now.`);
+      logger.error(` remove ${command} is not supported now.`);
       return help(REMOVE_HELP_INFO);
     }
     const remove = new Remove(props.region);
@@ -139,7 +138,7 @@ export default class Component {
     Client.credentials = inputs.credentials;
     Client.region = region;
 
-    this.logger.debug(JSON.stringify(_.pick(inputs, ['props', 'appName', 'project', 'args']), null, '  '));
+    logger.debug(JSON.stringify(_.pick(inputs, ['props', 'appName', 'project', 'args']), null, '  '));
     return inputs;
   }
 }

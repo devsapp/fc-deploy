@@ -1,6 +1,5 @@
 /* eslint-disable no-await-in-loop */
 /* eslint-disable require-atomic-updates */
-import { ILogger, HLogger } from '@serverless-devs/core';
 import fs from 'fs';
 import _ from 'lodash';
 import Client from '../../../utils/client';
@@ -12,10 +11,9 @@ import {
 import { IProperties } from '../../../../common/entity';
 import { isCode, isCustomContainerConfig } from '../../../../interface/function';
 import { makeDestination } from './function-async-config';
+import logger from '../../../../common/logger';
 
 export default class Component {
-  @HLogger('FC-BASE-SDK') static logger: ILogger;
-
   /**
    * 部署资源
    * @param props
@@ -59,7 +57,7 @@ export default class Component {
     const needDeployService = deployAllConfig || command === 'service';
     const needDeployFunction = !command || commandIsFunction;
 
-    await this.logger.task('Creating', [
+    await logger.task('Creating', [
       {
         title: `Creating Service ${service?.name}...`,
         id: 'Service',
@@ -156,7 +154,7 @@ export default class Component {
       res = await fcClient.createService(name, serviceConfig);
     } catch (ex) {
       if (ex.code !== 'ServiceAlreadyExists') {
-        this.logger.debug(`ex code: ${ex.code}, ex: ${ex.message}`);
+        logger.debug(`ex code: ${ex.code}, ex: ${ex.message}`);
         throw ex;
       }
       res = await fcClient.updateService(name, serviceConfig);
@@ -239,12 +237,12 @@ export default class Component {
     }
 
     let res;
-    this.logger.debug(`handler function config: ${JSON.stringify(functionConfig, null, 2)}`);
+    logger.debug(`handler function config: ${JSON.stringify(functionConfig, null, 2)}`);
     try {
       res = await fcClient.updateFunction(serviceName, functionName, functionConfig);
     } catch (ex) {
       if (ex.code !== 'FunctionNotFound' || onlyDeployConfig) {
-        this.logger.debug(`ex code: ${ex.code}, ex: ${ex.message}`);
+        logger.debug(`ex code: ${ex.code}, ex: ${ex.message}`);
         throw ex;
       }
       functionConfig.functionName = functionName;
@@ -266,7 +264,7 @@ export default class Component {
       }
     }
     if (asyncWarn) {
-      this.logger.warn(`Reminder function.asyncConfig: ${asyncWarn}`);
+      logger.warn(`Reminder function.asyncConfig: ${asyncWarn}`);
     }
 
     return res;
@@ -285,14 +283,14 @@ export default class Component {
       res = await fcClient.createTrigger(serviceName, functionName, triggerConfig);
     } catch (ex) {
       if (ex.code !== 'TriggerAlreadyExists') {
-        this.logger.debug(`ex code: ${ex.code}, ex: ${ex.message}`);
+        logger.debug(`ex code: ${ex.code}, ex: ${ex.message}`);
         throw ex;
       }
       try {
         res = await fcClient.updateTrigger(serviceName, functionName, triggerName, triggerConfig);
       } catch (e) {
         if (e.message.includes('Updating trigger is not supported yet.')) {
-          this.logger.debug(
+          logger.debug(
             `Updating ${serviceName}/${functionName}/${triggerName} is not supported yet.`,
           );
           return triggerConfig;

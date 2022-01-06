@@ -5,10 +5,9 @@ import { FcCustomDomain, CustomDomainConfig } from './lib/fc/custom-domain';
 import { ICredentials } from './lib/profile';
 import StdoutFormatter from '../stdout-formatter';
 import { IInputs, IProperties } from './interface';
+import logger from '../../../common/logger';
 
 export default class FcBaseComponent {
-  @core.HLogger('FC-DEPLOY-DOMAIN') logger: core.ILogger;
-
   private async report(componentName: string, command: string, accountID?: string, access?: string): Promise<void> {
     let uid: string = accountID;
     if (_.isEmpty(accountID)) {
@@ -23,7 +22,7 @@ export default class FcBaseComponent {
       });
     } catch (e) {
       const warnMsg = StdoutFormatter.stdoutFormatter.warn('report', `Component ${componentName} report error`, e.message);
-      this.logger.warn(warnMsg);
+      logger.warn(warnMsg);
     }
   }
   // 解析入参
@@ -62,9 +61,9 @@ export default class FcBaseComponent {
     } = await this.handlerInputs(inputs);
     await this.report('fc-deploy-domain', 'deploy', fcCustomDomain.credentials.AccountID);
     const createMsg = StdoutFormatter.stdoutFormatter.create('custom domain', fcCustomDomain.customDomainConfig.domainName);
-    this.logger.debug(createMsg);
+    logger.debug(createMsg);
     await fcCustomDomain.deploy();
-    this.logger.debug(`custom domain: ${fcCustomDomain.customDomainConfig.domainName} is deployed.`);
+    logger.debug(`custom domain: ${fcCustomDomain.customDomainConfig.domainName} is deployed.`);
     return (await fcCustomDomain.get())?.data;
   }
 
@@ -75,20 +74,20 @@ export default class FcBaseComponent {
     } = await this.handlerInputs(inputs);
     await this.report('fc-deploy-domain', 'remove', fcCustomDomain.credentials.AccountID);
     const removeMsg = StdoutFormatter.stdoutFormatter.remove('custom domain', fcCustomDomain.customDomainConfig.domainName);
-    this.logger.info(removeMsg);
+    logger.info(removeMsg);
     const parsedArgs: {[key: string]: any} = core.commandParse({ args }, { boolean: ['y', 'assumeYes'] });
     const assumeYes: boolean = parsedArgs.data?.y || parsedArgs.data?.assumeYes;
 
     const onlineCustomDomain = await fcCustomDomain.get();
     if (_.isEmpty(onlineCustomDomain)) {
-      this.logger.error(`custom domain: ${fcCustomDomain.name} dose not exist online, remove failed.`);
+      logger.error(`custom domain: ${fcCustomDomain.name} dose not exist online, remove failed.`);
       return;
     }
     if (assumeYes || await promptForConfirmContinue(`Are you sure to remove custom domain: ${JSON.stringify(onlineCustomDomain.data)}?`)) {
       await fcCustomDomain.remove();
-      this.logger.debug(`${fcCustomDomain.customDomainConfig.domainName} is removed.`);
+      logger.debug(`${fcCustomDomain.customDomainConfig.domainName} is removed.`);
     } else {
-      this.logger.info(`cancel removing custom domain: ${fcCustomDomain.customDomainConfig.domainName}`);
+      logger.info(`cancel removing custom domain: ${fcCustomDomain.customDomainConfig.domainName}`);
     }
   }
 

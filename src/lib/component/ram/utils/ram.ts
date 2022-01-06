@@ -1,10 +1,10 @@
 /* eslint-disable no-await-in-loop */
-import { HLogger, ILogger } from '@serverless-devs/core';
 import _ from 'lodash';
 import Ram from '@alicloud/ram';
 import retry from 'promise-retry';
-import { CONTEXT, RETRYOPTIONS } from '../constant';
+import { RETRYOPTIONS } from '../constant';
 import StdoutFormatter from '../../stdout-formatter';
+import logger from '../../../../common/logger';
 import { ICredentials, IProperties, IPolicy, IRoleDocument } from '../interface';
 
 interface IPolicyName {
@@ -34,7 +34,6 @@ const getStatement = (service: string, statement: any): IRoleDocument => {
 };
 
 export default class R {
-  @HLogger(CONTEXT) logger: ILogger;
   ramClient: any;
   stdoutFormatter = StdoutFormatter.stdoutFormatter;
 
@@ -62,7 +61,7 @@ export default class R {
   ): Promise<boolean> {
     let policyNameAvailable = false;
 
-    this.logger.debug(this.stdoutFormatter.check('plicy', policyName));
+    logger.debug(this.stdoutFormatter.check('plicy', policyName));
     await retry(async (rty: (arg0: any) => void, times: any) => {
       try {
         const onlinePolicyConfig = await this.ramClient.getPolicy({
@@ -70,16 +69,16 @@ export default class R {
           PolicyName: policyName,
         });
 
-        this.logger.debug(`On-line policy config: ${JSON.stringify(onlinePolicyConfig)}`);
+        logger.debug(`On-line policy config: ${JSON.stringify(onlinePolicyConfig)}`);
         const onlinePolicyDocument = JSON.parse(
           onlinePolicyConfig.DefaultPolicyVersion.PolicyDocument,
         );
-        this.logger.debug(
+        logger.debug(
           `On-line default policy version document: ${JSON.stringify(onlinePolicyDocument)}`,
         );
 
         policyNameAvailable = true;
-        this.logger.debug(`Check plicy ${policyName} exist.`);
+        logger.debug(`Check plicy ${policyName} exist.`);
         if (!statement || _.isEqual(onlinePolicyDocument.Statement, statement)) {
           return;
         }
@@ -94,9 +93,9 @@ export default class R {
           throw ex;
         }
 
-        this.logger.debug(`Error when getPolicy, policyName is ${policyName}, error is: ${ex}`);
+        logger.debug(`Error when getPolicy, policyName is ${policyName}, error is: ${ex}`);
 
-        this.logger.debug(
+        logger.debug(
           this.stdoutFormatter.retry('policy', 'check policy not exist or ensure available', times),
         );
         rty(ex);
@@ -111,22 +110,22 @@ export default class R {
     roleDocument?: IRoleDocument,
   ): Promise<string> {
     try {
-      this.logger.debug(this.stdoutFormatter.check('role', roleName));
+      logger.debug(this.stdoutFormatter.check('role', roleName));
       const roleResponse = await this.ramClient.getRole({ RoleName: roleName });
 
-      this.logger.debug(`${roleName} already exists.`);
-      this.logger.debug(`Get role ${roleName} response: ${JSON.stringify(roleResponse)}`);
+      logger.debug(`${roleName} already exists.`);
+      logger.debug(`Get role ${roleName} response: ${JSON.stringify(roleResponse)}`);
 
       const { Arn, AssumeRolePolicyDocument } = roleResponse.Role;
 
       if (roleDocument && JSON.stringify(roleDocument) !== AssumeRolePolicyDocument) {
-        this.logger.debug(`${roleName} authorization policy is inconsistent with online.`);
+        logger.debug(`${roleName} authorization policy is inconsistent with online.`);
         await this.updateRole(roleName, roleDocument);
       }
 
       return Arn;
     } catch (ex) {
-      this.logger.debug(`error when getRole: ${roleName}, error is: ${ex}`);
+      logger.debug(`error when getRole: ${roleName}, error is: ${ex}`);
 
       if (ex.name !== 'EntityNotExist.RoleError') {
         throw ex;
@@ -135,7 +134,7 @@ export default class R {
   }
 
   async createPolicy(policyName: string, statement: any, description?: string) {
-    this.logger.debug(this.stdoutFormatter.create('plicy', policyName));
+    logger.debug(this.stdoutFormatter.create('plicy', policyName));
 
     await retry(async (rty: (arg0: any) => void, times: any) => {
       try {
@@ -151,13 +150,13 @@ export default class R {
         if (ex.code === 'NoPermission') {
           throw ex;
         }
-        this.logger.debug(`Error when createPolicy, policyName is ${policyName}, error is: ${ex}`);
-        this.logger.debug(this.stdoutFormatter.retry('policy', 'create policy', times));
+        logger.debug(`Error when createPolicy, policyName is ${policyName}, error is: ${ex}`);
+        logger.debug(this.stdoutFormatter.retry('policy', 'create policy', times));
         rty(ex);
       }
     }, RETRYOPTIONS);
 
-    this.logger.debug(`Create plicy ${policyName} success.`);
+    logger.debug(`Create plicy ${policyName} success.`);
   }
 
   async createRole(
@@ -166,24 +165,24 @@ export default class R {
     description?: string,
   ): Promise<string> {
     try {
-      this.logger.debug(this.stdoutFormatter.create('role', name));
+      logger.debug(this.stdoutFormatter.create('role', name));
       const role = await this.ramClient.createRole({
         RoleName: name,
         Description: description,
         AssumeRolePolicyDocument: JSON.stringify(roleDocument),
       });
 
-      this.logger.debug(`Get role ${name} response: ${JSON.stringify(role)}`);
-      this.logger.debug(`Create role ${name} success, arn is ${role.Role.Arn}`);
+      logger.debug(`Get role ${name} response: ${JSON.stringify(role)}`);
+      logger.debug(`Create role ${name} success, arn is ${role.Role.Arn}`);
       return role.Role.Arn;
     } catch (ex) {
-      this.logger.debug(`Error when createRole, roleName is ${name}, error is: ${ex}`);
+      logger.debug(`Error when createRole, roleName is ${name}, error is: ${ex}`);
       throw ex;
     }
   }
 
   async updatePolicy(policyName: string, statement: any) {
-    this.logger.debug(this.stdoutFormatter.update('plicy', policyName));
+    logger.debug(this.stdoutFormatter.update('plicy', policyName));
 
     await retry(async (rty: (arg0: any) => void, times: any) => {
       try {
@@ -191,7 +190,7 @@ export default class R {
           PolicyType: 'Custom',
           PolicyName: policyName,
         });
-        this.logger.debug(`Policy listPolicyVersions response: ${JSON.stringify(listResponse)}`);
+        logger.debug(`Policy listPolicyVersions response: ${JSON.stringify(listResponse)}`);
 
         const versions = (listResponse.PolicyVersions || {}).PolicyVersion || [];
         if (versions.length >= 5) {
@@ -211,34 +210,34 @@ export default class R {
           throw ex;
         }
 
-        this.logger.debug(`Error when updatePolicy, policyName is ${policyName}, error is: ${ex}`);
-        this.logger.debug(this.stdoutFormatter.retry('plicy', 'update plicy', times));
+        logger.debug(`Error when updatePolicy, policyName is ${policyName}, error is: ${ex}`);
+        logger.debug(this.stdoutFormatter.retry('plicy', 'update plicy', times));
         rty(ex);
       }
     }, RETRYOPTIONS);
 
-    this.logger.debug(`Update plicy: ${policyName} success.`);
+    logger.debug(`Update plicy: ${policyName} success.`);
   }
 
   async updateRole(name: string, roleDocument: IRoleDocument) {
     try {
-      this.logger.debug(this.stdoutFormatter.update('role', name));
+      logger.debug(this.stdoutFormatter.update('role', name));
       const role = await this.ramClient.updateRole({
         RoleName: name,
         NewAssumeRolePolicyDocument: JSON.stringify(roleDocument),
       });
 
-      this.logger.debug(`Get role ${name} response: ${JSON.stringify(role)}`);
-      this.logger.debug(`Update role ${name} success, arn is ${role.Role.Arn}`);
+      logger.debug(`Get role ${name} response: ${JSON.stringify(role)}`);
+      logger.debug(`Update role ${name} success, arn is ${role.Role.Arn}`);
       return role.Role.Arn;
     } catch (ex) {
-      this.logger.debug(`Error when updateRole, roleName is ${name}, error is: ${ex}`);
+      logger.debug(`Error when updateRole, roleName is ${name}, error is: ${ex}`);
       throw ex;
     }
   }
 
   async deletePolicyVersion(policyName: string, versions: any, deleteAll: boolean) {
-    this.logger.debug(
+    logger.debug(
       `Delete policy ${policyName} ${deleteAll ? 'all' : 'single'} version start...`,
     );
 
@@ -246,7 +245,7 @@ export default class R {
       try {
         for (const version of versions) {
           if (version.IsDefaultVersion === false) {
-            this.logger.debug(this.stdoutFormatter.remove('policy version', version.VersionId));
+            logger.debug(this.stdoutFormatter.remove('policy version', version.VersionId));
             await this.ramClient.deletePolicyVersion({
               PolicyName: policyName,
               VersionId: version.VersionId,
@@ -262,15 +261,15 @@ export default class R {
           throw ex;
         }
 
-        this.logger.debug(
+        logger.debug(
           `Error when deletePolicyVersion, policyName is ${policyName}, error is: ${ex}`,
         );
-        this.logger.debug(this.stdoutFormatter.retry('policy', 'delete policy version', times));
+        logger.debug(this.stdoutFormatter.retry('policy', 'delete policy version', times));
         rty(ex);
       }
     }, RETRYOPTIONS);
 
-    this.logger.debug(
+    logger.debug(
       `Delete policy ${policyName} ${deleteAll ? 'all' : 'single'} version success.`,
     );
   }
@@ -307,7 +306,7 @@ export default class R {
         );
 
         if (!policyNameAvailable) {
-          this.logger.debug(`Check plicy ${name} does not exist.`);
+          logger.debug(`Check plicy ${name} does not exist.`);
           await this.createPolicy(name, statement, description);
         }
 
@@ -323,10 +322,10 @@ export default class R {
 
     let arn = await this.checkRoleNotExistOrEnsureAvailable(name, roleDocument);
     if (!arn) {
-      this.logger.debug(`Reminder role: Could not find ${name}, create a new role`);
+      logger.debug(`Reminder role: Could not find ${name}, create a new role`);
       arn = await this.createRole(name, roleDocument, description);
     }
-    this.logger.debug(`${name} arn is ${arn}.`);
+    logger.debug(`${name} arn is ${arn}.`);
 
     return arn;
   }
@@ -335,13 +334,13 @@ export default class R {
     let policies: any;
     await retry(async (rty: (arg0: any) => void, times: any) => {
       try {
-        this.logger.debug(`Get list policies for ${roleName} start...`);
+        logger.debug(`Get list policies for ${roleName} start...`);
 
         policies = await this.ramClient.listPoliciesForRole({
           RoleName: roleName,
         });
 
-        this.logger.debug(
+        logger.debug(
           `Get list policies for ${roleName} response: ${JSON.stringify(policies)}`,
         );
       } catch (ex) {
@@ -349,10 +348,10 @@ export default class R {
           throw ex;
         }
 
-        this.logger.debug(
+        logger.debug(
           `Error when listPoliciesForRole, roleName is ${roleName}, error is: ${ex}`,
         );
-        this.logger.debug(this.stdoutFormatter.retry('policy', 'list policies for role', times));
+        logger.debug(this.stdoutFormatter.retry('policy', 'list policies for role', times));
         rty(ex);
       }
     }, RETRYOPTIONS);
@@ -361,13 +360,13 @@ export default class R {
     for (const { name, type } of policyNamesArray) {
       // eslint-disable-next-line no-loop-func
       await retry(async (rty: (arg0: any) => void, times: any) => {
-        this.logger.debug(`Attach policy(${name}) to ${roleName} start...`);
+        logger.debug(`Attach policy(${name}) to ${roleName} start...`);
         try {
           const policy = policies?.Policies?.Policy?.find((item: { PolicyName: string }) => {
             return _.toLower(item.PolicyName) === _.toLower(name);
           });
           if (policy || attachPolicys.includes(name)) {
-            this.logger.debug(`Policy(${name}) already exists in ${roleName}, skip attach.`);
+            logger.debug(`Policy(${name}) already exists in ${roleName}, skip attach.`);
           } else {
             await this.ramClient.attachPolicyToRole({
               PolicyType: type,
@@ -375,17 +374,17 @@ export default class R {
               RoleName: roleName,
             });
             attachPolicys.push(name);
-            this.logger.debug(`Attach policy(${name}) to ${roleName} success.`);
+            logger.debug(`Attach policy(${name}) to ${roleName} success.`);
           }
         } catch (ex) {
           if (ex.code === 'NoPermission') {
             throw ex;
           }
 
-          this.logger.debug(
+          logger.debug(
             `Error when attachPolicyToRole, roleName is ${roleName}, policyName is ${name}, policyType is ${type}, error is: ${ex}`,
           );
-          this.logger.debug(this.stdoutFormatter.retry('policy', 'attach policy to role', times));
+          logger.debug(this.stdoutFormatter.retry('policy', 'attach policy to role', times));
           rty(ex);
         }
       }, RETRYOPTIONS);
@@ -396,13 +395,13 @@ export default class R {
     const arn = await this.makeRole(propertie);
 
     const { policies = [] } = propertie;
-    this.logger.debug(`Ram component policies config: ${policies}`);
+    logger.debug(`Ram component policies config: ${policies}`);
     const policyNamesArray = await this.mackPlicies(policies);
-    this.logger.debug(`Ram component policies names: ${policyNamesArray}`);
+    logger.debug(`Ram component policies names: ${policyNamesArray}`);
 
-    this.logger.debug('Request attachPolicysToRole start...');
+    logger.debug('Request attachPolicysToRole start...');
     await this.attachPolicysToRole(policyNamesArray, propertie.name);
-    this.logger.debug('Request attachPolicysToRole end.');
+    logger.debug('Request attachPolicysToRole end.');
 
     return arn;
   }
@@ -410,7 +409,7 @@ export default class R {
   async deletePolicys(policies: Array<string | IPolicy>) {
     for (const item of policies) {
       if (_.isString(item)) {
-        this.logger.warn(
+        logger.warn(
           this.stdoutFormatter.warn('policy', `${item} is the specified resource, skip delete.`),
         );
         continue;
@@ -424,27 +423,27 @@ export default class R {
             PolicyType: 'Custom',
             PolicyName: policyName,
           });
-          this.logger.debug(
+          logger.debug(
             `Policy listPolicyVersions response: ${JSON.stringify(listPolicyVersionResponse)}`,
           );
           const versions = (listPolicyVersionResponse.PolicyVersions || {}).PolicyVersion || [];
           await this.deletePolicyVersion(policyName, versions, true);
 
-          await this.logger.debug(this.stdoutFormatter.remove('policy', policyName));
+          await logger.debug(this.stdoutFormatter.remove('policy', policyName));
           await this.ramClient.deletePolicy({ PolicyName: policyName });
         } catch (ex) {
           const exCode = ex.code;
           if (exCode === 'NoPermission' || times > 5) {
             throw ex;
           } else if (exCode === 'EntityNotExist.Policy') {
-            this.logger.debug(`The policy does not exist: ${policyName}`);
+            logger.debug(`The policy does not exist: ${policyName}`);
             return;
           }
 
-          this.logger.debug(
+          logger.debug(
             `Error when deletePolicys, policyName is ${policyName}, error is: ${ex}`,
           );
-          this.logger.debug(this.stdoutFormatter.retry('policy', 'delete policy', times));
+          logger.debug(this.stdoutFormatter.retry('policy', 'delete policy', times));
           rty(ex);
         }
       }, RETRYOPTIONS);
@@ -466,21 +465,21 @@ export default class R {
           });
         }
 
-        this.logger.debug(this.stdoutFormatter.remove('role', roleName));
+        logger.debug(this.stdoutFormatter.remove('role', roleName));
         await this.ramClient.deleteRole({ RoleName: roleName });
-        this.logger.debug(`Delete role ${roleName} success.`);
+        logger.debug(`Delete role ${roleName} success.`);
       } catch (ex) {
         const exCode = ex.code;
 
         if (exCode === 'NoPermission' || times > 5) {
           throw ex;
         } else if (exCode === 'EntityNotExist.Role') {
-          this.logger.debug(`The role not exists: ${roleName}.`);
+          logger.debug(`The role not exists: ${roleName}.`);
           return;
         }
 
-        this.logger.debug(`Error when deleteRole, roleName is ${roleName}, error is: ${ex}`);
-        this.logger.debug(this.stdoutFormatter.retry('role', 'delete role', times));
+        logger.debug(`Error when deleteRole, roleName is ${roleName}, error is: ${ex}`);
+        logger.debug(this.stdoutFormatter.retry('role', 'delete role', times));
         rty(ex);
       }
     }, RETRYOPTIONS);

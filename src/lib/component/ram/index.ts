@@ -1,20 +1,19 @@
-import { HLogger, ILogger, getCredential, commandParse, reportComponent, help } from '@serverless-devs/core';
-import { CONTEXT, HELP, CONTEXT_NAME } from './constant';
+import { getCredential, commandParse, reportComponent, help } from '@serverless-devs/core';
+import { HELP, CONTEXT_NAME } from './constant';
 import StdoutFormatter from '../stdout-formatter';
 import { IInputs, IProperties } from './interface';
 import Ram from './utils/ram';
 import Base from './common/base';
+import logger from '../../../common/logger';
 
 export default class RamCompoent extends Base {
-  @HLogger(CONTEXT) logger: ILogger;
-
   async deploy(inputs: IInputs): Promise<string> {
-    this.logger.debug('Create ram start...');
-    this.logger.debug(`inputs.props: ${JSON.stringify(inputs.props)}`);
+    logger.debug('Create ram start...');
+    logger.debug(`inputs.props: ${JSON.stringify(inputs.props)}`);
 
     const apts = { boolean: ['help'], alias: { help: 'h' } };
     const commandData: any = commandParse({ args: inputs.args }, apts);
-    this.logger.debug(`Command data is: ${JSON.stringify(commandData)}`);
+    logger.debug(`Command data is: ${JSON.stringify(commandData)}`);
     if (commandData.data?.help) {
       help(HELP);
       return;
@@ -28,10 +27,10 @@ export default class RamCompoent extends Base {
     });
 
     const properties: IProperties = inputs.props;
-    this.logger.debug(`Properties values: ${JSON.stringify(properties)}.`);
+    logger.debug(`Properties values: ${JSON.stringify(properties)}.`);
 
     if (properties.service && properties.statement) {
-      this.logger.warn(StdoutFormatter.stdoutFormatter.warn(
+      logger.warn(StdoutFormatter.stdoutFormatter.warn(
         'deploy',
         "The 'service' and 'statement' configurations exist at the same time, and the 'service' configuration is invalid and overwritten by the 'statement'",
       ));
@@ -47,16 +46,16 @@ export default class RamCompoent extends Base {
       content: { arn, role: properties.name },
     });
 
-    this.logger.debug('Create ram success.');
+    logger.debug('Create ram success.');
     return arn;
   }
 
   async delete(inputs) {
-    this.logger.debug('Delete ram start...');
+    logger.debug('Delete ram start...');
 
     const apts = { boolean: ['help'], alias: { help: 'h' } };
     const commandData: any = commandParse({ args: inputs.args }, apts);
-    this.logger.debug(`Command data is: ${JSON.stringify(commandData)}`);
+    logger.debug(`Command data is: ${JSON.stringify(commandData)}`);
     if (commandData.data?.help) {
       help(HELP);
       return;
@@ -70,14 +69,14 @@ export default class RamCompoent extends Base {
     });
 
     const properties: IProperties = inputs.Properties;
-    this.logger.debug(`Properties values: ${JSON.stringify(properties)}.`);
+    logger.debug(`Properties values: ${JSON.stringify(properties)}.`);
 
     const ram = new Ram(credentials);
     await ram.deleteRole(properties.name);
     await ram.deletePolicys(properties.policies || []);
     super.__report({ name: 'ram', access: inputs.project?.access, content: { arn: '', role: '' } });
 
-    this.logger.debug('Delete ram success.');
+    logger.debug('Delete ram success.');
   }
 
   async remove(inputs) {
