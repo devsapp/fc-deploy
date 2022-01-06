@@ -3,7 +3,6 @@ import { FcService, ServiceConfig } from './lib/fc/service';
 import { FcFunction, FunctionConfig } from './lib/fc/function';
 import { FcTrigger, TriggerConfig } from './lib/fc/trigger';
 import { FcCustomDomain, CustomDomainConfig } from './lib/fc/custom-domain';
-import { FcBaseComponent } from './lib/component/fc-base';
 import { FcDomainComponent } from './lib/component/fc-domain';
 import FcBaseSdk from './lib/component/fc-base-sdk';
 import {
@@ -81,7 +80,7 @@ export default class FcDeployComponent {
       this.args = this.args.replace(`--type ${type}`, '');
       type = null;
     }
-    const { fcBaseComponentIns, componentName, BaseComponent } = await this.handlerBase();
+    const { fcBaseComponentIns, componentName, BaseComponent } = FcBaseSdk;
     if (type && componentName === 'fc-base') {
       // pulumi 底座时, --type 不生效
       logger.warn(
@@ -537,7 +536,7 @@ export default class FcDeployComponent {
         this.serverlessProfile,
         `${this.serverlessProfile?.project.projectName}-fc-base-project`,
       );
-      const { fcBaseComponentIns, BaseComponent, componentName } = await this.handlerBase();
+      const { fcBaseComponentIns, BaseComponent, componentName } = FcBaseSdk;
       await this.checkIfResourceExistOnline(nonOptionsArg, targetTriggerNameArr);
 
       const fcBaseComponent = new BaseComponent(
@@ -697,20 +696,6 @@ export default class FcDeployComponent {
           ),
         );
       });
-  }
-
-  private async handlerBase() {
-    const fcDefault = await core.loadComponent('devsapp/fc-default');
-    const res = await fcDefault.get({ args: 'deploy-type' });
-    if (res === 'pulumi') {
-      return {
-        fcBaseComponentIns: await core.loadComponent('devsapp/fc-base'),
-        BaseComponent: FcBaseComponent,
-        componentName: 'fc-base',
-      };
-    }
-
-    return FcBaseSdk;
   }
 
   private async checkIfResourceExistOnline(
