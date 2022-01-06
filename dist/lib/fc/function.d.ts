@@ -9,6 +9,7 @@ export interface FunctionConfig {
     ossBucket?: string;
     ossKey?: string;
     caPort?: number;
+    customRuntimeConfig?: CustomRuntimeConfig;
     customContainerConfig?: CustomContainerConfig;
     handler?: string;
     memorySize?: number;
@@ -28,6 +29,10 @@ export interface FunctionConfig {
     instanceLifecycleConfig?: InstanceLifecycleConfig;
     asyncConfiguration?: AsyncConfiguration;
     customDNS?: CustomDNS;
+}
+export interface CustomRuntimeConfig {
+    command: string[];
+    args?: string[];
 }
 export interface CustomDNS {
     nameServers?: string[] | null;

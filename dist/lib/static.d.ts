@@ -8,6 +8,10 @@ export declare const FUNCTION_CONF_DEFAULT: {
     instanceConcurrency: number;
     instanceType: string;
     codeUri: string;
+    customRuntimeConfig: {
+        command: any;
+        args: any;
+    };
 };
 export declare const DEPLOY_SUPPORT_COMMAND: string[];
 export declare const DEPLOY_SUPPORT_CONFIG_ARGS: string[];
