@@ -2,7 +2,7 @@ import { inquirer } from '@serverless-devs/core';
 import Pop from '@alicloud/pop-core';
 import StdoutFormattter from '../../stdout-formatter';
 import { ICredentials, IProperties, IVpcConfig, IDeleteProperties } from '../interface';
-import logger from '../common/logger';
+import logger from '../../../../common/logger';
 
 const requestOption = {
   method: 'POST',

@@ -1,6 +1,3 @@
-export const CONTEXT = 'FC-DEPLOY-RAM';
-export const CONTEXT_NAME = 'fc-deploy-ram';
-
 export const RETRYOPTIONS = {
   retries: 5,
   factor: 2,

@@ -1,5 +1,5 @@
-import { getCredential, commandParse, reportComponent, help } from '@serverless-devs/core';
-import { HELP, CONTEXT_NAME } from './constant';
+import { getCredential, commandParse, help } from '@serverless-devs/core';
+import { HELP } from './constant';
 import StdoutFormatter from '../stdout-formatter';
 import { IInputs, IProperties } from './interface';
 import Ram from './utils/ram';
@@ -21,11 +21,6 @@ export default class RamCompoent extends Base {
     await StdoutFormatter.initStdout();
 
     const credentials = inputs.credentials || await getCredential(inputs.project?.access);
-    reportComponent(CONTEXT_NAME, {
-      uid: credentials.AccountID,
-      command: 'deploy',
-    });
-
     const properties: IProperties = inputs.props;
     logger.debug(`Properties values: ${JSON.stringify(properties)}.`);
 
@@ -63,11 +58,6 @@ export default class RamCompoent extends Base {
     await StdoutFormatter.initStdout();
 
     const credentials = inputs.credentials || await getCredential(inputs.project?.access);
-    reportComponent(CONTEXT_NAME, {
-      uid: credentials.AccountID,
-      command: 'delete',
-    });
-
     const properties: IProperties = inputs.Properties;
     logger.debug(`Properties values: ${JSON.stringify(properties)}.`);
 

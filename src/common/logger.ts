@@ -1,6 +1,6 @@
 import { Logger } from '@serverless-devs/core';
+import { CONTEXT } from '../constant'
 
-export const CONTEXT = 'FC-DEPLOY';
 
 const logger = new Logger(CONTEXT);
 

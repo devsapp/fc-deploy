@@ -4,6 +4,7 @@ export interface IFunctionConfig {
     description?: string;
     caPort?: number;
     customContainerConfig?: ICustomContainerConfig;
+    customRuntimeConfig?: CustomRuntimeConfig;
     handler: string;
     memorySize?: number;
     runtime: string;
@@ -46,6 +47,10 @@ export interface IFunctionConfig {
             value: string;
         }> | null;
     };
+}
+export interface CustomRuntimeConfig {
+    command: string[];
+    args?: string[];
 }
 export interface ICustomContainerConfig {
     image: string;

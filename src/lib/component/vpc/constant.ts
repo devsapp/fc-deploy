@@ -1,6 +1,3 @@
-export const CONTEXT = 'FC-DEPLOY-VPC';
-export const CONTEXT_NAME = 'fc-deploy-vpc';
-
 export const RETRYOPTIONS = {
   retries: 5,
   factor: 2,

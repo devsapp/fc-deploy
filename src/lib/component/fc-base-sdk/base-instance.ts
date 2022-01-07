@@ -29,7 +29,7 @@ export default class Component {
   }
 
   async deploy(inputs: InputProps, deployOptions: IDeployOptions) {
-    const newInputs = await this.initInputs(_.cloneDeep(inputs), 'deploy');
+    const newInputs = await this.initInputs(_.cloneDeep(inputs));
     const apts = {
       boolean: ['help'],
       string: ['trigger-name', 'type'],
@@ -79,7 +79,7 @@ export default class Component {
   }
 
   async remove(inputs: InputProps) {
-    const { args = '', props } = await this.initInputs(_.cloneDeep(inputs), 'remove');
+    const { args = '', props } = await this.initInputs(_.cloneDeep(inputs));
 
     /**
      * 如果指定了 use-local，那么不和远端交互，仅删除传入配置【权重大于 y/assume-yes】
@@ -133,7 +133,7 @@ export default class Component {
     return dataNames;
   }
 
-  private async initInputs(inputs: InputProps, command: string) {
+  private async initInputs(inputs: InputProps) {
     const { region } = inputs.props;
     if (_.isEmpty(inputs.credentials)) {
       inputs.credentials = await getCredential(inputs.project?.access);
