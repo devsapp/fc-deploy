@@ -1,8 +1,9 @@
-import { ILogger, HLogger, spinner, getState, setState } from '@serverless-devs/core';
+import { spinner, getState, setState } from '@serverless-devs/core';
 import _ from 'lodash';
 import Client from '../../../utils/client';
 import { IProperties } from '../../../../common/entity';
 import { promptForConfirmOrDetails, tableShow } from '../../../utils/utils';
+import logger from '../../../../common/logger';
 
 const errorCode = ['ServiceNotFound', 'FunctionNotFound', 'TriggerNotFound'];
 interface RemoveInputsProps {
@@ -12,7 +13,6 @@ interface RemoveInputsProps {
 }
 
 export default class Component {
-  @HLogger('FC-BASE-SDK') logger: ILogger;
   fcClient: any;
   region: any;
   removeNameList: any = {};
@@ -82,7 +82,7 @@ export default class Component {
       deleteTriggerList = await this.getDeleteList(yamlTriggerNames, listTriggerNames, showTip);
     }
 
-    this.logger.debug(`delete trigger list: ${JSON.stringify(deleteTriggerList)}`);
+    logger.debug(`delete trigger list: ${JSON.stringify(deleteTriggerList)}`);
     for (const name of deleteTriggerList) {
       await this.deleteTrigger(serviceName, functionName, name);
     }
@@ -130,7 +130,7 @@ export default class Component {
       deleteFunctionList = await this.getDeleteList(yamlNames, listFunctionNames, showTip);
     }
 
-    this.logger.debug(`delete function list: ${JSON.stringify(deleteFunctionList)}`);
+    logger.debug(`delete function list: ${JSON.stringify(deleteFunctionList)}`);
     for (const name of deleteFunctionList) {
       const cloneProps = _.cloneDeep(props);
       if (_.isEmpty(cloneProps.function)) {
@@ -258,7 +258,7 @@ export default class Component {
 
       return data;
     } catch (ex) {
-      this.logger.warn(`get ${path} error: ${ex.code}\n${ex.message}`);
+      logger.warn(`get ${path} error: ${ex.code}\n${ex.message}`);
       return [];
     }
   }

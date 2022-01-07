@@ -1,15 +1,18 @@
-import { ILogger, HLogger, commandParse, help, getCredential } from '@serverless-devs/core';
+import { commandParse, help, getCredential } from '@serverless-devs/core';
 import { InputProps } from '../../../common/entity';
 import Client from '../../utils/client';
 import _ from 'lodash';
 import Deploy from './command/deploy';
 import Remove from './command/remove';
 import { REMOVE_HELP_INFO } from './constants';
+import logger from '../../../common/logger';
 
 const supportCommand = ['all', 'service', 'function', 'trigger'];
-export default class Component {
-  @HLogger('FC-BASE-SDK') logger: ILogger;
 
+interface IDeployOptions {
+  logConfigIsAuto?: boolean
+}
+export default class Component {
   protected __report(reportData: any) {
     if (process && process.send) {
       const { name, content, access } = reportData;
@@ -25,8 +28,8 @@ export default class Component {
     }
   }
 
-  async deploy(inputs: InputProps) {
-    const newInputs = await this.initInputs(_.cloneDeep(inputs), 'deploy');
+  async deploy(inputs: InputProps, deployOptions: IDeployOptions) {
+    const newInputs = await this.initInputs(_.cloneDeep(inputs));
     const apts = {
       boolean: ['help'],
       string: ['trigger-name', 'type'],
@@ -40,7 +43,7 @@ export default class Component {
     } = parsedArgs.data || {};
 
     if (nonOptionsArgs.length > 1) {
-      this.logger.error(' error: expects argument.');
+      logger.error(' error: expects argument.');
       return help('');
     }
     if (!_.isEmpty(type) && !['config', 'code'].includes(type)) {
@@ -49,7 +52,7 @@ export default class Component {
 
     const command = nonOptionsArgs[0];
     if (command && !supportCommand.includes(command)) {
-      this.logger.error(` deploy ${command} is not supported now.`);
+      logger.error(` deploy ${command} is not supported now.`);
       return help('');
     }
 
@@ -57,11 +60,11 @@ export default class Component {
       return help();
     }
 
-    const deployRes = await Deploy.deploy(newInputs.props, {
+    const deployRes = await Deploy.deploy(newInputs.props, Object.assign({
       command: command === 'all' ? '' : command,
       type: type || 'all',
       onlyDelpoyTriggerName: triggerName,
-    });
+    }, deployOptions));
     const reportContent = this.reportNames(newInputs.props.region, deployRes);
     try {
       this.__report({
@@ -70,13 +73,13 @@ export default class Component {
         content: reportContent,
       });
     } catch (e) {
-      this.logger.debug(`db report error: ${e.toString()}`);
+      logger.debug(`db report error: ${e.toString()}`);
     }
     return reportContent;
   }
 
   async remove(inputs: InputProps) {
-    const { args = '', props } = await this.initInputs(_.cloneDeep(inputs), 'remove');
+    const { args = '', props } = await this.initInputs(_.cloneDeep(inputs));
 
     /**
      * 如果指定了 use-local，那么不和远端交互，仅删除传入配置【权重大于 y/assume-yes】
@@ -95,13 +98,13 @@ export default class Component {
     const { y: force, triggerName, 'use-local': useLocal } = parsedArgs.data || {};
 
     if (nonOptionsArgs.length > 1) {
-      this.logger.error(' error: expects argument.');
+      logger.error(' error: expects argument.');
       return help(REMOVE_HELP_INFO);
     }
 
     const command = nonOptionsArgs[0] || 'service';
     if (!supportCommand.includes(command)) {
-      this.logger.error(` remove ${command} is not supported now.`);
+      logger.error(` remove ${command} is not supported now.`);
       return help(REMOVE_HELP_INFO);
     }
     const remove = new Remove(props.region);
@@ -130,7 +133,7 @@ export default class Component {
     return dataNames;
   }
 
-  private async initInputs(inputs: InputProps, command: string) {
+  private async initInputs(inputs: InputProps) {
     const { region } = inputs.props;
     if (_.isEmpty(inputs.credentials)) {
       inputs.credentials = await getCredential(inputs.project?.access);
@@ -139,7 +142,7 @@ export default class Component {
     Client.credentials = inputs.credentials;
     Client.region = region;
 
-    this.logger.debug(JSON.stringify(_.pick(inputs, ['props', 'appName', 'project', 'args']), null, '  '));
+    logger.debug(JSON.stringify(_.pick(inputs, ['props', 'appName', 'project', 'args']), null, '  '));
     return inputs;
   }
 }

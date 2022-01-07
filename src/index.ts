@@ -3,7 +3,6 @@ import { FcService, ServiceConfig } from './lib/fc/service';
 import { FcFunction, FunctionConfig } from './lib/fc/function';
 import { FcTrigger, TriggerConfig } from './lib/fc/trigger';
 import { FcCustomDomain, CustomDomainConfig } from './lib/fc/custom-domain';
-import { FcBaseComponent } from './lib/component/fc-base';
 import { FcDomainComponent } from './lib/component/fc-domain';
 import FcBaseSdk from './lib/component/fc-base-sdk';
 import {
@@ -15,7 +14,7 @@ import {
   DEPLOY_SUPPORT_CONFIG_ARGS,
 } from './lib/static';
 import * as _ from 'lodash';
-import { ServerlessProfile, replaceProjectName, ICredentials } from './lib/profile';
+import { ServerlessProfile, replaceProjectName, ICredentials, IDeployWithRetryOptions } from './lib/profile';
 import { IProperties, IInputs } from './interface';
 import * as path from 'path';
 import { formatArgs, hasHttpPrefix } from './lib/utils/utils';
@@ -26,6 +25,7 @@ import { isAutoConfig } from './lib/definition';
 import { VpcConfig } from './lib/resource/vpc';
 import { AlicloudNas, NasConfig } from './lib/resource/nas';
 import logger from './common/logger';
+import FcDomain from './lib/component/fc-domain/index'
 
 export default class FcDeployComponent {
   private serverlessProfile: ServerlessProfile;
@@ -80,7 +80,7 @@ export default class FcDeployComponent {
       this.args = this.args.replace(`--type ${type}`, '');
       type = null;
     }
-    const { fcBaseComponentIns, componentName, BaseComponent } = await this.handlerBase();
+    const { fcBaseComponentIns, componentName, BaseComponent } = FcBaseSdk;
     if (type && componentName === 'fc-base') {
       // pulumi 底座时, --type 不生效
       logger.warn(
@@ -217,11 +217,13 @@ export default class FcDeployComponent {
       resolvedTriggerConfs,
     );
 
+    const deployWithRetryOptions = { needDeployService, needDeployFunction, needDeployTrigger }
+
     if (needDeployTrigger && needDeployFunction && needDeployService) {
       // 部署所有资源，则复用传入的 args 执行子组件的 deploy 方法
       const fcBaseComponentInputs = fcBaseComponent.genComponentInputs(componentName, this.args);
       // console.log(JSON.stringify(fcBaseComponentInputs, null, 2));
-      await this.deployWithRetry(fcBaseComponentIns, fcBaseComponentInputs);
+      await this.deployWithRetry(fcBaseComponentIns, fcBaseComponentInputs, deployWithRetryOptions);
     } else {
       // 部署部分资源
       if (needDeployService) {
@@ -239,7 +241,7 @@ export default class FcDeployComponent {
           componentName,
           formatArgs(resolvedArgs),
         );
-        await this.deployWithRetry(fcBaseComponentIns, fcBaseComponentInputs);
+        await this.deployWithRetry(fcBaseComponentIns, fcBaseComponentInputs, deployWithRetryOptions);
       }
       if (needDeployFunction) {
         logger.debug(StdoutFormatter.stdoutFormatter.create('function', resolvedFunctionConf.name));
@@ -256,7 +258,7 @@ export default class FcDeployComponent {
           componentName,
           formatArgs(resolvedArgs),
         );
-        await this.deployWithRetry(fcBaseComponentIns, fcBaseComponentInputs);
+        await this.deployWithRetry(fcBaseComponentIns, fcBaseComponentInputs, deployWithRetryOptions);
       }
 
       if (needDeployTrigger) {
@@ -290,7 +292,7 @@ export default class FcDeployComponent {
             componentName,
             formatArgs(resolvedArgs),
           );
-          await this.deployWithRetry(fcBaseComponentIns, fcBaseComponentInputs);
+          await this.deployWithRetry(fcBaseComponentIns, fcBaseComponentInputs, deployWithRetryOptions);
         }
       }
     }
@@ -394,7 +396,7 @@ export default class FcDeployComponent {
               this.args,
             );
             logger.spinner?.stop();
-            const fcDoaminComponentIns = await core.loadComponent('devsapp/fc-domain');
+            const fcDoaminComponentIns = new FcDomain();
             logger.spinner?.start();
             const domainResData =
               (await fcDoaminComponentIns.deploy(fcDomainComponentInputs)) || {};
@@ -536,7 +538,7 @@ export default class FcDeployComponent {
         this.serverlessProfile,
         `${this.serverlessProfile?.project.projectName}-fc-base-project`,
       );
-      const { fcBaseComponentIns, BaseComponent, componentName } = await this.handlerBase();
+      const { fcBaseComponentIns, BaseComponent, componentName } = FcBaseSdk;
       await this.checkIfResourceExistOnline(nonOptionsArg, targetTriggerNameArr);
 
       const fcBaseComponent = new BaseComponent(
@@ -613,7 +615,7 @@ export default class FcDeployComponent {
         this.curPath,
       );
       const fcDomainComponentInputs = fcDomainComponent.genComponentInputs('fc-domain', this.args);
-      const fcDoaminComponentIns = await core.load('devsapp/fc-domain');
+      const fcDoaminComponentIns = new FcDomain();
       await fcDoaminComponentIns.remove(fcDomainComponentInputs);
       removedCustomDomains.push(resolvedCustomDomainConf.domainName);
       await fcCustomDomain.delStatedCustomDomainConf();
@@ -696,20 +698,6 @@ export default class FcDeployComponent {
           ),
         );
       });
-  }
-
-  private async handlerBase() {
-    const fcDefault = await core.loadComponent('devsapp/fc-default');
-    const res = await fcDefault.get({ args: 'deploy-type' });
-    if (res === 'pulumi') {
-      return {
-        fcBaseComponentIns: await core.loadComponent('devsapp/fc-base'),
-        BaseComponent: FcBaseComponent,
-        componentName: 'fc-base',
-      };
-    }
-
-    return FcBaseSdk;
   }
 
   private async checkIfResourceExistOnline(
@@ -888,13 +876,20 @@ export default class FcDeployComponent {
   }
 
   // 调用 fc-base/fc-base-sdk 组件部署资源
-  private async deployWithRetry(fcBaseComponentIns, fcBaseComponentInputs): Promise<any> {
+  private async deployWithRetry(fcBaseComponentIns, fcBaseComponentInputs, deployWithRetryOptions: IDeployWithRetryOptions): Promise<any> {
     // logConfig 配置是auto时重试部署 40 次,否则按照正常的逻辑重试
     const logConfigIsAuto = isAutoConfig(this.fcService?.localConfig?.logConfig);
     await promiseRetry(async (retry: any, times: number): Promise<any> => {
       try {
         if (logConfigIsAuto) {
-          await retryDeployUntilSlsCreated(fcBaseComponentIns, fcBaseComponentInputs);
+          const spin = core.spinner(this.getLogAutoMessage(deployWithRetryOptions))
+          try {
+            await retryDeployUntilSlsCreated(fcBaseComponentIns, fcBaseComponentInputs);
+            spin.succeed();
+          } catch (error) {
+            spin.fail();
+            throw error;
+          }
         } else {
           await fcBaseComponentIns.deploy(fcBaseComponentInputs);
         }
@@ -910,5 +905,21 @@ export default class FcDeployComponent {
         retry(ex);
       }
     });
+  }
+
+  private getLogAutoMessage (deployWithRetryOptions: IDeployWithRetryOptions) {
+    const { needDeployService, needDeployFunction, needDeployTrigger } = deployWithRetryOptions;
+    if (needDeployService && needDeployFunction && needDeployTrigger) {
+      return 'Creating Service, Function, Triggers with logConfig auto...'
+    }
+    if (needDeployService) {
+      return 'Creating Service with logConfig auto...'
+    }
+    if (needDeployService) {
+      return 'Creating Function with logConfig auto...'
+    }
+    if (needDeployService) {
+      return 'Creating Triggers with logConfig auto...'
+    }
   }
 }

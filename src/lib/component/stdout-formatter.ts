@@ -4,6 +4,7 @@ export default class StdoutFormatter {
   static stdoutFormatter: any;
 
   static async initStdout() {
-    this.stdoutFormatter = await loadComponent('devsapp/stdout-formatter');
+    const fcCore = await loadComponent('devsapp/fc-core');
+    this.stdoutFormatter = fcCore.formatterOutput;
   }
 }

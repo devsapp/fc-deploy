@@ -1,6 +1,5 @@
 /* eslint-disable no-await-in-loop */
 /* eslint-disable require-atomic-updates */
-import { ILogger, HLogger } from '@serverless-devs/core';
 import fs from 'fs';
 import _ from 'lodash';
 import Client from '../../../utils/client';
@@ -12,10 +11,9 @@ import {
 import { IProperties } from '../../../../common/entity';
 import { isCode, isCustomContainerConfig } from '../../../../interface/function';
 import { makeDestination } from './function-async-config';
+import logger from '../../../../common/logger';
 
 export default class Component {
-  @HLogger('FC-BASE-SDK') static logger: ILogger;
-
   /**
    * 部署资源
    * @param props
@@ -25,7 +23,7 @@ export default class Component {
    *  onlyDelpoyTriggerName：当 command 为 trigger 时生效，仅部署哪些触发器
    * @returns
    */
-  static async deploy(props: IProperties, { command, type, onlyDelpoyTriggerName }): Promise<any> {
+  static async deploy(props: IProperties, { command, type, onlyDelpoyTriggerName, logConfigIsAuto }: any): Promise<any> {
     const { region, service, function: functionConfig, triggers } = props;
     const deployAllConfig = !command && (type === 'all' || type === 'config');
 
@@ -59,42 +57,65 @@ export default class Component {
     const needDeployService = deployAllConfig || command === 'service';
     const needDeployFunction = !command || commandIsFunction;
 
-    await this.logger.task('Creating', [
-      {
-        title: `Creating Service ${service?.name}...`,
-        id: 'Service',
-        enabled: () => needDeployService,
-        task: async () => {
-          deployRes.service = await this.makeService(fcClient, service);
+    if (logConfigIsAuto) {
+      if (needDeployService) {
+        deployRes.service = await this.makeService(fcClient, service);
+      }
+      if (needDeployFunction && Boolean(functionConfig)) {
+        deployRes.function = await this.makeFunction(fcClient, functionConfig, type);
+      }
+      if (!_.isEmpty(deployTriggers)) {
+        const triggersRes = [];
+        for (const triggerConfig of deployTriggers) {
+          const triggerRes = await this.makeTrigger(
+            fcClient,
+            triggerConfig.service,
+            triggerConfig.function,
+            transfromTriggerConfig(triggerConfig, region, Client.credentials.AccountID),
+          );
+          triggersRes.push(triggerRes);
+        }
+        deployRes.triggers = triggersRes;
+      }
+    } else {
+      await logger.task('Creating', [
+        {
+          title: `Creating Service ${service?.name}...`,
+          id: 'Service',
+          enabled: () => needDeployService,
+          task: async () => {
+            deployRes.service = await this.makeService(fcClient, service);
+          },
         },
-      },
-      {
-        title: `Creating Function ${functionConfig?.service}/${functionConfig?.name}...`,
-        id: 'Function',
-        enabled: () => needDeployFunction && Boolean(functionConfig),
-        task: async () => {
-          deployRes.function = await this.makeFunction(fcClient, functionConfig, type);
+        {
+          title: `Creating Function ${functionConfig?.service}/${functionConfig?.name}...`,
+          id: 'Function',
+          enabled: () => needDeployFunction && Boolean(functionConfig),
+          task: async () => {
+            deployRes.function = await this.makeFunction(fcClient, functionConfig, type);
+          },
         },
-      },
-      {
-        title: 'Creating Trigger...',
-        id: 'Triggers',
-        enabled: () => !_.isEmpty(deployTriggers),
-        task: async () => {
-          const triggersRes = [];
-          for (const triggerConfig of deployTriggers) {
-            const triggerRes = await this.makeTrigger(
-              fcClient,
-              triggerConfig.service,
-              triggerConfig.function,
-              transfromTriggerConfig(triggerConfig, region, Client.credentials.AccountID),
-            );
-            triggersRes.push(triggerRes);
-          }
-          deployRes.triggers = triggersRes;
+        {
+          title: 'Creating Trigger...',
+          id: 'Triggers',
+          enabled: () => !_.isEmpty(deployTriggers),
+          task: async () => {
+            const triggersRes = [];
+            for (const triggerConfig of deployTriggers) {
+              const triggerRes = await this.makeTrigger(
+                fcClient,
+                triggerConfig.service,
+                triggerConfig.function,
+                transfromTriggerConfig(triggerConfig, region, Client.credentials.AccountID),
+              );
+              triggersRes.push(triggerRes);
+            }
+            deployRes.triggers = triggersRes;
+          },
         },
-      },
-    ]);
+      ]);
+    }
+
     return deployRes;
   }
 
@@ -156,7 +177,7 @@ export default class Component {
       res = await fcClient.createService(name, serviceConfig);
     } catch (ex) {
       if (ex.code !== 'ServiceAlreadyExists') {
-        this.logger.debug(`ex code: ${ex.code}, ex: ${ex.message}`);
+        logger.debug(`ex code: ${ex.code}, ex: ${ex.message}`);
         throw ex;
       }
       res = await fcClient.updateService(name, serviceConfig);
@@ -239,12 +260,12 @@ export default class Component {
     }
 
     let res;
-    this.logger.debug(`handler function config: ${JSON.stringify(functionConfig, null, 2)}`);
+    logger.debug(`handler function config: ${JSON.stringify(functionConfig, null, 2)}`);
     try {
       res = await fcClient.updateFunction(serviceName, functionName, functionConfig);
     } catch (ex) {
       if (ex.code !== 'FunctionNotFound' || onlyDeployConfig) {
-        this.logger.debug(`ex code: ${ex.code}, ex: ${ex.message}`);
+        logger.debug(`ex code: ${ex.code}, ex: ${ex.message}`);
         throw ex;
       }
       functionConfig.functionName = functionName;
@@ -266,7 +287,7 @@ export default class Component {
       }
     }
     if (asyncWarn) {
-      this.logger.warn(`Reminder function.asyncConfig: ${asyncWarn}`);
+      logger.warn(`Reminder function.asyncConfig: ${asyncWarn}`);
     }
 
     return res;
@@ -285,14 +306,14 @@ export default class Component {
       res = await fcClient.createTrigger(serviceName, functionName, triggerConfig);
     } catch (ex) {
       if (ex.code !== 'TriggerAlreadyExists') {
-        this.logger.debug(`ex code: ${ex.code}, ex: ${ex.message}`);
+        logger.debug(`ex code: ${ex.code}, ex: ${ex.message}`);
         throw ex;
       }
       try {
         res = await fcClient.updateTrigger(serviceName, functionName, triggerName, triggerConfig);
       } catch (e) {
         if (e.message.includes('Updating trigger is not supported yet.')) {
-          this.logger.debug(
+          logger.debug(
             `Updating ${serviceName}/${functionName}/${triggerName} is not supported yet.`,
           );
           return triggerConfig;

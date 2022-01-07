@@ -67,3 +67,9 @@ export async function getFcEndpoint(): Promise<string | undefined> {
   const enableFcEndpoint: any = await fcDefault.get({ args: 'enable-fc-endpoint' });
   return enableFcEndpoint === true || enableFcEndpoint === 'true' ? fcEndpoint : undefined;
 }
+
+export interface IDeployWithRetryOptions {
+  needDeployService: boolean;
+  needDeployFunction: boolean;
+  needDeployTrigger: boolean;
+}
