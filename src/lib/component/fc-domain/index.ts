@@ -39,8 +39,13 @@ export default class FcBaseComponent {
     const { region } = properties;
     const appName: string = inputs?.appName;
 
-    const endpoint = await this.getFcEndpoint();
-    const fcCustomDomain = new FcCustomDomain(customDomainConfig, credentials, region, endpoint);
+    const fcCore = await core.loadComponent('devsapp/fc-core');
+    const fcClient = await fcCore.makeFcClient({
+      access,
+      credentials,
+      region
+    });
+    const fcCustomDomain = new FcCustomDomain(customDomainConfig, credentials, fcClient);
     fcCustomDomain.validateConfig();
 
     await StdoutFormatter.initStdout();
@@ -89,13 +94,5 @@ export default class FcBaseComponent {
     } else {
       logger.info(`cancel removing custom domain: ${fcCustomDomain.customDomainConfig.domainName}`);
     }
-  }
-
-  private async getFcEndpoint(): Promise<string | undefined> {
-    const fcDefault = await core.loadComponent('devsapp/fc-default');
-    const fcEndpoint: string = await fcDefault.get({ args: 'fc-endpoint' });
-    if (!fcEndpoint) { return undefined; }
-    const enableFcEndpoint: any = await fcDefault.get({ args: 'enable-fc-endpoint' });
-    return (enableFcEndpoint === true || enableFcEndpoint === 'true') ? fcEndpoint : undefined;
   }
 }

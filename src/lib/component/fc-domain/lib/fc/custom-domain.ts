@@ -1,8 +1,8 @@
-import { FcClient } from './fc-client';
 import * as _ from 'lodash';
 import { ICredentials } from '../profile';
 import promiseRetry from '../retry';
 import StdoutFormatter from '../../../stdout-formatter';
+import logger from '../../../../../common/logger';
 
 export interface CustomDomainConfig {
   domainName: string;
@@ -29,13 +29,16 @@ interface CertConfig {
   privateKey: string;
 }
 
-export class FcCustomDomain extends FcClient {
+export class FcCustomDomain {
   readonly customDomainConfig: CustomDomainConfig;
   readonly name: string;
+  fcClient: any;
+  credentials: ICredentials;
 
-  constructor(customDomainConfig: CustomDomainConfig, credentials: ICredentials, region: string, endpoint: string | undefined) {
-    super(region, credentials, endpoint);
+  constructor(customDomainConfig: CustomDomainConfig, credentials: ICredentials, fcClient) {
+    this.fcClient = fcClient;
     this.customDomainConfig = customDomainConfig;
+    this.credentials = credentials;
     this.name = this.customDomainConfig.domainName;
   }
 
@@ -53,17 +56,17 @@ export class FcCustomDomain extends FcClient {
     return await promiseRetry(async (retry: any, times: number): Promise<any> => {
       try {
         const onlineCustomDomain = await this.fcClient.getCustomDomain(this.name);
-        this.logger.debug(`online custom domain: ${JSON.stringify(onlineCustomDomain)}`);
+        logger.debug(`online custom domain: ${JSON.stringify(onlineCustomDomain)}`);
         return onlineCustomDomain;
       } catch (ex) {
         if (ex.code !== 'DomainNameNotFound') {
-          this.logger.debug(`error when getCustomDomain, domainName is ${this.name}, error is: \n${ex}`);
+          logger.debug(`error when getCustomDomain, domainName is ${this.name}, error is: \n${ex}`);
 
           const retryMsg = StdoutFormatter.stdoutFormatter.retry('custom domain', 'get', this.name, times);
-          this.logger.log(retryMsg, 'red');
+          logger.log(retryMsg, 'red');
           retry(ex);
         }
-        this.logger.debug(`domain: ${this.name} dose not exist online.`);
+        logger.debug(`domain: ${this.name} dose not exist online.`);
         return undefined;
       }
     });
@@ -90,7 +93,7 @@ export class FcCustomDomain extends FcClient {
   async deploy(): Promise<void> {
     const isDomainExistOnline: boolean = await this.existOnline();
     const options = this.resolveCustomDomainConfig();
-    this.logger.debug(`custom domain deploy options: ${JSON.stringify(options)}`);
+    logger.debug(`custom domain deploy options: ${JSON.stringify(options)}`);
     await promiseRetry(async (retry: any, times: number): Promise<void> => {
       try {
         if (!isDomainExistOnline) {
@@ -99,10 +102,10 @@ export class FcCustomDomain extends FcClient {
           await this.fcClient.updateCustomDomain(this.name, options);
         }
       } catch (ex) {
-        this.logger.debug(`error when createCustomDomain or updateCustomDomain, domainName is ${this.name}, options is ${JSON.stringify(options)}, error is: \n${ex}`);
+        logger.debug(`error when createCustomDomain or updateCustomDomain, domainName is ${this.name}, options is ${JSON.stringify(options)}, error is: \n${ex}`);
 
         const retryMsg = StdoutFormatter.stdoutFormatter.retry('custom domain', !isDomainExistOnline ? 'create' : 'update', this.name, times);
-        this.logger.debug(retryMsg);
+        logger.debug(retryMsg);
         retry(ex);
       }
     });
@@ -114,9 +117,9 @@ export class FcCustomDomain extends FcClient {
         await this.fcClient.deleteCustomDomain(this.name);
       } catch (ex) {
         if (ex.code !== 'DomainNameNotFound') {
-          this.logger.debug(`error when deleteCustomDomain, domainName is ${this.name}, error is: \n${ex}`);
+          logger.debug(`error when deleteCustomDomain, domainName is ${this.name}, error is: \n${ex}`);
           const retryMsg = StdoutFormatter.stdoutFormatter.retry('custom domain', 'delete', this.name, times);
-          this.logger.log(retryMsg, 'red');
+          logger.log(retryMsg, 'red');
           retry(ex);
         }
         throw ex;
