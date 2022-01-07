@@ -30,7 +30,7 @@ export interface FunctionConfig {
   ossBucket?: string;
   ossKey?: string; // conflict with codeUri
   caPort?: number;
-  customRuntimeConfig?: CustomRuntimeConfig; 
+  customRuntimeConfig?: CustomRuntimeConfig;
   customContainerConfig?: CustomContainerConfig;
   handler?: string;
   memorySize?: number;

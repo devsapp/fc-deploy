@@ -4,7 +4,7 @@ export interface IFunctionConfig {
   description?: string;
   caPort?: number;
   customContainerConfig?: ICustomContainerConfig;
-  customRuntimeConfig?: CustomRuntimeConfig; 
+  customRuntimeConfig?: CustomRuntimeConfig;
   handler: string;
   memorySize?: number;
   runtime: string;

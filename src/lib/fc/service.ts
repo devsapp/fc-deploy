@@ -414,7 +414,7 @@ export class FcService extends FcDeploy<ServiceConfig> {
           vpcConfig,
           roleArn,
         );
-        ensureVm.stop();
+        ensureVm?.stop();
       } catch (e) {
         ensureVm.fail();
         this.logger.debug(`Ensure nas dir failed: error: ${e}`);
