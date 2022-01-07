@@ -43,14 +43,6 @@ export class AlicloudSls extends AlicloudClient {
     logger.spinner?.stop();
     const slsComponentIns = await core.load('devsapp/sls');
     await slsComponentIns.create(slsComponentInputs);
-    const fcDefault = await core.loadComponent('devsapp/fc-default');
-    const deployType = await fcDefault.get({ args: 'deploy-type' });
-    if (deployType === 'pulumi') {
-      return {
-        project: defaultProject,
-        logstore: defaultLogstore,
-      };
-    }
     return {
       project: defaultProject,
       logstore: defaultLogstore,
