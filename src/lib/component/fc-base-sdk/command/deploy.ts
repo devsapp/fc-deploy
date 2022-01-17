@@ -1,6 +1,5 @@
 /* eslint-disable no-await-in-loop */
 /* eslint-disable require-atomic-updates */
-import fs from 'fs';
 import _ from 'lodash';
 import Client from '../../../utils/client';
 import {
@@ -213,8 +212,10 @@ export default class Component {
 
     if (!onlyDeployConfig) {
       if (filename) {
+        functionConfig.withoutCodeLimit = true;
         functionConfig.code = {
-          zipFile: fs.readFileSync(filename, 'base64'),
+          zipFile: filename,
+          // zipFile: fs.readFileSync(filename, 'base64'),
         };
       } else if (ossBucket && ossKey) {
         functionConfig.code = {
