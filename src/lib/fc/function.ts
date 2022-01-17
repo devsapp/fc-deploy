@@ -522,8 +522,8 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
     return await pack(syncedCodePath, null, zipPath);
   }
 
-  async needPushRegistry(pushRegistry?: string): Promise<boolean> {
-    if (!isCustomContainerRuntime(this.localConfig?.runtime) || this.useRemote) {
+  async needPushRegistry(pushRegistry?: string, skipAutoPush?: boolean): Promise<boolean> {
+    if (!isCustomContainerRuntime(this.localConfig?.runtime) || this.useRemote || skipAutoPush) {
       return false;
     }
     if (!_.isNil(pushRegistry)) {
@@ -542,11 +542,12 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
     baseDir: string,
     pushRegistry?: string,
     assumeYes?: boolean,
+    skipAutoPush?: boolean,
   ): Promise<{ codeZipPath?: string; codeOssObject?: string }> {
     this.logger.debug('waiting for making function code.');
     if (isCustomContainerRuntime(this.localConfig?.runtime)) {
       try {
-        if (await this.needPushRegistry(pushRegistry)) {
+        if (await this.needPushRegistry(pushRegistry, skipAutoPush)) {
           const alicloudAcr = new AlicloudAcr(
             pushRegistry,
             this.serverlessProfile,
@@ -661,6 +662,7 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
     type: string,
     pushRegistry?: string,
     assumeYes?: boolean,
+    skipAutoPush?: boolean,
   ): Promise<FunctionConfig> {
     if (_.isEmpty(this.localConfig) && _.isEmpty(this.remoteConfig)) {
       this.statefulConfig = null;
@@ -672,6 +674,7 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
         baseDir,
         pushRegistry,
         assumeYes,
+        skipAutoPush,
       );
 
       if (!_.isNil(codeOssObject)) {

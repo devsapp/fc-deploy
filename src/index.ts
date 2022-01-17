@@ -46,13 +46,14 @@ export default class FcDeployComponent {
       return;
     }
     const parsedArgs: { [key: string]: any } = core.commandParse(inputs, {
-      boolean: ['help', 'assume-yes', 'use-remote', 'use-local', 'escape-nas-check'],
+      boolean: ['help', 'assume-yes', 'use-remote', 'use-local', 'skip-push','escape-nas-check'],
       string: ['type'],
       alias: { help: 'h', 'assume-yes': 'y' },
     });
     const argsData: any = parsedArgs?.data || {};
 
     const assumeYes: boolean = argsData.y || argsData.assumeYes || argsData['assume-yes'];
+    const skipAutoPush: boolean = argsData['skip-push'];
     const useLocal: boolean = argsData['use-local'];
     const useRemote: boolean = argsData['use-remote'];
     // 指定 --escape-nas-check 参数后，当用户使用自定义的 nasConfig，不会进行 nasDir 的检查
@@ -157,6 +158,7 @@ export default class FcDeployComponent {
               type,
               pushRegistry,
               assumeYes,
+              skipAutoPush,
             );
             resolvedFunctionConf.name =
               resolvedFunctionConf.name || resolvedFunctionConf.functionName;
