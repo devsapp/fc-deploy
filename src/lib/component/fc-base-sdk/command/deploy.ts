@@ -1,6 +1,7 @@
 /* eslint-disable no-await-in-loop */
 /* eslint-disable require-atomic-updates */
 import _ from 'lodash';
+import fs from 'fs';
 import Client from '../../../utils/client';
 import {
   getTargetTriggers,
@@ -212,11 +213,17 @@ export default class Component {
 
     if (!onlyDeployConfig) {
       if (filename) {
-        functionConfig.withoutCodeLimit = true;
-        functionConfig.code = {
-          zipFile: filename,
-          // zipFile: fs.readFileSync(filename, 'base64'),
-        };
+        if (fs.statSync(filename).size > 52428800) {
+          functionConfig.withoutCodeLimit = true;
+          functionConfig.code = {
+            zipFile: filename,
+          };
+        } else {
+          functionConfig.code = {
+            zipFile: fs.readFileSync(filename, 'base64'),
+          };
+        }
+        
       } else if (ossBucket && ossKey) {
         functionConfig.code = {
           ossBucketName: ossBucket,
