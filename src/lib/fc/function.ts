@@ -103,10 +103,6 @@ export function isCustomRuntime(runtime: string): boolean {
   return runtime === 'custom';
 }
 
-export function isBuildInterpretedLanguage(runtime: string) {
-  return runtime.startsWith('node') || runtime.startsWith('python') || runtime.startsWith('php');
-}
-
 export class FcFunction extends FcDeploy<FunctionConfig> {
   readonly serviceName: string;
   readonly name: string;
@@ -437,14 +433,16 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
       `${this.credentials.AccountID}-${this.region}-${this.serviceName}-${this.name}.zip`,
     );
 
-    if (this.isBuild && isBuildInterpretedLanguage(this.localConfig.runtime)) {
-      const fcBuildLink = await core.loadComponent('devsapp/fc-build-link');
-      await fcBuildLink.linkWithProps({
+  if (this.isBuild) {
+      const fcCore = await core.loadComponent('devsapp/fc-core');
+
+      await fcCore.buildLink({
         configDirPath: baseDir,
         codeUri: this.originalCodeUri,
+        runtime: this.localConfig.runtime,
         serviceName: this.serviceName,
         functionName: this.name,
-      });
+      }, true);
     }
 
     return await pack(codeAbsPath, codeignore, zipPath);
