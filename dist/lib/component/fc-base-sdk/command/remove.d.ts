@@ -1,4 +1,3 @@
-import { ILogger } from '@serverless-devs/core';
 import { IProperties } from '../../../../common/entity';
 interface RemoveInputsProps {
     force?: boolean;
@@ -6,7 +5,6 @@ interface RemoveInputsProps {
     triggerName?: string | string[];
 }
 export default class Component {
-    logger: ILogger;
     fcClient: any;
     region: any;
     removeNameList: any;

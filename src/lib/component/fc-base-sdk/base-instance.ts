@@ -10,7 +10,7 @@ import logger from '../../../common/logger';
 const supportCommand = ['all', 'service', 'function', 'trigger'];
 
 interface IDeployOptions {
-  logConfigIsAuto?: boolean
+  logConfigIsAuto?: boolean;
 }
 export default class Component {
   protected __report(reportData: any) {

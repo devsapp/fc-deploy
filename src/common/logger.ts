@@ -1,5 +1,5 @@
 import { Logger } from '@serverless-devs/core';
-import { CONTEXT } from '../constant'
+import { CONTEXT } from '../constant';
 
 
 const logger = new Logger(CONTEXT);

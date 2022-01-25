@@ -70,7 +70,6 @@ export interface CustomContainerConfig {
 }
 export declare function isCustomContainerRuntime(runtime: string): boolean;
 export declare function isCustomRuntime(runtime: string): boolean;
-export declare function isBuildInterpretedLanguage(runtime: string): boolean;
 export declare class FcFunction extends FcDeploy<FunctionConfig> {
     readonly serviceName: string;
     readonly name: string;
@@ -78,14 +77,9 @@ export declare class FcFunction extends FcDeploy<FunctionConfig> {
     isBuild: boolean;
     static readonly DEFAULT_BUILD_ARTIFACTS_PATH_SUFFIX: string;
     static readonly DEFAULT_SYNC_CODE_PATH: string;
-    static readonly MAX_CODE_SIZE_WITH_OSS: number;
-    static readonly MAX_CODE_SIZE_WITH_OSS_OF_C1: number;
-    static readonly MAX_CODE_SIZE_WITH_CODEURI: number;
     constructor(functionConf: FunctionConfig, serviceName: string, serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string);
     init(useLocal: boolean, useRemote: boolean, assumeYes: boolean, inputs: any): Promise<void>;
     private initLocal;
-    private isElasticInstance;
-    private isEnhancedInstance;
     getCodeUriWithBuildPath(): Promise<any>;
     initLocalConfig(assumeYes?: boolean): Promise<void>;
     syncRemoteCode(): Promise<string>;
@@ -96,10 +90,10 @@ export declare class FcFunction extends FcDeploy<FunctionConfig> {
     zipCode(baseDir: string): Promise<any>;
     removeZipCode(codeZipPath: string): Promise<void>;
     packRemoteCode(): Promise<any>;
-    needPushRegistry(pushRegistry?: string): Promise<boolean>;
-    makeFunctionCode(baseDir: string, pushRegistry?: string, assumeYes?: boolean): Promise<{
+    needPushRegistry(pushRegistry?: string, skipAutoPush?: boolean): Promise<boolean>;
+    makeFunctionCode(baseDir: string, pushRegistry?: string, assumeYes?: boolean, skipAutoPush?: boolean): Promise<{
         codeZipPath?: string;
         codeOssObject?: string;
     }>;
-    makeFunction(baseDir: string, type: string, pushRegistry?: string, assumeYes?: boolean): Promise<FunctionConfig>;
+    makeFunction(baseDir: string, type: string, pushRegistry?: string, assumeYes?: boolean, skipAutoPush?: boolean): Promise<FunctionConfig>;
 }

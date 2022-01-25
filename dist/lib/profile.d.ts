@@ -24,3 +24,8 @@ export interface ServerlessProfile {
 }
 export declare function replaceProjectName(originProfile: ServerlessProfile, projectName: string): ServerlessProfile;
 export declare function getFcEndpoint(): Promise<string | undefined>;
+export interface IDeployWithRetryOptions {
+    needDeployService: boolean;
+    needDeployFunction: boolean;
+    needDeployTrigger: boolean;
+}

@@ -43,7 +43,7 @@ export default class FcBaseComponent {
     const fcClient = await fcCore.makeFcClient({
       access,
       credentials,
-      region
+      region,
     });
     const fcCustomDomain = new FcCustomDomain(customDomainConfig, credentials, fcClient);
     fcCustomDomain.validateConfig();

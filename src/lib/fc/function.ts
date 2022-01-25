@@ -433,7 +433,7 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
       `${this.credentials.AccountID}-${this.region}-${this.serviceName}-${this.name}.zip`,
     );
 
-  if (this.isBuild) {
+    if (this.isBuild) {
       const fcCore = await core.loadComponent('devsapp/fc-core');
 
       await fcCore.buildLink({

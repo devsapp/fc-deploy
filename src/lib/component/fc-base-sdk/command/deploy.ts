@@ -223,7 +223,6 @@ export default class Component {
             zipFile: fs.readFileSync(filename, 'base64'),
           };
         }
-        
       } else if (ossBucket && ossKey) {
         functionConfig.code = {
           ossBucketName: ossBucket,

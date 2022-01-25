@@ -25,7 +25,7 @@ import { isAutoConfig } from './lib/definition';
 import { VpcConfig } from './lib/resource/vpc';
 import { AlicloudNas, NasConfig } from './lib/resource/nas';
 import logger from './common/logger';
-import FcDomain from './lib/component/fc-domain/index'
+import FcDomain from './lib/component/fc-domain/index';
 
 export default class FcDeployComponent {
   private serverlessProfile: ServerlessProfile;
@@ -46,7 +46,7 @@ export default class FcDeployComponent {
       return;
     }
     const parsedArgs: { [key: string]: any } = core.commandParse(inputs, {
-      boolean: ['help', 'assume-yes', 'use-remote', 'use-local', 'skip-push','escape-nas-check'],
+      boolean: ['help', 'assume-yes', 'use-remote', 'use-local', 'skip-push', 'escape-nas-check'],
       string: ['type'],
       alias: { help: 'h', 'assume-yes': 'y' },
     });
@@ -219,7 +219,7 @@ export default class FcDeployComponent {
       resolvedTriggerConfs,
     );
 
-    const deployWithRetryOptions = { needDeployService, needDeployFunction, needDeployTrigger }
+    const deployWithRetryOptions = { needDeployService, needDeployFunction, needDeployTrigger };
 
     if (needDeployTrigger && needDeployFunction && needDeployService) {
       // 部署所有资源，则复用传入的 args 执行子组件的 deploy 方法
@@ -884,7 +884,7 @@ export default class FcDeployComponent {
     await promiseRetry(async (retry: any, times: number): Promise<any> => {
       try {
         if (logConfigIsAuto) {
-          const spin = core.spinner(this.getLogAutoMessage(deployWithRetryOptions))
+          const spin = core.spinner(this.getLogAutoMessage(deployWithRetryOptions));
           try {
             await retryDeployUntilSlsCreated(fcBaseComponentIns, fcBaseComponentInputs);
             spin.succeed();
@@ -909,19 +909,19 @@ export default class FcDeployComponent {
     });
   }
 
-  private getLogAutoMessage (deployWithRetryOptions: IDeployWithRetryOptions) {
+  private getLogAutoMessage(deployWithRetryOptions: IDeployWithRetryOptions) {
     const { needDeployService, needDeployFunction, needDeployTrigger } = deployWithRetryOptions;
     if (needDeployService && needDeployFunction && needDeployTrigger) {
-      return 'Creating Service, Function, Triggers with logConfig auto...'
+      return 'Creating Service, Function, Triggers with logConfig auto...';
     }
     if (needDeployService) {
-      return 'Creating Service with logConfig auto...'
+      return 'Creating Service with logConfig auto...';
     }
     if (needDeployService) {
-      return 'Creating Function with logConfig auto...'
+      return 'Creating Function with logConfig auto...';
     }
     if (needDeployService) {
-      return 'Creating Triggers with logConfig auto...'
+      return 'Creating Triggers with logConfig auto...';
     }
   }
 }

@@ -4,7 +4,7 @@ import { VpcComponent } from '../component/vpc';
 import { promptForConfirmContinue } from '../utils/prompt';
 import { replaceProjectName } from '../profile';
 import logger from '../../common/logger';
-import Vpc from '../component/vpc/index'
+import Vpc from '../component/vpc/index';
 
 export interface VpcConfig {
   securityGroupId: string;
