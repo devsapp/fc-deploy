@@ -41,7 +41,7 @@ export default class FcDeployComponent {
   private access: string;
 
   async deploy(inputs: IInputs): Promise<any> {
-    const { isHelp } = await this.handlerInputs(_.cloneDeep(inputs));
+    const { isHelp } = await this.handlerInputs(inputs);
     if (isHelp) {
       core.help(DEPLOY_HELP_INFO);
       return;
@@ -117,35 +117,7 @@ export default class FcDeployComponent {
       (needDeployAll && type !== 'code') || (!command && type !== 'code') || command === 'trigger';
     let needDeployAllTriggers = true;
 
-    const { env } = argsData;
     await logger.task('Checking', [
-      {
-        title: `Checking Environment ${env} exists `,
-        id: 'Environment',
-        enabled: () => !_.isEmpty(env),
-        task: async () => {
-          const profile = replaceProjectName(
-            this.serverlessProfile,
-            `${this.serverlessProfile?.project.projectName}-infra-as-template`,
-          );
-
-          const envComponent = new InfraAsTemplateComponent(
-            profile,
-            this.credentials,
-            null,
-            this.curPath,
-          );
-          const envComponentInputs = envComponent.genComponentInputs('infrastructure-as-template', this.args);
-          const envComponentInst = await core.load('infrastructure-as-template');
-          const result = await envComponentInst.deploy(envComponentInputs);
-          const { output } = result.status;
-          logger.debug(
-            `Resolved environment output is:\n${JSON.stringify(output, null, '  ')}`,
-          );
-          inputs.props = InfraAsTemplateComponent.modifyVariables(inputs.props, { outputs: output }) || {};
-          logger.debug(`Props after modified is: ${JSON.stringify(inputs.props, null, '  ')}`);
-        },
-      },
       {
         title: `Checking Service ${this.fcService?.name} exists`,
         id: 'Service',
@@ -777,8 +749,6 @@ export default class FcDeployComponent {
       inputs?.project?.access,
     );
 
-    const properties: IProperties = inputs?.props;
-
     const appName: string = inputs?.appName;
     this.args = formatArgs(inputs?.args);
 
@@ -786,7 +756,8 @@ export default class FcDeployComponent {
     const projectName: string = project?.projectName;
     const parsedArgs: { [key: string]: any } = core.commandParse(inputs, {
       boolean: ['help'],
-      alias: { help: 'h' },
+      string: ['env'],
+      alias: { help: 'h', env: 'e' },
     });
     const argsData: any = parsedArgs?.data || {};
     if (argsData?.help) {
@@ -795,8 +766,6 @@ export default class FcDeployComponent {
       };
     }
 
-    this.region = argsData?.region || properties?.region;
-
     this.serverlessProfile = {
       project: {
         access: this.access,
@@ -804,6 +773,54 @@ export default class FcDeployComponent {
       },
       appName,
     };
+
+    // check the environment and using environment state to modify the inputs.
+    const { env } = argsData;
+    await logger.task('Checking', [
+      {
+        title: `Checking Environment ${env} exists `,
+        id: 'Environment',
+        enabled: () => !_.isEmpty(env),
+        task: async () => {
+          const profile = replaceProjectName(
+            this.serverlessProfile,
+            `${this.serverlessProfile?.project.projectName}-infra-as-template`,
+          );
+
+          const envComponent = new InfraAsTemplateComponent(
+            profile,
+            this.credentials,
+            null,
+            this.curPath,
+          );
+          const envComponentInputs = envComponent.genComponentInputs('infrastructure-as-template', this.args);
+          const envComponentInst = await core.load('infrastructure-as-template');
+          const result = await envComponentInst.deploy(envComponentInputs);
+          const state = {
+            name: result.name,
+            region: result.region,
+            roleArn: result.roleArn,
+            template: result.template,
+            props: result.props,
+            outputs: result.status.output,
+          };
+          logger.debug(
+            `Resolved environment state is:\n${JSON.stringify(state, null, '  ')}`,
+          );
+          inputs.props = InfraAsTemplateComponent.modifyVariables(inputs.props, state) || {};
+
+          // keep the service region consistent with environment
+          if (inputs.props?.region !== state.region) {
+            inputs.props.region = state.region;
+          }
+
+          logger.debug(`Props after modified is: ${JSON.stringify(inputs.props, null, '  ')}`);
+        },
+      },
+    ]);
+
+    const properties: IProperties = inputs?.props;
+    this.region = argsData?.region || properties?.region;
 
     // @ts-ignore
     const serviceConf: ServiceConfig = properties?.service || {};
