@@ -40,7 +40,7 @@ export class InfraAsTemplateComponent extends Component {
       if (parentStr !== '') {
         parentStr = `${parentStr}.`;
       }
-      Object.keys(value).map((key) => {
+      Object.keys(value).forEach((key) => {
         const showKey = `${parentStr}${key}`;
         const objValue = value[key];
         result[showKey] = objValue;
