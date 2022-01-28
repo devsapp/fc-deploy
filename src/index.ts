@@ -26,6 +26,7 @@ import { VpcConfig } from './lib/resource/vpc';
 import { AlicloudNas, NasConfig } from './lib/resource/nas';
 import logger from './common/logger';
 import FcDomain from './lib/component/fc-domain/index';
+import { InfraAsTemplateComponent } from './lib/component/infra-as-template';
 
 export default class FcDeployComponent {
   private serverlessProfile: ServerlessProfile;
@@ -116,7 +117,35 @@ export default class FcDeployComponent {
       (needDeployAll && type !== 'code') || (!command && type !== 'code') || command === 'trigger';
     let needDeployAllTriggers = true;
 
+    const { env } = argsData;
     await logger.task('Checking', [
+      {
+        title: `Checking Environment ${env} exists `,
+        id: 'Environment',
+        enabled: () => !_.isEmpty(env),
+        task: async () => {
+          const profile = replaceProjectName(
+            this.serverlessProfile,
+            `${this.serverlessProfile?.project.projectName}-infra-as-template`,
+          );
+
+          const envComponent = new InfraAsTemplateComponent(
+            profile,
+            this.credentials,
+            null,
+            this.curPath,
+          );
+          const envComponentInputs = envComponent.genComponentInputs('infrastructure-as-template', this.args);
+          const envComponentInst = await core.load('infrastructure-as-template');
+          const result = await envComponentInst.deploy(envComponentInputs);
+          const { output } = result.status;
+          logger.debug(
+            `Resolved environment output is:\n${JSON.stringify(output, null, '  ')}`,
+          );
+          inputs.props = InfraAsTemplateComponent.modifyVariables(inputs.props, { outputs: output }) || {};
+          logger.debug(`Props after modified is: ${JSON.stringify(inputs.props, null, '  ')}`);
+        },
+      },
       {
         title: `Checking Service ${this.fcService?.name} exists`,
         id: 'Service',
