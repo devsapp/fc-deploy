@@ -50,8 +50,16 @@ export declare const DEPLOY_HELP_INFO: ({
         description: string;
         type: BooleanConstructor;
         typeLabel?: undefined;
+        alias?: undefined;
     } | {
         name: string;
+        typeLabel: string;
+        description: string;
+        type?: undefined;
+        alias?: undefined;
+    } | {
+        name: string;
+        alias: string;
         typeLabel: string;
         description: string;
         type?: undefined;
