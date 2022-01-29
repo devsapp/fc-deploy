@@ -132,6 +132,12 @@ export const DEPLOY_HELP_INFO = [
         typeLabel: '{underline <registry>}',
         description: 'Specify registry or registry type of the image when use custom container runtime.\nRegistry type includes \'acr-internet\' and \'acr-vpc\'',
       },
+      {
+        name: 'env',
+        alias: 'e',
+        typeLabel: '{underline <env>}',
+        description: 'Specify the environment name',
+      },
     ],
   },
   {
@@ -157,6 +163,7 @@ export const DEPLOY_HELP_INFO = [
       '$ s {bold deploy}',
       '$ s <ProjectName> {bold deploy}',
       '$ s {bold deploy} {underline --use-local}',
+      '$ s {bold deploy} {underline --env test}',
     ],
   },
   {

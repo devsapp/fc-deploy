@@ -208,7 +208,11 @@ describe('Integration::remove', () => {
         args: '-y',
       });
       const res = await fcDeploy.remove(inputs);
-      expect(res).toStrictEqual({
+      expect({
+        service: res.service,
+        functions: _.map(res.functions, item => item.function),
+        triggers: _.map(res.triggers, item => item.trigger),
+      }).toStrictEqual({
         service: SERVICE_CONFIG.name,
         functions: [FUNCTION_CONFIG.name],
         triggers: [HTTP_TRIGGER_CONFIG.name],
