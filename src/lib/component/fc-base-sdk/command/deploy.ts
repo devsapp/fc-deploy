@@ -267,7 +267,8 @@ export default class Component {
     }
 
     let res;
-    logger.debug(`handler function config: ${JSON.stringify(functionConfig, null, 2)}`);
+    // debug 输出代码包的 base64，导致无法调试
+    // logger.debug(`handler function config: ${JSON.stringify(functionConfig, null, 2)}`);
     try {
       res = await fcClient.updateFunction(serviceName, functionName, functionConfig);
     } catch (ex) {
