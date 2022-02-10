@@ -91,7 +91,7 @@ async function packTo(file: string, codeignore: any, targetPath: string, prefix 
   zipArchiver.pipe(output);
 
   const asbFilePath = path.resolve(file);
-  const isBootstrap = isBootstrapPath(asbFilePath, asbFilePath, true);
+  const isBootstrap = await isBootstrapPath(asbFilePath, asbFilePath, true);
 
   if (stats.isFile()) {
     zipArchiver.file(asbFilePath, {
@@ -155,7 +155,7 @@ async function zipFolder(zipArchiver, folder, folders, codeignore, codeUri, pref
     const absFilePath = path.resolve(fPath);
     const relative = path.relative(absCodeUri, absFilePath);
 
-    const isBootstrap = isBootstrapPath(absFilePath, absCodeUri, false);
+    const isBootstrap = await isBootstrapPath(absFilePath, absCodeUri, false);
     if (s.size === 1067) {
       const content = await readLines(fPath);
       if (_.head(content) === 'XSym' && content.length === 5) {
@@ -185,12 +185,22 @@ async function zipFolder(zipArchiver, folder, folders, codeignore, codeUri, pref
   }))).reduce(((sum: any, curr: any) => sum + curr), 0);
 }
 
-function isBootstrapPath(absFilePath, absCodeUri, isFile = true) {
+async function isBootstrapPath(absFilePath, absCodeUri, isFile = true) {
   let absBootstrapDir;
   if (isFile) {
     absBootstrapDir = path.dirname(absCodeUri);
   } else {
     absBootstrapDir = absCodeUri;
   }
-  return path.join(absBootstrapDir, 'bootstrap') === absFilePath;
+  const isBootstrapFile = path.join(absBootstrapDir, 'bootstrap') === absFilePath;
+  if (isBootstrapFile) {
+    try {
+      const { getFileEndOfLineSequence } = await core.loadComponent('devsapp/fc-core');
+      const fileEndOfLineSequence = await getFileEndOfLineSequence(absFilePath);
+      if (typeof fileEndOfLineSequence === 'string' && fileEndOfLineSequence !== 'LF') {
+        logger.warn(`The bootstrap line ending sequence was detected as ${fileEndOfLineSequence}, possibly affecting the function call. The supported format is LF.`);
+      }
+    } catch (_ex) { /* 不阻塞主程序运行*/ }
+  }
+  return isBootstrapFile;
 }
