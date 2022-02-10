@@ -192,8 +192,8 @@ async function isBootstrapPath(absFilePath, absCodeUri, isFile = true) {
   } else {
     absBootstrapDir = absCodeUri;
   }
-  const isTrue = path.join(absBootstrapDir, 'bootstrap') === absFilePath;
-  if (isTrue) {
+  const isBootstrapFile = path.join(absBootstrapDir, 'bootstrap') === absFilePath;
+  if (isBootstrapFile) {
     try {
       const { getFileEndOfLineSequence } = await core.loadComponent('devsapp/fc-core');
       const fileEndOfLineSequence = await getFileEndOfLineSequence(absFilePath);
@@ -202,5 +202,5 @@ async function isBootstrapPath(absFilePath, absCodeUri, isFile = true) {
       }
     } catch (_ex) { /* 不阻塞主程序运行*/ }
   }
-  return isTrue;
+  return isBootstrapFile;
 }
