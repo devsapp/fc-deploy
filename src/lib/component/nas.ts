@@ -41,7 +41,8 @@ export class NasComponent extends Component {
       serviceName: this.assistServiceName,
       vpcConfig: {
         vpcId: this.vpcConfig.vpcId,
-        vSwitchIds: this.vpcConfig.vSwitchIds,
+        // @ts-ignore
+        vSwitchIds: this.vpcConfig.vswitchIds || this.vpcConfig.vSwitchIds,
         securityGroupId: this.vpcConfig.securityGroupId,
       },
       groupId: this.nasGid,
