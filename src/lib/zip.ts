@@ -200,7 +200,7 @@ async function isBootstrapPath(absFilePath, absCodeUri, isFile = true) {
       if (typeof fileEndOfLineSequence === 'string' && fileEndOfLineSequence !== 'LF') {
         logger.warn(`The bootstrap line ending sequence was detected as ${fileEndOfLineSequence}, possibly affecting the function call. The supported format is LF.`);
       }
-    } catch (_ex) { /* 不阻塞主程序运行*/ }
+    } catch (_ex) { /* 不阻塞主程序运行 */ }
   }
   return isBootstrapFile;
 }
