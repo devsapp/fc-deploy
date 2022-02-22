@@ -44,6 +44,8 @@ export class AlicloudClient extends IInputsBase {
       apiVersion,
       accessKeyId: this.credentials?.AccessKeyID,
       accessKeySecret: this.credentials?.AccessKeySecret,
+      // @ts-ignore
+      securityToken: this.credentials?.SecurityToken,
       opts: {
         timeout: this.timeout || defaultTimeout * 1000,
       },

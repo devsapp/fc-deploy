@@ -59,6 +59,8 @@ export default class HandlerService {
       apiVersion,
       accessKeyId: profile.AccessKeyID,
       accessKeySecret: profile.AccessKeySecret,
+      // @ts-ignore
+      securityToken: profile.SecurityToken,
       opts: {
         timeout: timeout * 1000,
       },
