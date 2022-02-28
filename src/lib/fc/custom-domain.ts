@@ -16,6 +16,7 @@ export interface CustomDomainConfig {
   protocol: 'HTTP' | 'HTTP,HTTPS';
   routeConfigs: RouteConfig[];
   certConfig?: CertConfig;
+  certId?: Number;
 }
 
 function instanceOfCustomDomainConfig(data: any): data is CustomDomainConfig {
@@ -134,7 +135,9 @@ export class FcCustomDomain extends IInputsBase {
       throw new Error('There should be http trigger when custom domain exists');
     }
     if (this.customDomainConf.protocol?.toLocaleLowerCase().includes('https')) {
-      if (!Object.prototype.hasOwnProperty.call(this.customDomainConf, 'certConfig')) {
+      const hasCertConfig = Object.prototype.hasOwnProperty.call(this.customDomainConf, 'certConfig');
+      const hasCertId = Object.prototype.hasOwnProperty.call(this.customDomainConf, 'certId');
+      if (!(hasCertConfig || hasCertId)) {
         throw new Error(
           'Must config "CertConfig" for CustomDomain when using "HTTP,HTTPS" protocol\nYou can refer to https://help.aliyun.com/document_detail/90759.html?spm=a2c4g.11186623.6.665.446a1bae462uKK for help',
         );
@@ -198,18 +201,27 @@ export class FcCustomDomain extends IInputsBase {
     return state.domainName;
   }
 
-  async makeCustomDomain(args: string): Promise<CustomDomainConfig> {
+  async makeCustomDomain(args: string, credentials): Promise<CustomDomainConfig> {
     const resolvedCustomDomainConf: CustomDomainConfig = _.cloneDeep(this.customDomainConf);
+    const { HttpsCertConfig } = await core.loadComponent('devsapp/fc-core');
     if (!_.isEmpty(this.customDomainConf.certConfig)) {
-      const { privateKey } = this.customDomainConf.certConfig;
-      const { certificate } = this.customDomainConf.certConfig;
-
-      if (privateKey && privateKey.endsWith('.pem')) {
-        resolvedCustomDomainConf.certConfig.privateKey = await fse.readFile(privateKey, 'utf-8');
+      const { privateKey, certificate } = this.customDomainConf.certConfig;
+      if (privateKey) {
+        resolvedCustomDomainConf.certConfig.privateKey = await HttpsCertConfig.getCertKeyContent(privateKey, {
+          credentials,
+        });
       }
-      if (certificate && certificate.endsWith('.pem')) {
-        resolvedCustomDomainConf.certConfig.certificate = await fse.readFile(certificate, 'utf-8');
+      if (certificate) {
+        resolvedCustomDomainConf.certConfig.certificate = await HttpsCertConfig.getCertKeyContent(certificate, {
+          credentials,
+        });
       }
+    } else if (this.customDomainConf.certId) {
+      const { HttpsCertConfig } = await core.loadComponent('devsapp/fc-core');
+      resolvedCustomDomainConf.certConfig = await HttpsCertConfig.getUserCertificateDetail(this.customDomainConf.certId, {
+        credentials,
+      });
+      delete resolvedCustomDomainConf.certId;
     }
     delete resolvedCustomDomainConf.routeConfigs;
 
