@@ -217,7 +217,6 @@ export class FcCustomDomain extends IInputsBase {
         });
       }
     } else if (this.customDomainConf.certId) {
-      const { HttpsCertConfig } = await core.loadComponent('devsapp/fc-core');
       resolvedCustomDomainConf.certConfig = await HttpsCertConfig.getUserCertificateDetail(this.customDomainConf.certId, {
         credentials,
       });
