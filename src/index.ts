@@ -360,7 +360,7 @@ export default class FcDeployComponent {
             }
             const resolvedCustomDomainConf: CustomDomainConfig = await this.fcCustomDomains[
               i
-            ].makeCustomDomain(this.args);
+            ].makeCustomDomain(this.args, this.credentials);
             hasAutoCustomDomainNameInDomains =
               hasAutoCustomDomainNameInDomains || this.fcCustomDomains[i].isDomainNameAuto;
             resolvedCustomDomainConfs.push(resolvedCustomDomainConf);
@@ -604,7 +604,7 @@ export default class FcDeployComponent {
     const removedCustomDomains: string[] = [];
     for (const fcCustomDomain of this.fcCustomDomains) {
       const resolvedCustomDomainConf: CustomDomainConfig = await fcCustomDomain.makeCustomDomain(
-        this.args,
+        this.args, this.credentials,
       );
       logger.debug(
         `waiting for custom domain: ${resolvedCustomDomainConf.domainName} to be removed.`,
