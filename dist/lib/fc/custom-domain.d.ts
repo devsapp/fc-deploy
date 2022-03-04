@@ -5,6 +5,7 @@ export interface CustomDomainConfig {
     protocol: 'HTTP' | 'HTTP,HTTPS';
     routeConfigs: RouteConfig[];
     certConfig?: CertConfig;
+    certId?: Number;
 }
 interface RouteConfig {
     path: string;
@@ -33,6 +34,6 @@ export declare class FcCustomDomain extends IInputsBase {
     initLocalConfig(): Promise<void>;
     delStatedCustomDomainConf(): Promise<void>;
     getStatedCustomDomainConf(): Promise<string>;
-    makeCustomDomain(args: string): Promise<CustomDomainConfig>;
+    makeCustomDomain(args: string, credentials: any): Promise<CustomDomainConfig>;
 }
 export {};
