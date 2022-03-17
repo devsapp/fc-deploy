@@ -1,6 +1,5 @@
 import * as _ from 'lodash';
 import * as core from '@serverless-devs/core';
-import logger from '../common/logger';
 
 export class IInputsBase {
   @core.HLogger('FC-DEPLOY') logger: core.ILogger;
@@ -57,15 +56,8 @@ export function replaceProjectName(
 }
 
 export async function getFcEndpoint(): Promise<string | undefined> {
-  logger.spinner?.stop();
-  const fcDefault = await core.loadComponent('devsapp/fc-default');
-  logger.spinner?.start();
-  const fcEndpoint: string = await fcDefault.get({ args: 'fc-endpoint' });
-  if (!fcEndpoint) {
-    return undefined;
-  }
-  const enableFcEndpoint: any = await fcDefault.get({ args: 'enable-fc-endpoint' });
-  return enableFcEndpoint === true || enableFcEndpoint === 'true' ? fcEndpoint : undefined;
+  const fcCore = await core.loadComponent('devsapp/fc-core');
+  return await fcCore.getEndpointFromFcDefault();
 }
 
 export interface IDeployWithRetryOptions {

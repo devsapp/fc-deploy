@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 import { generateRamResourceName, CustomPolicyConfig, AlicloudRam } from '../resource/ram';
 import { DESCRIPTION } from '../static';
-import { ServerlessProfile, ICredentials } from '../profile';
+import { ServerlessProfile, ICredentials, getFcEndpoint } from '../profile';
 import FcDeploy from './fc-deploy';
 import StdoutFormatter from '../component/stdout-formatter';
 
@@ -370,8 +370,10 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
     return roleArn;
   }
 
-  generateSystemDomain(): string {
-    return `https://${this.credentials.AccountID}.${this.region}.fc.aliyuncs.com/2016-08-15/proxy/${this.serviceName}/${this.functionName}/`;
+  async generateSystemDomain(): Promise<string> {
+    const customEndpoint = await getFcEndpoint();
+    const endpoint = customEndpoint || `https://${this.credentials.AccountID}.${this.region}.fc.aliyuncs.com`;
+    return `${endpoint}/2016-08-15/proxy/${this.serviceName}/${this.functionName}/`;
   }
 
   async makeTrigger(): Promise<TriggerConfig> {
