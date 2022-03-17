@@ -1,7 +1,7 @@
 import FC from '@alicloud/fc2';
 import Pop from '@alicloud/pop-core';
 import { ICredentials } from '../../common/entity';
-import * as core from '@serverless-devs/core';
+import { getFcEndpoint } from '../profile';
 
 export default class Client {
   static region: string;
@@ -14,7 +14,7 @@ export default class Client {
       AccessKeySecret,
       SecurityToken,
     } = this.credentials;
-    const endpoint = await Client.getFcEndpoint();
+    const endpoint = await getFcEndpoint();
     return new FC(AccountID, {
       accessKeyID: AccessKeyID,
       accessKeySecret: AccessKeySecret,
@@ -45,13 +45,5 @@ export default class Client {
         timeout: 6000000,
       },
     });
-  }
-
-  static async getFcEndpoint(): Promise<string | undefined> {
-    const fcDefault = await core.loadComponent('devsapp/fc-default');
-    const fcEndpoint: string = await fcDefault.get({ args: 'fc-endpoint' });
-    if (!fcEndpoint) { return undefined; }
-    const enableFcEndpoint: any = await fcDefault.get({ args: 'enable-fc-endpoint' });
-    return (enableFcEndpoint === true || enableFcEndpoint === 'true') ? fcEndpoint : undefined;
   }
 }

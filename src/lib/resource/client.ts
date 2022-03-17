@@ -68,6 +68,7 @@ export class AlicloudClient extends IInputsBase {
     return new ROAClient({
       accessKeyId: this.credentials?.AccessKeyID,
       accessKeySecret: this.credentials?.AccessKeySecret,
+      securityToken: this.credentials?.SecurityToken,
       endpoint,
       apiVersion,
     });

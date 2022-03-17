@@ -404,7 +404,7 @@ export class FcService extends FcDeploy<ServiceConfig> {
     }
     if (!escapeNasCheck) {
       // user-defined nasConfig
-      const ensureVm = core.spinner('Ensuring nas dir...');
+      const ensureVm = core.spinner('Ensuring nas dir...\r');
       try {
         await alicloudNas.ensureNasDir(
           this.name,
@@ -414,7 +414,7 @@ export class FcService extends FcDeploy<ServiceConfig> {
           vpcConfig,
           roleArn,
         );
-        ensureVm?.stop();
+        ensureVm.stop();
       } catch (e) {
         ensureVm.fail();
         this.logger.debug(`Ensure nas dir failed: error: ${e}`);
