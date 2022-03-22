@@ -3,6 +3,7 @@ import Pop from '@alicloud/pop-core';
 import StdoutFormattter from '../../stdout-formatter';
 import { ICredentials, IProperties, IVpcConfig, IDeleteProperties } from '../interface';
 import logger from '../../../../common/logger';
+import { writeCreatCache } from '../../../utils/write-creat-cache';
 
 const requestOption = {
   method: 'POST',
@@ -42,8 +43,15 @@ export default class HandlerService {
   vpcClient: Pop;
   ecsClient: Pop;
   stdoutFormatter = StdoutFormattter.stdoutFormatter;
+  accountID: string;
+  serviceName: any;
+  configPath: any;
 
-  constructor(credentials: ICredentials) {
+  constructor(credentials: ICredentials, serviceName?: string, configPath?: string) {
+    this.accountID = credentials.AccountID;
+    this.serviceName = serviceName;
+    this.configPath = configPath;
+
     this.vpcClient = this.getPopClient('https://vpc.aliyuncs.com', '2016-04-28', credentials);
     this.ecsClient = this.getPopClient('https://ecs.aliyuncs.com', '2014-05-26', credentials);
   }
@@ -375,7 +383,15 @@ export default class HandlerService {
     };
     logger.debug(`createVSwitch params is ${JSON.stringify(params)}.`);
     const createRs: any = await this.vpcClient.request('CreateVSwitch', params, requestOption);
-    return createRs.VSwitchId;
+    const vswitchId = createRs.VSwitchId;
+    await writeCreatCache({
+      accountID: this.accountID,
+      region: regionId,
+      serviceName: this.serviceName,
+      configPath: this.configPath,
+      vswitchId,
+    });
+    return vswitchId;
   }
 
   async createVpc({ regionId, vpcName, description, cidrBlock }: IMackVpc): Promise<string> {
@@ -392,6 +408,13 @@ export default class HandlerService {
     const vpcId = createRs.VpcId;
     await this.waitVpcUntilAvaliable(regionId, vpcId);
     logger.debug(`Create vpc success, vpcId is: ${vpcId}`);
+    await writeCreatCache({
+      accountID: this.accountID,
+      region: regionId,
+      serviceName: this.serviceName,
+      configPath: this.configPath,
+      vpcId,
+    });
 
     return vpcId;
   }
@@ -418,6 +441,13 @@ export default class HandlerService {
 
     const id = createRs.SecurityGroupId;
     logger.debug(`Create securityGroup success, vpcId is: ${id}`);
+    await writeCreatCache({
+      accountID: this.accountID,
+      region: regionId,
+      serviceName: this.serviceName,
+      configPath: this.configPath,
+      securityGroupId: id,
+    });
 
     return id;
   }
@@ -442,7 +472,7 @@ export default class HandlerService {
       if (vpcs && vpcs.length) {
         status = vpcs[0].Status;
 
-        logger.info(
+        logger.debug(
           `VPC already created, waiting for status to be 'Available', the status is ${status} currently`,
         );
       }

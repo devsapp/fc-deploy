@@ -221,6 +221,7 @@ export class FcService extends FcDeploy<ServiceConfig> {
     try {
       const roleArn = await alicloudRam.makeRole(
         roleName,
+        this.name,
         undefined,
         roleDescription,
         undefined,
@@ -342,7 +343,7 @@ export class FcService extends FcDeploy<ServiceConfig> {
         this.region,
         this.curPath,
       );
-      const vpcDeployRes = await alicloudVpc.createDefaultVpc();
+      const vpcDeployRes = await alicloudVpc.createDefaultVpc(this.name);
       this.logger.debug(
         `Generated vpcConfig: \n${yaml.dump(vpcDeployRes, {
           styles: {

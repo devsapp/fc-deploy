@@ -361,6 +361,7 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
     );
     const roleArn = await alicloudRam.makeRole(
       roleName,
+      this.serviceName,
       undefined,
       DESCRIPTION,
       serviceOfAssumeRolePolicy || undefined,

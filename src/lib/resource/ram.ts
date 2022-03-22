@@ -79,6 +79,7 @@ export class AlicloudRam extends AlicloudClient {
 
   async makeRole(
     roleName: string,
+    serviceName: string,
     args?: string,
     description?: string,
     resourceName?: string,
@@ -97,6 +98,7 @@ export class AlicloudRam extends AlicloudClient {
         assumeRolePolicy,
         attachedPolicies,
         description,
+        serviceName,
       },
       this.region,
       this.credentials,

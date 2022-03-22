@@ -4,14 +4,16 @@ import { Component } from './component';
 
 export class RamComponent extends Component {
   readonly roleName: string;
+  readonly serviceName: string;
   readonly resourceName?: string;
   readonly assumeRolePolicy?: any;
   readonly attachedPolicies?: any[];
   readonly description?: string;
 
-  constructor(serverlessProfile: ServerlessProfile, { roleName, resourceName, assumeRolePolicy, attachedPolicies, description }, region: string, credentials: ICredentials, curPath?: string) {
+  constructor(serverlessProfile: ServerlessProfile, { roleName, resourceName, assumeRolePolicy, attachedPolicies, description, serviceName }, region: string, credentials: ICredentials, curPath?: string) {
     super(serverlessProfile, region, credentials, curPath);
     this.roleName = roleName;
+    this.serviceName = serviceName;
     if (!_.isNil(resourceName)) { this.resourceName = resourceName; }
     if (!_.isNil(assumeRolePolicy)) { this.assumeRolePolicy = assumeRolePolicy; }
     if (!_.isNil(attachedPolicies)) { this.attachedPolicies = attachedPolicies; }
@@ -21,6 +23,8 @@ export class RamComponent extends Component {
   genComponentProp(): { [key: string]: any } {
     const prop = Object.assign({}, {
       name: this.roleName,
+      region: this.region,
+      serviceName: this.serviceName,
       description: this.description,
     });
     if (this.attachedPolicies) {
