@@ -57,7 +57,7 @@ export default class Component {
     }
 
     if (parsedArgs.data?.help) {
-      return help();
+      return help('');
     }
 
     const deployRes = await Deploy.deploy(newInputs.props, Object.assign({

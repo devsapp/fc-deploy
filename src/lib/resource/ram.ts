@@ -5,7 +5,7 @@ import { generateResourceName } from '../utils/utils';
 import _ from 'lodash';
 import { FC_DEFAULT_ROLE } from '../static';
 import logger from '../../common/logger';
-import Ram from '../component/ram/index';
+import * as core from '@serverless-devs/core';
 
 export interface RoleConfig {
   name?: string;
@@ -79,6 +79,7 @@ export class AlicloudRam extends AlicloudClient {
 
   async makeRole(
     roleName: string,
+    serviceName: string,
     args?: string,
     description?: string,
     resourceName?: string,
@@ -97,6 +98,7 @@ export class AlicloudRam extends AlicloudClient {
         assumeRolePolicy,
         attachedPolicies,
         description,
+        serviceName,
       },
       this.region,
       this.credentials,
@@ -104,7 +106,7 @@ export class AlicloudRam extends AlicloudClient {
     );
     const ramComponentInputs = ramComponent.genComponentInputs('ram', args);
     logger.spinner?.stop();
-    const ramComponentIns = new Ram();
+    const ramComponentIns = await core.loadComponent('devsapp/ram');
     logger.spinner?.start();
     const roleArn = await ramComponentIns.deploy(ramComponentInputs);
     return roleArn;

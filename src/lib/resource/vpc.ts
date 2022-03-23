@@ -89,7 +89,7 @@ export class AlicloudVpc extends AlicloudClient {
     return usedZoneId;
   }
 
-  async createDefaultVpc() {
+  async createDefaultVpc(serviceName) {
     const zoneId = await this.selectAllowedVSwitchZone();
     const profileOfVpc = replaceProjectName(this.serverlessProfile, `${this.serverlessProfile?.project.projectName}-vpc-project`);
     const vpcComponent = new VpcComponent(profileOfVpc, {
@@ -106,7 +106,7 @@ export class AlicloudVpc extends AlicloudClient {
     // load vpc component
     logger.spinner?.stop();
     const vpcComponentIns = new Vpc();
-    const res = await vpcComponentIns.create(vpcComponentInputs);
+    const res = await vpcComponentIns.create(vpcComponentInputs, serviceName, this.curPath);
     logger.spinner?.start();
     return res;
   }

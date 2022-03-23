@@ -9,7 +9,7 @@ import HandlerService from './utils/handlerService';
 import logger from '../../../common/logger';
 
 export default class VpcCompoent extends Base {
-  async create(inputs: IInputs) {
+  async create(inputs: IInputs, serviceName: string, configPath: string) {
     logger.debug('Create vpc start...');
     logger.debug(`[inputs params: ${JSON.stringify(inputs.props)}`);
 
@@ -25,7 +25,7 @@ export default class VpcCompoent extends Base {
     const credential = inputs.credentials || await getCredential(inputs.project.access);
     const properties = this.checkPropertiesAndGenerateResourcesName(_.cloneDeep(inputs.props));
     logger.debug(`Properties values: ${JSON.stringify(properties)}.`);
-    const client = new HandlerService(credential);
+    const client = new HandlerService(credential, serviceName, configPath);
     const vpcConfig = await client.create(properties);
 
     logger.debug(`Create vpc success, config is: ${JSON.stringify(vpcConfig)}.`);

@@ -80,8 +80,8 @@ export default class FcBaseComponent {
     await this.report('fc-deploy-domain', 'remove', fcCustomDomain.credentials.AccountID);
     const removeMsg = StdoutFormatter.stdoutFormatter.remove('custom domain', fcCustomDomain.customDomainConfig.domainName);
     logger.info(removeMsg);
-    const parsedArgs: {[key: string]: any} = core.commandParse({ args }, { boolean: ['y', 'assumeYes'] });
-    const assumeYes: boolean = parsedArgs.data?.y || parsedArgs.data?.assumeYes;
+    const parsedArgs: {[key: string]: any} = core.commandParse({ args }, { boolean: ['y', 'assume-yes', 'assumeYes'] });
+    const assumeYes: boolean = parsedArgs.data?.y || parsedArgs.data?.['assume-yes'] || parsedArgs.data?.assumeYes;
 
     const onlineCustomDomain = await fcCustomDomain.get();
     if (_.isEmpty(onlineCustomDomain)) {

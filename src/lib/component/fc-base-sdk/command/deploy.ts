@@ -12,6 +12,7 @@ import { IProperties } from '../../../../common/entity';
 import { isCode, isCustomContainerConfig } from '../../../../interface/function';
 import { makeDestination } from './function-async-config';
 import logger from '../../../../common/logger';
+import { getFcEndpoint } from '../../../profile';
 
 export default class Component {
   /**
@@ -252,7 +253,7 @@ export default class Component {
     }
 
     // 如果自定义 endpoint，layers 配置不能兜底
-    if (_.isEmpty(layers) && !(await Client.getFcEndpoint())) {
+    if (_.isEmpty(layers) && !(await getFcEndpoint())) {
       functionConfig.layers = [];
     }
 

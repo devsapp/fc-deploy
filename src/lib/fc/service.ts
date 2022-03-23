@@ -221,6 +221,7 @@ export class FcService extends FcDeploy<ServiceConfig> {
     try {
       const roleArn = await alicloudRam.makeRole(
         roleName,
+        this.name,
         undefined,
         roleDescription,
         undefined,
@@ -342,7 +343,7 @@ export class FcService extends FcDeploy<ServiceConfig> {
         this.region,
         this.curPath,
       );
-      const vpcDeployRes = await alicloudVpc.createDefaultVpc();
+      const vpcDeployRes = await alicloudVpc.createDefaultVpc(this.name);
       this.logger.debug(
         `Generated vpcConfig: \n${yaml.dump(vpcDeployRes, {
           styles: {
@@ -404,7 +405,7 @@ export class FcService extends FcDeploy<ServiceConfig> {
     }
     if (!escapeNasCheck) {
       // user-defined nasConfig
-      const ensureVm = core.spinner('Ensuring nas dir...');
+      const ensureVm = core.spinner('Ensuring nas dir...\r');
       try {
         await alicloudNas.ensureNasDir(
           this.name,
@@ -414,7 +415,7 @@ export class FcService extends FcDeploy<ServiceConfig> {
           vpcConfig,
           roleArn,
         );
-        ensureVm?.stop();
+        ensureVm.stop();
       } catch (e) {
         ensureVm.fail();
         this.logger.debug(`Ensure nas dir failed: error: ${e}`);
