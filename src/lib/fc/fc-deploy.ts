@@ -141,6 +141,9 @@ export default abstract class FcDeploy<T> extends IInputsBase {
         remoteConfig = info[type];
       }
     } catch (e) {
+      if (e?.name === 'CatchableError') {
+        throw e;
+      }
       if (!e.toString().includes('NotFoundError')) {
         this.logger.warn(
           StdoutFormatter.stdoutFormatter.warn(

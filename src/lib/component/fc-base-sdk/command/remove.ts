@@ -1,9 +1,10 @@
-import { spinner, getState, setState } from '@serverless-devs/core';
+import { spinner, getState, setState, fse } from '@serverless-devs/core';
 import _ from 'lodash';
 import Client from '../../../utils/client';
 import { IProperties } from '../../../../common/entity';
-import { promptForConfirmOrDetails, tableShow } from '../../../utils/utils';
+import { getStateFilePath, promptForConfirmOrDetails, tableShow } from '../../../utils/utils';
 import logger from '../../../../common/logger';
+import { getStateId } from '../../../utils/write-creat-cache';
 
 const errorCode = ['ServiceNotFound', 'FunctionNotFound', 'TriggerNotFound'];
 interface RemoveInputsProps {
@@ -15,9 +16,11 @@ interface RemoveInputsProps {
 export default class Component {
   fcClient: any;
   region: any;
+  configPath: string;
   removeNameList: any = {};
 
-  constructor(region) {
+  constructor(region, configPath) {
+    this.configPath = configPath;
     this.region = region;
   }
 
@@ -180,6 +183,11 @@ export default class Component {
       }
       vm.warn(`[${ex.code}], ${ex.message}`);
     }
+    // 删除创建的缓存
+    try {
+      const { stateId, cachePath } = await getStateId(this.fcClient.accountid, this.region, serviceName, this.configPath);
+      await fse.remove(getStateFilePath(stateId, cachePath));
+    } catch (_ex) { /**/ }
   }
 
   private async deleteFunction(serviceName, functionName) {

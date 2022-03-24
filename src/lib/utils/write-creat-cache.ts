@@ -2,9 +2,13 @@ import * as core from '@serverless-devs/core';
 import path from 'path';
 import logger from '../../common/logger';
 
-async function getStateId(accountID, region, serviceName) {
+export async function getStateId(accountID, region, serviceName, configPath) {
   const fcCore = await core.loadComponent('devsapp/fc-core');
-  return await fcCore.DeployCache.getCreateResourceStateID(accountID, region, serviceName);
+  const cachePath = path.join(configPath ? path.dirname(configPath) : process.cwd(), '.s');
+  return {
+    stateId: await fcCore.DeployCache.getCreateResourceStateID(accountID, region, serviceName),
+    cachePath,
+  };
 }
 
 interface WriteCreatCache {
@@ -26,9 +30,8 @@ export async function writeCreatCache({
     return;
   }
   try {
-    const stateId = await getStateId(accountID, region, serviceName);
-    const cachePath = path.join(configPath ? path.dirname(configPath) : process.cwd(), '.s');
-    const cacheData = (await core.getState(stateId, cachePath)) || {};
+    const { stateId, cachePath } = await getStateId(accountID, region, serviceName, configPath);
+    const cacheData = (await core.getState(stateId, cachePath,)) || {};
 
     if (vswitchId) {
       cacheData.vswitchId = vswitchId;

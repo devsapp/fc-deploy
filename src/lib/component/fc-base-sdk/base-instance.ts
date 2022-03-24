@@ -107,7 +107,7 @@ export default class Component {
       logger.error(` remove ${command} is not supported now.`);
       return help(REMOVE_HELP_INFO);
     }
-    const remove = new Remove(props.region);
+    const remove = new Remove(props.region, inputs.path?.configPath);
     await remove[command](props, { force, triggerName, useLocal }, command);
     this.__report({
       name: 'fc',
