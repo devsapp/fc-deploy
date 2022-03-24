@@ -31,7 +31,10 @@ export default class HandlerService {
     vpcClient: Pop;
     ecsClient: Pop;
     stdoutFormatter: any;
-    constructor(credentials: ICredentials);
+    accountID: string;
+    serviceName: any;
+    configPath: any;
+    constructor(credentials: ICredentials, serviceName?: string, configPath?: string);
     getPopClient(endpoint: string, apiVersion: string, profile: ICredentials): Pop;
     create(properties: IProperties): Promise<IVpcConfig>;
     delete(inputs: IDeleteProperties): Promise<void>;

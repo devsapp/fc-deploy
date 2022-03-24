@@ -31,7 +31,7 @@ export async function writeCreatCache({
   }
   try {
     const { stateId, cachePath } = await getStateId(accountID, region, serviceName, configPath);
-    const cacheData = (await core.getState(stateId, cachePath,)) || {};
+    const cacheData = (await core.getState(stateId, cachePath)) || {};
 
     if (vswitchId) {
       cacheData.vswitchId = vswitchId;

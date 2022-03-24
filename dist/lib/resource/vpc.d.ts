@@ -12,7 +12,7 @@ export declare class AlicloudVpc extends AlicloudClient {
     takeIntersection(vpcZones: any, fcAllowedZones: any, nasZones: any): any[];
     selectVSwitchZoneId(fcAllowedZones: any, vpcZones: any, nasZones: any): Promise<any>;
     selectAllowedVSwitchZone(): Promise<any>;
-    createDefaultVpc(): Promise<import("../component/vpc/interface").IVpcConfig>;
+    createDefaultVpc(serviceName: any): Promise<import("../component/vpc/interface").IVpcConfig>;
     describeVSwitchAttributes(vswitchId: any): Promise<any>;
     getVSwitchZoneId(vswitchId: any): Promise<any>;
     convertToFcAllowedZones(vswitchIds: string[]): Promise<any[]>;

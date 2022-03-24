@@ -5,5 +5,4 @@ export default class Client {
     static credentials: ICredentials;
     static fcClient(): Promise<any>;
     static xtraceClient(): Pop;
-    static getFcEndpoint(): Promise<string | undefined>;
 }
