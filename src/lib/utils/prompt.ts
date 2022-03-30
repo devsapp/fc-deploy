@@ -53,7 +53,7 @@ export async function promptForConfirmOrDetails({
   if (diff) {
     logger.log(`
 📑 Config check:
-Online status => Target Config
+Online status => Target Status
 ${diff}`);
   }
 
