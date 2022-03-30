@@ -420,7 +420,7 @@ export default class FcDeployComponent {
     if (needDeployService) {
       Object.assign(res, { service: resolvedServiceConf });
     }
-    const returnedFunctionConf: FunctionConfig = _.cloneDeep(resolvedFunctionConf);
+    const returnedFunctionConf: FunctionConfig = _.cloneDeep(this.fcFunction.statefulConfig);
     if (!_.isEmpty(resolvedFunctionConf?.codeUri)) {
       returnedFunctionConf.codeUri = this.fcFunction.useRemote
         ? this.fcFunction.remoteConfig?.codeUri
