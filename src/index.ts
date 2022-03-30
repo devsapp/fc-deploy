@@ -897,6 +897,9 @@ export default class FcDeployComponent {
         }
         return;
       } catch (ex) {
+        if (/^the size of file \d+ could not greater than \d+$/.test(ex.message)) {
+          throw new core.CatchableError(ex.message, 'For large code package upload, please refer to https://github.com/awesome-fc/fc-faq/blob/main/docs/大代码包部署的实践案例.md');
+        }
         if (ex.code === 'AccessDenied' || (logConfigIsAuto && isSlsNotExistException(ex))) {
           throw ex;
         }
