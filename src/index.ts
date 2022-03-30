@@ -146,7 +146,7 @@ export default class FcDeployComponent {
               StdoutFormatter.stdoutFormatter.warn('--push-registry', 'will be deprecated soon.'),
             );
           }
-          await this.fcFunction.init(useLocal, useRemote, assumeYes, _.cloneDeep(inputs));
+          await this.fcFunction.init(useLocal, useRemote, assumeYes, _.cloneDeep(inputs), type);
           if (this.fcFunction.useRemote) {
             logger.debug(`Function ${this.fcFunction.name} using online config, skip it.`);
             needDeployFunction = false;
