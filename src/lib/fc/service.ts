@@ -383,22 +383,29 @@ export class FcService extends FcDeploy<ServiceConfig> {
             'fc will try to generate related nas file system automatically',
           ),
         );
-        const nasDefaultConfig = await alicloudNas.createDefaultNas(
-          this.name,
-          vpcConfig,
-          `/${this.name}`,
-          roleArn,
-          assumeYes,
-        );
-        this.logger.debug(
-          `Generated nasConfig: \n${yaml.dump(nasDefaultConfig, {
-            styles: {
-              '!!null': 'canonical', // dump null as ~
-            },
-            sortKeys: true, // sort object keys
-          })}`,
-        );
-        return nasDefaultConfig;
+        try {
+          const nasDefaultConfig = await alicloudNas.createDefaultNas(
+            this.name,
+            vpcConfig,
+            `/${this.name}`,
+            roleArn,
+            assumeYes,
+          );
+          this.logger.debug(
+            `Generated nasConfig: \n${yaml.dump(nasDefaultConfig, {
+              styles: {
+                '!!null': 'canonical', // dump null as ~
+              },
+              sortKeys: true, // sort object keys
+            })}`,
+          );
+          return nasDefaultConfig;
+        } catch(ex) {
+          if ((ex?.message || '').includes('Your account does not open Nas Service yet or balance is insufficient')) {
+            ex.message = `${ex.message}\nOpen: https://nasnext.console.aliyun.com/cn-chengdu/filesystem`;
+          }
+          throw ex;
+        }
       } else {
         throw new Error('nasConfig only support auto/Auto when set to string.');
       }
