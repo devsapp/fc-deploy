@@ -400,7 +400,7 @@ export class FcService extends FcDeploy<ServiceConfig> {
             })}`,
           );
           return nasDefaultConfig;
-        } catch(ex) {
+        } catch (ex) {
           if ((ex?.message || '').includes('Your account does not open Nas Service yet or balance is insufficient')) {
             ex.message = `${ex.message}\nOpen: https://nasnext.console.aliyun.com/cn-chengdu/filesystem`;
           }
