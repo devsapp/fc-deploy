@@ -20,6 +20,7 @@ export interface ServerlessProfile {
         access: string;
         projectName: string;
     };
+    credentials?: any;
     appName: string;
 }
 export declare function replaceProjectName(originProfile: ServerlessProfile, projectName: string): ServerlessProfile;

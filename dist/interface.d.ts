@@ -6,6 +6,7 @@ import { ServerlessProfile } from './lib/profile';
 export interface IInputs extends ServerlessProfile {
     props?: IProperties;
     args?: string;
+    credentials?: any;
     path: {
         configPath: string;
     };
