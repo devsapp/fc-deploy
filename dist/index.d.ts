@@ -14,7 +14,6 @@ export default class FcDeployComponent {
     help(): Promise<void>;
     remove(inputs: IInputs): Promise<any>;
     deployAutoNas(inputs: IInputs): Promise<any>;
-    report(componentName: string, command: string, accountID?: string, access?: string): Promise<void>;
     private checkIfResourceExistOnline;
     private handlerInputs;
     private deployWithRetry;
