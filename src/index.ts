@@ -675,33 +675,6 @@ export default class FcDeployComponent {
     return nasConfig;
   }
 
-  async report(
-    componentName: string,
-    command: string,
-    accountID?: string,
-    access?: string,
-  ): Promise<void> {
-    let uid: string = accountID;
-    if (!accountID && !access) {
-      const credentials: ICredentials = await core.getCredential(access);
-      uid = credentials.AccountID;
-    }
-    core
-      .reportComponent(componentName, {
-        command,
-        uid,
-      })
-      .catch((e) => {
-        logger.warn(
-          StdoutFormatter.stdoutFormatter.warn(
-            'component report',
-            `component name: ${componentName}, method: ${command}`,
-            e.message,
-          ),
-        );
-      });
-  }
-
   private async checkIfResourceExistOnline(
     resourceType: string,
     resourceName?: any,
@@ -740,13 +713,7 @@ export default class FcDeployComponent {
     await StdoutFormatter.initStdout();
     const project = inputs?.project;
     this.access = project?.access;
-    this.credentials = await core.getCredential(this.access);
-    await this.report(
-      'fc-deploy',
-      inputs?.command,
-      this.credentials.AccountID,
-      inputs?.project?.access,
-    );
+    this.credentials = _.isEmpty(inputs.credentials) ? await core.getCredential(this.access) : inputs.credentials;
 
     const properties: IProperties = inputs?.props;
 

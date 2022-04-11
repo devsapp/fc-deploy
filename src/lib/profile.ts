@@ -20,6 +20,7 @@ export class IInputsBase {
     if (!_.isNil(curPath)) {
       this.curPath = curPath;
     }
+    serverlessProfile.credentials = credentials;
   }
 }
 export interface ICredentials {
@@ -43,6 +44,7 @@ export interface ServerlessProfile {
     access: string;
     projectName: string;
   };
+  credentials?: any;
   appName: string;
 }
 

@@ -22,7 +22,7 @@ export default class VpcCompoent extends Base {
     }
     await this.initStdout();
 
-    const credential = inputs.credentials || await getCredential(inputs.project.access);
+    const credential = _.isEmpty(inputs.credentials) ? await getCredential(inputs.project?.access) : inputs.credentials;
     const properties = this.checkPropertiesAndGenerateResourcesName(_.cloneDeep(inputs.props));
     logger.debug(`Properties values: ${JSON.stringify(properties)}.`);
     const client = new HandlerService(credential, serviceName, configPath);
@@ -50,7 +50,7 @@ export default class VpcCompoent extends Base {
     }
     await this.initStdout();
 
-    const credential = inputs.credentials || await getCredential(inputs.project?.access);
+    const credential = _.isEmpty(inputs.credentials) ? await getCredential(inputs.project?.access) : inputs.credentials;
     let properties: IDeleteProperties;
 
     const client = new HandlerService(credential);

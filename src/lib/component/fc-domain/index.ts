@@ -8,29 +8,12 @@ import { IInputs, IProperties } from './interface';
 import logger from '../../../common/logger';
 
 export default class FcBaseComponent {
-  private async report(componentName: string, command: string, accountID?: string, access?: string): Promise<void> {
-    let uid: string = accountID;
-    if (_.isEmpty(accountID)) {
-      const credentials: ICredentials = await core.getCredential(access);
-      uid = credentials.AccountID;
-    }
-
-    try {
-      core.reportComponent(componentName, {
-        command,
-        uid,
-      });
-    } catch (e) {
-      const warnMsg = StdoutFormatter.stdoutFormatter.warn('report', `Component ${componentName} report error`, e.message);
-      logger.warn(warnMsg);
-    }
-  }
   // 解析入参
   private async handlerInputs(inputs: IInputs) {
     const project = inputs?.project;
     const properties: IProperties = inputs?.props;
     const access: string = project?.access;
-    const credentials: ICredentials = await core.getCredential(access);
+    const credentials: ICredentials = _.isEmpty(inputs.credentials) ? await core.getCredential(access) : inputs.credentials;
     const args = inputs?.args;
     const curPath: string = inputs?.path;
     const projectName: string = project?.projectName;
@@ -64,7 +47,6 @@ export default class FcBaseComponent {
     const {
       fcCustomDomain,
     } = await this.handlerInputs(inputs);
-    await this.report('fc-deploy-domain', 'deploy', fcCustomDomain.credentials.AccountID);
     const createMsg = StdoutFormatter.stdoutFormatter.create('custom domain', fcCustomDomain.customDomainConfig.domainName);
     logger.debug(createMsg);
     await fcCustomDomain.deploy();
@@ -77,7 +59,6 @@ export default class FcBaseComponent {
       fcCustomDomain,
       args,
     } = await this.handlerInputs(inputs);
-    await this.report('fc-deploy-domain', 'remove', fcCustomDomain.credentials.AccountID);
     const removeMsg = StdoutFormatter.stdoutFormatter.remove('custom domain', fcCustomDomain.customDomainConfig.domainName);
     logger.info(removeMsg);
     const parsedArgs: {[key: string]: any} = core.commandParse({ args }, { boolean: ['y', 'assume-yes', 'assumeYes'] });
