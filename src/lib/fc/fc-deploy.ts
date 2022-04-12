@@ -48,7 +48,9 @@ export default abstract class FcDeploy<T> extends IInputsBase {
     if (!_.isEmpty(state)) {
       await core.setState(stateId, {});
     }
-    await fse.remove(getStateFilePath(stateId));
+    try {
+      await fse.remove(getStateFilePath(stateId));
+    } catch (_ex) { /**/ }
   }
 
   async getState(): Promise<any> {

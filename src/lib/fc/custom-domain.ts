@@ -190,7 +190,9 @@ export class FcCustomDomain extends IInputsBase {
     }
     // 预期是删除掉这个文件，但是预防后面 core 修改逻辑导致问题，先清空内容再删除文件。
     await core.setState(this.stateId, {});
-    await fse.remove(getStateFilePath(this.stateId));
+    try {
+      await fse.remove(getStateFilePath(this.stateId));
+    } catch (_ex) { /**/ }
   }
 
   async getStatedCustomDomainConf(): Promise<string> {
