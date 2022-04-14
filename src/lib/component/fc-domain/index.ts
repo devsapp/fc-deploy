@@ -59,8 +59,8 @@ export default class FcBaseComponent {
       fcCustomDomain,
       args,
     } = await this.handlerInputs(inputs);
-    const removeMsg = StdoutFormatter.stdoutFormatter.remove('custom domain', fcCustomDomain.customDomainConfig.domainName);
-    logger.info(removeMsg);
+    const domainName = fcCustomDomain?.customDomainConfig?.domainName;
+    logger.debug(`Removing custom domain: ${domainName}`);
     const parsedArgs: {[key: string]: any} = core.commandParse({ args }, { boolean: ['y', 'assume-yes', 'assumeYes'] });
     const assumeYes: boolean = parsedArgs.data?.y || parsedArgs.data?.['assume-yes'] || parsedArgs.data?.assumeYes;
 
@@ -70,8 +70,15 @@ export default class FcBaseComponent {
       return;
     }
     if (assumeYes || await promptForConfirmContinue(`Are you sure to remove custom domain: ${JSON.stringify(onlineCustomDomain.data)}?`)) {
-      await fcCustomDomain.remove();
-      logger.debug(`${fcCustomDomain.customDomainConfig.domainName} is removed.`);
+      const vm = core.spinner(`Delete domain ${domainName}...`);
+      try {
+        await fcCustomDomain.remove();
+        vm.succeed(`Delete domain ${domainName} success`);
+      } catch (ex) {
+        vm.fail();
+        throw ex;
+      }
+      logger.debug(`${domainName} is removed.`);
     } else {
       logger.info(`cancel removing custom domain: ${fcCustomDomain.customDomainConfig.domainName}`);
     }
