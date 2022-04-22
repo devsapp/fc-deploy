@@ -39,7 +39,7 @@ export class AlicloudAcr extends AlicloudClient {
     const httpMethod = 'GET';
     const uriPath = '/tokens';
     const queries: any = {};
-    const body = '{}';
+    const body = '';
     const headers: any = {
       'Content-Type': 'application/json',
     };

@@ -2,12 +2,15 @@ import * as core from '@serverless-devs/core';
 import path from 'path';
 import logger from '../../common/logger';
 
-export async function getStateId(accountID, region, serviceName, configPath) {
+export async function getCreateResourceState(accountID, region, serviceName, configPath) {
   const fcCore = await core.loadComponent('devsapp/fc-core');
-  const cachePath = path.join(configPath ? path.dirname(configPath) : process.cwd(), '.s');
+  const sPath = configPath ? path.dirname(configPath) : process.cwd();
+  const cachePath = path.join(sPath, '.s');
   return {
     stateId: await fcCore.DeployCache.getCreateResourceStateID(accountID, region, serviceName),
+    sPath,
     cachePath,
+    fcCore,
   };
 }
 
@@ -16,36 +19,29 @@ interface WriteCreatCache {
   region: string;
   serviceName: string;
   configPath: string;
-  vswitchId?: string;
-  vpcId?: string;
-  securityGroupId?: string;
+  key: string;
+  value: string;
 }
 
 // 记录组件创建的资源
 export async function writeCreatCache({
   accountID, region, serviceName, configPath,
-  vswitchId, vpcId, securityGroupId,
+  key, value,
 }: WriteCreatCache) {
   if (!(region && serviceName)) { // region serviceName必须存在，否则不计入缓存
     return;
   }
   try {
-    const { stateId, cachePath } = await getStateId(accountID, region, serviceName, configPath);
-    const cacheData = (await core.getState(stateId, cachePath)) || {};
+    const { stateId, cachePath, fcCore, sPath } = await getCreateResourceState(accountID, region, serviceName, configPath);
 
-    if (vswitchId) {
-      cacheData.vswitchId = vswitchId;
+    if (['functionNames', 'domains'].includes(key)) {
+      const cacheData = (await core.getState(stateId, cachePath)) || {};
+      const itemData = core.lodash.get(cacheData, key, []);
+      itemData.push(value);
+      await fcCore.DeployCache.setCreateResourceState(stateId, { key, value: Array.from(new Set(itemData)) }, sPath);
+    } else {
+      await fcCore.DeployCache.setCreateResourceState(stateId, { key, value }, sPath);
     }
-
-    if (vpcId) {
-      cacheData.vpcId = vpcId;
-    }
-
-    if (securityGroupId) {
-      cacheData.securityGroupId = securityGroupId;
-    }
-
-    await core.setState(stateId, cacheData, cachePath);
   } catch (ex) {
     /* 不影响主进程 */
     logger.debug(ex);

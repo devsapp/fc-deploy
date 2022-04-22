@@ -13,8 +13,10 @@ import { isCode, isCustomContainerConfig } from '../../../../interface/function'
 import { makeDestination } from './function-async-config';
 import logger from '../../../../common/logger';
 import { getFcEndpoint } from '../../../profile';
+import { writeCreatCache } from '../../../utils/write-creat-cache';
 
 export default class Component {
+  static configPath;
   /**
    * 部署资源
    * @param props
@@ -176,6 +178,14 @@ export default class Component {
     let res;
     try {
       res = await fcClient.createService(name, serviceConfig);
+      await writeCreatCache({
+        accountID: Client.credentials.AccountID,
+        region: Client.region,
+        serviceName: name,
+        configPath: this.configPath,
+        key: 'serviceName',
+        value: name,
+      });
     } catch (ex) {
       if (ex.code !== 'ServiceAlreadyExists') {
         logger.debug(`ex code: ${ex.code}, ex: ${ex.message}`);
@@ -279,6 +289,14 @@ export default class Component {
       }
       functionConfig.functionName = functionName;
       res = await fcClient.createFunction(serviceName, functionConfig);
+      await writeCreatCache({
+        accountID: Client.credentials.AccountID,
+        region: Client.region,
+        serviceName,
+        configPath: this.configPath,
+        key: 'functionNames',
+        value: `${serviceName}/${functionName}`,
+      });
     }
 
     let asyncWarn = '';

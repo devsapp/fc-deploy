@@ -401,7 +401,7 @@ export default class FcDeployComponent {
             const fcDoaminComponentIns = new FcDomain();
             logger.spinner?.start();
             const domainResData =
-              (await fcDoaminComponentIns.deploy(fcDomainComponentInputs)) || {};
+              (await fcDoaminComponentIns.deploy(fcDomainComponentInputs, this.fcService.name)) || {};
             // 将部署结果写入缓存
             if (!_.isEmpty(domainResData)) {
               await core.setState(resolvedCustomDomainConf.domainName, domainResData);
@@ -496,7 +496,7 @@ export default class FcDeployComponent {
       core.help(REMOVE_HELP_INFO);
       return;
     }
-    const nonOptionsArg = nonOptionsArgs[0] || 'service';
+    const nonOptionsArg = nonOptionsArgs[0] || 'all';
     if (!SUPPORTED_REMOVE_ARGS.includes(nonOptionsArg)) {
       logger.error(` Remove ${nonOptionsArg} is not supported now.`);
       // help info
@@ -504,6 +504,7 @@ export default class FcDeployComponent {
       return;
     }
 
+    let removeRes: any = {};
     if (nonOptionsArg !== 'domain') {
       if (['service', 'all'].includes(nonOptionsArg)) {
         await this.fcService.initRemote('service', this.fcService.name);
@@ -554,7 +555,7 @@ export default class FcDeployComponent {
       );
       const fcBaseComponentInputs = fcBaseComponent.genComponentInputs(componentName, this.args);
 
-      const removeRes = await fcBaseComponentIns.remove(fcBaseComponentInputs);
+      removeRes = await fcBaseComponentIns.remove(fcBaseComponentInputs);
       // unset state
       if (!_.isEmpty(this.fcTriggers)) {
         for (let i = 0; i < this.fcTriggers.length; i++) {
@@ -572,7 +573,7 @@ export default class FcDeployComponent {
           await this.fcFunction.unsetState();
         }
       }
-      if (nonOptionsArg === 'service') {
+      if (nonOptionsArg === 'service' || nonOptionsArg === 'all') {
         if (!_.isEmpty(this.fcService)) {
           await this.fcService.unsetState();
         }
@@ -590,7 +591,9 @@ export default class FcDeployComponent {
           logger.debug(e);
         }
       }
+    }
 
+    if (nonOptionsArg !== 'domain' && (nonOptionsArg === 'all' && _.isEmpty(this.fcCustomDomains))) {
       return removeRes;
     }
     // remove domain
@@ -622,7 +625,9 @@ export default class FcDeployComponent {
       removedCustomDomains.push(resolvedCustomDomainConf.domainName);
       await fcCustomDomain.delStatedCustomDomainConf();
     }
-    return `Remove custom domain: ${removedCustomDomains.map((t) => t)}`;
+    removeRes.domain = removedCustomDomains;
+
+    return removeRes;
   }
 
   async deployAutoNas(inputs: IInputs): Promise<any> {

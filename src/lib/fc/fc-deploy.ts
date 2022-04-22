@@ -44,7 +44,7 @@ export default abstract class FcDeploy<T> extends IInputsBase {
   async unsetState(): Promise<void> {
     const state: any = await this.getState();
     const stateId = this.genStateID();
-    // 预期是删除掉这个文件，但是预防后面 core 修改逻辑导致问题，先清空内容再删除文件。
+    // 预期是删除掉这个文件，但是预防后面 core 修改逻辑导致删除失败的问题，先清空内容再删除文件。
     if (!_.isEmpty(state)) {
       await core.setState(stateId, {});
     }

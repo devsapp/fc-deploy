@@ -4,7 +4,7 @@ import Client from '../../../utils/client';
 import { IProperties } from '../../../../common/entity';
 import { getStateFilePath, promptForConfirmOrDetails, tableShow } from '../../../utils/utils';
 import logger from '../../../../common/logger';
-import { getStateId } from '../../../utils/write-creat-cache';
+import { getCreateResourceState } from '../../../utils/write-creat-cache';
 
 const errorCode = ['ServiceNotFound', 'FunctionNotFound', 'TriggerNotFound'];
 interface RemoveInputsProps {
@@ -181,11 +181,11 @@ export default class Component {
         vm.fail();
         throw ex;
       }
-      vm.warn(`[${ex.code}], ${ex.message}`);
+      vm.warn(ex.message);
     }
     // 删除创建的缓存
     try {
-      const { stateId, cachePath } = await getStateId(this.fcClient.accountid, this.region, serviceName, this.configPath);
+      const { stateId, cachePath } = await getCreateResourceState(this.fcClient.accountid, this.region, serviceName, this.configPath);
       await fse.remove(getStateFilePath(stateId, cachePath));
     } catch (_ex) { /**/ }
   }
@@ -206,7 +206,7 @@ export default class Component {
         vm.fail();
         throw ex;
       }
-      vm.warn(`[${ex.code}], ${ex.message}`);
+      vm.warn(ex.message);
     }
   }
 
@@ -226,7 +226,7 @@ export default class Component {
         vm.fail();
         throw ex;
       }
-      vm.warn(`[${ex.code}], ${ex.message}`);
+      vm.warn(ex.message);
     }
   }
 
@@ -237,7 +237,7 @@ export default class Component {
     }
   }
 
-  private async getDeleteList(yamlArr: string[], arr: string[], showTip: {[key: string]: any}) {
+  private async getDeleteList(yamlArr: string[], arr: string[], showTip: { [key: string]: any }) {
     for (const name of arr) {
       if (!yamlArr.includes(name)) {
         tableShow(showTip.data, showTip.showKey);
