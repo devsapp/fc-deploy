@@ -35,7 +35,7 @@ export default class Component {
       string: ['trigger-name', 'type'],
       alias: { help: 'h', triggerName: 'trigger-name' },
     };
-    const parsedArgs: {[key: string]: any} = commandParse({ args: inputs.args }, apts);
+    const parsedArgs: { [key: string]: any } = commandParse({ args: inputs.args }, apts);
     const nonOptionsArgs = parsedArgs.data?._ || [];
     const {
       triggerName,
@@ -60,11 +60,13 @@ export default class Component {
       return help('');
     }
 
-    const deployRes = await Deploy.deploy(newInputs.props, Object.assign({
+    const payload = Object.assign({
       command: command === 'all' ? '' : command,
       type: type || 'all',
       onlyDelpoyTriggerName: triggerName,
-    }, deployOptions));
+    }, deployOptions)
+    Deploy.configPath = inputs?.path?.configPath;
+    const deployRes = await Deploy.deploy(newInputs.props, payload);
     const reportContent = this.reportNames(newInputs.props.region, deployRes);
     try {
       this.__report({
@@ -93,7 +95,7 @@ export default class Component {
       string: ['trigger-name'],
       alias: { help: 'h', triggerName: 'trigger-name', 'assume-yes': 'y' },
     };
-    const parsedArgs: {[key: string]: any} = commandParse({ args }, apts);
+    const parsedArgs: { [key: string]: any } = commandParse({ args }, apts);
     const nonOptionsArgs = parsedArgs.data?._ || [];
     const { y: force, triggerName, 'use-local': useLocal } = parsedArgs.data || {};
 

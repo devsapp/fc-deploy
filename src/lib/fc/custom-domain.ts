@@ -15,6 +15,7 @@ export interface CustomDomainConfig {
   domainName: string;
   protocol: 'HTTP' | 'HTTP,HTTPS';
   routeConfigs: RouteConfig[];
+  tlsConfig?: ITlsConfig;
   certConfig?: CertConfig;
   certId?: Number;
 }
@@ -29,6 +30,11 @@ interface RouteConfig {
   functionName?: string;
   qualifier?: string;
   methods?: string[];
+}
+
+interface ITlsConfig {
+  minVersion: string;
+  cipherSuites: string[];
 }
 
 interface CertConfig {

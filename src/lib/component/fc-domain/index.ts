@@ -43,13 +43,17 @@ export default class FcBaseComponent {
     };
   }
 
-  async deploy(inputs: IInputs): Promise<any> {
+  async deploy(inputs: IInputs, serviceName?: string): Promise<any> {
     const {
       fcCustomDomain,
     } = await this.handlerInputs(inputs);
     const createMsg = StdoutFormatter.stdoutFormatter.create('custom domain', fcCustomDomain.customDomainConfig.domainName);
     logger.debug(createMsg);
-    await fcCustomDomain.deploy();
+    await fcCustomDomain.deploy({
+      regionId: inputs?.props?.region,
+      serviceName: serviceName,
+      configPath: inputs?.path?.configPath,
+    });
     logger.debug(`custom domain: ${fcCustomDomain.customDomainConfig.domainName} is deployed.`);
     return (await fcCustomDomain.get())?.data;
   }
@@ -61,7 +65,7 @@ export default class FcBaseComponent {
     } = await this.handlerInputs(inputs);
     const domainName = fcCustomDomain?.customDomainConfig?.domainName;
     logger.debug(`Removing custom domain: ${domainName}`);
-    const parsedArgs: {[key: string]: any} = core.commandParse({ args }, { boolean: ['y', 'assume-yes', 'assumeYes'] });
+    const parsedArgs: { [key: string]: any } = core.commandParse({ args }, { boolean: ['y', 'assume-yes', 'assumeYes'] });
     const assumeYes: boolean = parsedArgs.data?.y || parsedArgs.data?.['assume-yes'] || parsedArgs.data?.assumeYes;
 
     const onlineCustomDomain = await fcCustomDomain.get();

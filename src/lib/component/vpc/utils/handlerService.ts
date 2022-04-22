@@ -389,7 +389,8 @@ export default class HandlerService {
       region: regionId,
       serviceName: this.serviceName,
       configPath: this.configPath,
-      vswitchId,
+      key: 'vswitchId',
+      value: vswitchId,
     });
     return vswitchId;
   }
@@ -413,7 +414,8 @@ export default class HandlerService {
       region: regionId,
       serviceName: this.serviceName,
       configPath: this.configPath,
-      vpcId,
+      key: 'vpcId',
+      value: vpcId,
     });
 
     return vpcId;
@@ -446,7 +448,8 @@ export default class HandlerService {
       region: regionId,
       serviceName: this.serviceName,
       configPath: this.configPath,
-      securityGroupId: id,
+      key: 'securityGroupId',
+      value: id,
     });
 
     return id;

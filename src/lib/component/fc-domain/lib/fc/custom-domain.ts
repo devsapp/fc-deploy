@@ -3,6 +3,7 @@ import { ICredentials } from '../profile';
 import promiseRetry from '../retry';
 import StdoutFormatter from '../../../stdout-formatter';
 import logger from '../../../../../common/logger';
+import { writeCreatCache } from '../../../../utils/write-creat-cache';
 
 export interface CustomDomainConfig {
   domainName: string;
@@ -78,8 +79,8 @@ export class FcCustomDomain {
     return true;
   }
 
-  resolveCustomDomainConfig(): {[key: string]: any} {
-    const options: {[key: string]: any} = { ...this.customDomainConfig };
+  resolveCustomDomainConfig(): { [key: string]: any } {
+    const options: { [key: string]: any } = { ...this.customDomainConfig };
     delete options.domainName;
     delete options.routeConfigs;
     Object.assign(options, {
@@ -90,7 +91,7 @@ export class FcCustomDomain {
     return options;
   }
 
-  async deploy(): Promise<void> {
+  async deploy(payload): Promise<void> {
     const isDomainExistOnline: boolean = await this.existOnline();
     const options = this.resolveCustomDomainConfig();
     logger.debug(`custom domain deploy options: ${JSON.stringify(options)}`);
@@ -98,6 +99,16 @@ export class FcCustomDomain {
       try {
         if (!isDomainExistOnline) {
           await this.fcClient.createCustomDomain(this.name, options);
+          if (payload?.regionId && payload?.serviceName) {
+            await writeCreatCache({
+              accountID: this.credentials.AccountID,
+              region: payload.regionId,
+              serviceName: payload.serviceName,
+              configPath: payload.configPath,
+              key: 'domains',
+              value: this.name,
+            });
+          }
         } else {
           await this.fcClient.updateCustomDomain(this.name, options);
         }
