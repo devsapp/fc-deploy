@@ -51,7 +51,7 @@ export default class FcBaseComponent {
     logger.debug(createMsg);
     await fcCustomDomain.deploy({
       regionId: inputs?.props?.region,
-      serviceName: serviceName,
+      serviceName,
       configPath: inputs?.path?.configPath,
     });
     logger.debug(`custom domain: ${fcCustomDomain.customDomainConfig.domainName} is deployed.`);

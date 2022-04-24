@@ -1,5 +1,6 @@
 import { IProperties } from '../../../../common/entity';
 export default class Component {
+    static configPath: any;
     /**
      * 部署资源
      * @param props

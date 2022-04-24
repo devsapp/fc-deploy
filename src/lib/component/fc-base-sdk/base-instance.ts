@@ -64,7 +64,7 @@ export default class Component {
       command: command === 'all' ? '' : command,
       type: type || 'all',
       onlyDelpoyTriggerName: triggerName,
-    }, deployOptions)
+    }, deployOptions);
     Deploy.configPath = inputs?.path?.configPath;
     const deployRes = await Deploy.deploy(newInputs.props, payload);
     const reportContent = this.reportNames(newInputs.props.region, deployRes);

@@ -29,7 +29,7 @@ export declare class FcCustomDomain {
     resolveCustomDomainConfig(): {
         [key: string]: any;
     };
-    deploy(): Promise<void>;
+    deploy(payload: any): Promise<void>;
     remove(): Promise<void>;
 }
 export {};
