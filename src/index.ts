@@ -436,7 +436,8 @@ export default class FcDeployComponent {
       for (const fcTrigger of this.fcTriggers) {
         // 只能同时部署一个 http trigger
         if (fcTrigger.isHttpTrigger()) {
-          Object.assign(res, { systemDomain: await fcTrigger.generateSystemDomain() });
+          const systemDomain = _.get(fcTrigger, 'remoteConfig.urlInternet', await fcTrigger.generateSystemDomain());
+          Object.assign(res, { systemDomain });
         }
       }
       Object.assign(res, {
