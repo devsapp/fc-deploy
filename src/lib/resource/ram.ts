@@ -119,7 +119,9 @@ export function extractRoleNameFromArn(roleArn: string): string {
 }
 
 export function checkRoleArnFormat(roleArn: string): void {
-  if (!roleArn.startsWith('acs:ram::')) {
-    throw new Error(`Invalid format of role arn: ${roleArn}, it should start with 'acs:ram::'`);
+  if (!/^acs:ram::[0-9]*:role\/.*$/.test(roleArn)) {
+    throw new Error(
+      `Invalid format of role arn: ${roleArn}, it should satisfy reg '^acs:ram::[0-9]*:role/.*$'.eg: acs:ram::123456:role/aliyunfcdefaultrole`,
+    );
   }
 }
