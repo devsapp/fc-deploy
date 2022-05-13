@@ -14,7 +14,12 @@ import {
   DEPLOY_SUPPORT_CONFIG_ARGS,
 } from './lib/static';
 import * as _ from 'lodash';
-import { ServerlessProfile, replaceProjectName, ICredentials, IDeployWithRetryOptions } from './lib/profile';
+import {
+  ServerlessProfile,
+  replaceProjectName,
+  ICredentials,
+  IDeployWithRetryOptions,
+} from './lib/profile';
 import { IProperties, IInputs } from './interface';
 import * as path from 'path';
 import { formatArgs, hasHttpPrefix } from './lib/utils/utils';
@@ -46,7 +51,7 @@ export default class FcDeployComponent {
       return;
     }
     const parsedArgs: { [key: string]: any } = core.commandParse(inputs, {
-      boolean: ['help', 'assume-yes', 'use-remote', 'use-local', 'skip-push', 'escape-nas-check'],
+      boolean: ['help', 'assume-yes', 'use-remote', 'use-local', 'skip-push'],
       string: ['type'],
       alias: { help: 'h', 'assume-yes': 'y' },
     });
@@ -56,8 +61,6 @@ export default class FcDeployComponent {
     const skipAutoPush: boolean = argsData['skip-push'];
     const useLocal: boolean = argsData['use-local'];
     const useRemote: boolean = argsData['use-remote'];
-    // 指定 --escape-nas-check 参数后，当用户使用自定义的 nasConfig，不会进行 nasDir 的检查
-    const escapeNasCheck: boolean = argsData['escape-nas-check'];
     let { type } = argsData;
     if (type && !DEPLOY_SUPPORT_CONFIG_ARGS.includes(type)) {
       core.help(DEPLOY_HELP_INFO);
@@ -127,7 +130,7 @@ export default class FcDeployComponent {
             logger.debug(`Service ${this.fcService.name} using online config, skip it.`);
             needDeployService = false;
           } else {
-            resolvedServiceConf = await this.fcService.makeService(assumeYes, escapeNasCheck);
+            resolvedServiceConf = await this.fcService.makeService(assumeYes);
             resolvedServiceConf.name = resolvedServiceConf.name || resolvedServiceConf.serviceName;
           }
           logger.debug(
@@ -243,7 +246,11 @@ export default class FcDeployComponent {
           componentName,
           formatArgs(resolvedArgs),
         );
-        await this.deployWithRetry(fcBaseComponentIns, fcBaseComponentInputs, deployWithRetryOptions);
+        await this.deployWithRetry(
+          fcBaseComponentIns,
+          fcBaseComponentInputs,
+          deployWithRetryOptions,
+        );
       }
       if (needDeployFunction) {
         logger.debug(StdoutFormatter.stdoutFormatter.create('function', resolvedFunctionConf.name));
@@ -260,7 +267,11 @@ export default class FcDeployComponent {
           componentName,
           formatArgs(resolvedArgs),
         );
-        await this.deployWithRetry(fcBaseComponentIns, fcBaseComponentInputs, deployWithRetryOptions);
+        await this.deployWithRetry(
+          fcBaseComponentIns,
+          fcBaseComponentInputs,
+          deployWithRetryOptions,
+        );
       }
 
       if (needDeployTrigger) {
@@ -294,7 +305,11 @@ export default class FcDeployComponent {
             componentName,
             formatArgs(resolvedArgs),
           );
-          await this.deployWithRetry(fcBaseComponentIns, fcBaseComponentInputs, deployWithRetryOptions);
+          await this.deployWithRetry(
+            fcBaseComponentIns,
+            fcBaseComponentInputs,
+            deployWithRetryOptions,
+          );
         }
       }
     }
@@ -401,7 +416,8 @@ export default class FcDeployComponent {
             const fcDoaminComponentIns = new FcDomain();
             logger.spinner?.start();
             const domainResData =
-              (await fcDoaminComponentIns.deploy(fcDomainComponentInputs, this.fcService.name)) || {};
+              (await fcDoaminComponentIns.deploy(fcDomainComponentInputs, this.fcService.name)) ||
+              {};
             // 将部署结果写入缓存
             if (!_.isEmpty(domainResData)) {
               await core.setState(resolvedCustomDomainConf.domainName, domainResData);
@@ -420,7 +436,9 @@ export default class FcDeployComponent {
     if (needDeployService) {
       Object.assign(res, { service: resolvedServiceConf });
     }
-    const returnedFunctionConf: FunctionConfig = _.cloneDeep(this.fcFunction?.statefulConfig || resolvedFunctionConf);
+    const returnedFunctionConf: FunctionConfig = _.cloneDeep(
+      this.fcFunction?.statefulConfig || resolvedFunctionConf,
+    );
     if (!_.isEmpty(resolvedFunctionConf?.codeUri)) {
       returnedFunctionConf.codeUri = this.fcFunction.useRemote
         ? this.fcFunction.remoteConfig?.codeUri
@@ -436,7 +454,11 @@ export default class FcDeployComponent {
       for (const fcTrigger of this.fcTriggers) {
         // 只能同时部署一个 http trigger
         if (fcTrigger.isHttpTrigger()) {
-          const systemDomain = _.get(fcTrigger, 'remoteConfig.urlInternet', await fcTrigger.generateSystemDomain());
+          const systemDomain = _.get(
+            fcTrigger,
+            'remoteConfig.urlInternet',
+            await fcTrigger.generateSystemDomain(),
+          );
           Object.assign(res, { systemDomain });
         }
       }
@@ -594,7 +616,7 @@ export default class FcDeployComponent {
       }
     }
 
-    if (nonOptionsArg !== 'domain' && (nonOptionsArg === 'all' && _.isEmpty(this.fcCustomDomains))) {
+    if (nonOptionsArg !== 'domain' && nonOptionsArg === 'all' && _.isEmpty(this.fcCustomDomains)) {
       return removeRes;
     }
     // remove domain
@@ -608,7 +630,8 @@ export default class FcDeployComponent {
     const removedCustomDomains: string[] = [];
     for (const fcCustomDomain of this.fcCustomDomains) {
       const resolvedCustomDomainConf: CustomDomainConfig = await fcCustomDomain.makeCustomDomain(
-        this.args, this.credentials,
+        this.args,
+        this.credentials,
       );
       logger.debug(
         `waiting for custom domain: ${resolvedCustomDomainConf.domainName} to be removed.`,
@@ -719,7 +742,9 @@ export default class FcDeployComponent {
     await StdoutFormatter.initStdout();
     const project = inputs?.project;
     this.access = project?.access;
-    this.credentials = _.isEmpty(inputs.credentials) ? await core.getCredential(this.access) : inputs.credentials;
+    this.credentials = _.isEmpty(inputs.credentials)
+      ? await core.getCredential(this.access)
+      : inputs.credentials;
 
     const properties: IProperties = inputs?.props;
 
@@ -851,7 +876,11 @@ export default class FcDeployComponent {
   }
 
   // 调用 fc-base/fc-base-sdk 组件部署资源
-  private async deployWithRetry(fcBaseComponentIns, fcBaseComponentInputs, deployWithRetryOptions: IDeployWithRetryOptions): Promise<any> {
+  private async deployWithRetry(
+    fcBaseComponentIns,
+    fcBaseComponentInputs,
+    deployWithRetryOptions: IDeployWithRetryOptions,
+  ): Promise<any> {
     // logConfig 配置是auto时重试部署 40 次,否则按照正常的逻辑重试
     const logConfigIsAuto = isAutoConfig(this.fcService?.localConfig?.logConfig);
     await promiseRetry(async (retry: any, times: number): Promise<any> => {
@@ -871,7 +900,10 @@ export default class FcDeployComponent {
         return;
       } catch (ex) {
         if (/^the size of file \d+ could not greater than \d+$/.test(ex.message)) {
-          throw new core.CatchableError(ex.message, 'For large code package upload, please refer to https://github.com/awesome-fc/fc-faq/blob/main/docs/大代码包部署的实践案例.md');
+          throw new core.CatchableError(
+            ex.message,
+            'For large code package upload, please refer to https://github.com/awesome-fc/fc-faq/blob/main/docs/大代码包部署的实践案例.md',
+          );
         }
         if (ex.code === 'AccessDenied' || (logConfigIsAuto && isSlsNotExistException(ex))) {
           throw ex;
