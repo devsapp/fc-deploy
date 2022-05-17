@@ -49,6 +49,7 @@ export class FcService extends FcDeploy<ServiceConfig> {
 
   readonly hasFunctionAsyncConfig: boolean;
   readonly hasCustomContainerConfig: boolean;
+  readonly runtime: string;
   hasAutoConfig: boolean;
   name: string;
 
@@ -70,6 +71,7 @@ export class FcService extends FcDeploy<ServiceConfig> {
     }
     this.hasCustomContainerConfig = _.has(functionConf, 'customContainerConfig');
     this.hasFunctionAsyncConfig = _.has(functionConf, 'asyncConfiguration');
+    this.runtime = _.get(functionConf, 'runtime');
     this.hasAutoConfig = false;
     this.name = serviceConf?.name;
   }
@@ -403,6 +405,7 @@ export class FcService extends FcDeploy<ServiceConfig> {
             `/${this.name}`,
             roleArn,
             assumeYes,
+            this.runtime,
           );
           this.logger.debug(
             `Generated nasConfig: \n${yaml.dump(nasDefaultConfig, {

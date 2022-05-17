@@ -41,6 +41,13 @@ export class AlicloudNas extends AlicloudClient {
     };
   }
 
+  static getUserId(runtime) {
+    if (runtime === 'custom' || runtime === 'custom-container') {
+      return 0;
+    }
+    return 10003;
+  }
+
   async getNasPopClient(): Promise<any> {
     return await this.getPopClient(`http://nas.${this.region}.aliyuncs.com`, '2017-06-26');
   }
@@ -81,7 +88,8 @@ export class AlicloudNas extends AlicloudClient {
     vpcConfig: VpcConfig,
     nasDir: string,
     roleArn: string,
-    assumeYes?: boolean,
+    assumeYes: boolean,
+    runtime: string,
   ): Promise<NasConfig> {
     const nasZones = await this.describeNasZones();
     const alicloudVpc = new AlicloudVpc(
@@ -99,8 +107,8 @@ export class AlicloudNas extends AlicloudClient {
     this.logger.debug(
       `getAvailableVSwitchId done, available vswitchID: ${vswitchId}, zoneId: ${zoneId}, storageType: ${storageType}`,
     );
-    const defaultNasUid = 10003;
-    const defaultNasGid = 10003;
+    const defaultNasUid = AlicloudNas.getUserId(runtime);
+    const defaultNasGid = AlicloudNas.getUserId(runtime);
     const defaultNasName = `Alibaba-FcDeployComponent-DefaultNas-${this.region}`;
     const profileOfNas = replaceProjectName(
       this.serverlessProfile,
