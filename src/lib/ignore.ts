@@ -1,7 +1,6 @@
-
-import parser from 'git-ignore-parser';
 import path from 'path';
-import { fse, ignore } from '@serverless-devs/core';
+import globby from 'globby';
+import { fse } from '@serverless-devs/core';
 
 const ignoredFile = ['.git', '.svn', '.env', '.DS_Store', 'template.packaged.yml', '.nas.yml', '.s/nas', '.s/tmp', '.s/package'];
 
@@ -40,15 +39,16 @@ export async function isIgnoredInCodeUri(actualCodeUri: string, runtime: string)
   const fileContent: string = await getIgnoreContent(ignoreFilePath);
   const fileContentList: string[] = fileContent.split('\n');
   const ignoreDependencies = selectIgnored(runtime);
-  // const ignoreList = await generateIgnoreFileFromNasYml(baseDir);
 
-  const ignoredPaths = parser(`${[...ignoredFile, ...ignoreDependencies, ...fileContentList].join('\n')}`);
-  const ig = ignore().add(ignoredPaths);
+  const packageJsonFilePaths = await globby([...ignoredFile, ...ignoreDependencies, ...fileContentList], {
+    cwd: actualCodeUri,
+    dot: true,
+    absolute: true,
+    onlyFiles: false,
+  });
 
   return function (f) {
-    const relativePath = path.relative(actualCodeUri, f);
-    if (relativePath === '') { return false; }
-    return ig.ignores(relativePath);
+    return packageJsonFilePaths.includes(f);
   };
 }
 
@@ -66,14 +66,15 @@ export async function isIgnored(baseDir: string, runtime: string, actualCodeUri:
     }
   }
   const ignoreDependencies = selectIgnored(runtime);
-  // const ignoreList = await generateIgnoreFileFromNasYml(baseDir);
 
-  const ignoredPaths = parser(`${[...ignoredFile, ...ignoreDependencies, ...fileContentList].join('\n')}`);
-  const ig = ignore().add(ignoredPaths);
+  const packageJsonFilePaths = await globby([...ignoredFile, ...ignoreDependencies, ...fileContentList], {
+    cwd: actualCodeUri,
+    dot: true,
+    absolute: true,
+    onlyFiles: false,
+  });
 
   return function (f) {
-    const relativePath = path.relative(actualCodeUri, f);
-    if (relativePath === '') { return false; }
-    return ig.ignores(relativePath);
+    return packageJsonFilePaths.includes(f);
   };
 }
