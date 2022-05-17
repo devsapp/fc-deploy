@@ -49,6 +49,7 @@ export class FcService extends FcDeploy<ServiceConfig> {
 
   readonly hasFunctionAsyncConfig: boolean;
   readonly hasCustomContainerConfig: boolean;
+  readonly runtime: string;
   hasAutoConfig: boolean;
   name: string;
 
@@ -70,6 +71,7 @@ export class FcService extends FcDeploy<ServiceConfig> {
     }
     this.hasCustomContainerConfig = _.has(functionConf, 'customContainerConfig');
     this.hasFunctionAsyncConfig = _.has(functionConf, 'asyncConfiguration');
+    this.runtime = _.get(functionConf, 'runtime');
     this.hasAutoConfig = false;
     this.name = serviceConf?.name;
   }
@@ -78,13 +80,27 @@ export class FcService extends FcDeploy<ServiceConfig> {
     const {
       service: { local, needInteract, diff },
     } = await this.plan(inputs, 'service');
-    logger.debug(`service plan local::\n${JSON.stringify(local, null, 2)}needInteract:: ${needInteract}\ndiff::\n${diff}`);
+    logger.debug(
+      `service plan local::\n${JSON.stringify(
+        local,
+        null,
+        2,
+      )}needInteract:: ${needInteract}\ndiff::\n${diff}`,
+    );
     this.localConfig = local;
     await this.initRemote('service', this.name);
     await this.initStateful();
     await this.initStatefulAutoConfig();
     await this.initLocal();
-    await this.setUseRemote(this.name, 'Service', useLocal, useRemote, needInteract, diff, undefined);
+    await this.setUseRemote(
+      this.name,
+      'Service',
+      useLocal,
+      useRemote,
+      needInteract,
+      diff,
+      undefined,
+    );
   }
 
   genStateID(): string {
@@ -365,7 +381,6 @@ export class FcService extends FcDeploy<ServiceConfig> {
     vpcConfig: VpcConfig,
     roleArn: string,
     assumeYes?: boolean,
-    escapeNasCheck?: boolean,
   ): Promise<NasConfig> {
     const { nasConfig } = this.localConfig;
     const alicloudNas = new AlicloudNas(
@@ -390,6 +405,7 @@ export class FcService extends FcDeploy<ServiceConfig> {
             `/${this.name}`,
             roleArn,
             assumeYes,
+            this.runtime,
           );
           this.logger.debug(
             `Generated nasConfig: \n${yaml.dump(nasDefaultConfig, {
@@ -401,7 +417,11 @@ export class FcService extends FcDeploy<ServiceConfig> {
           );
           return nasDefaultConfig;
         } catch (ex) {
-          if ((ex?.message || '').includes('Your account does not open Nas Service yet or balance is insufficient')) {
+          if (
+            (ex?.message || '').includes(
+              'Your account does not open Nas Service yet or balance is insufficient',
+            )
+          ) {
             ex.message = `${ex.message}\nOpen: https://nasnext.console.aliyun.com/cn-chengdu/filesystem`;
           }
           throw ex;
@@ -410,29 +430,11 @@ export class FcService extends FcDeploy<ServiceConfig> {
         throw new Error('nasConfig only support auto/Auto when set to string.');
       }
     }
-    if (!escapeNasCheck) {
-      // user-defined nasConfig
-      const ensureVm = core.spinner('Ensuring nas dir...\r');
-      try {
-        await alicloudNas.ensureNasDir(
-          this.name,
-          nasConfig?.mountPoints,
-          nasConfig.groupId,
-          nasConfig.userId,
-          vpcConfig,
-          roleArn,
-        );
-        ensureVm.stop();
-      } catch (e) {
-        ensureVm.fail();
-        this.logger.debug(`Ensure nas dir failed: error: ${e}`);
-      }
-    }
 
     return nasConfig;
   }
 
-  async makeService(assumeYes?: boolean, escapeNasCheck?: boolean): Promise<ServiceConfig> {
+  async makeService(assumeYes?: boolean): Promise<ServiceConfig> {
     if (this.useRemote) {
       this.statefulConfig = _.cloneDeep(this.remoteConfig);
       this.upgradeStatefulConfig();
@@ -475,8 +477,12 @@ export class FcService extends FcDeploy<ServiceConfig> {
     }
     if (!_.isEmpty(this.localConfig.nasConfig)) {
       // nas
-      // @ts-ignore
-      const resolvedNasConfig = await this.generateServiceNas(resolvedServiceConf?.vpcConfig, resolvedServiceConf?.role, assumeYes, escapeNasCheck);
+      const resolvedNasConfig = await this.generateServiceNas(
+        // @ts-ignore
+        resolvedServiceConf?.vpcConfig,
+        resolvedServiceConf?.role,
+        assumeYes,
+      );
       Object.assign(resolvedServiceConf, { nasConfig: resolvedNasConfig });
     }
     if (this.existOnline) {
@@ -500,12 +506,7 @@ export class FcService extends FcDeploy<ServiceConfig> {
     if (_.isEmpty(this.statefulAutoConfig) && _.isEmpty(this.remoteConfig)) {
       return;
     }
-    const {
-      logConfig,
-      vpcConfig,
-      nasConfig,
-      role,
-    } = this.remoteConfig || {};
+    const { logConfig, vpcConfig, nasConfig, role } = this.remoteConfig || {};
     const resolvedAutoConfigInState: any = this.statefulAutoConfig || {};
     // auto 优先使用线上配置，不存在时再使用缓存配置
     const logConfigAuto = isAutoConfig(this.localConfig.logConfig);
@@ -518,7 +519,9 @@ export class FcService extends FcDeploy<ServiceConfig> {
       }
     }
 
-    const vpcConfigAuto = (isAutoConfig(this.localConfig.vpcConfig) || (isAutoConfig(this.localConfig.nasConfig) && _.isEmpty(this.localConfig.vpcConfig)));
+    const vpcConfigAuto =
+      isAutoConfig(this.localConfig.vpcConfig) ||
+      (isAutoConfig(this.localConfig.nasConfig) && _.isEmpty(this.localConfig.vpcConfig));
     if (vpcConfigAuto) {
       // @ts-ignore: check online config
       if (vpcConfig?.vpcId) {
@@ -551,7 +554,13 @@ export class FcService extends FcDeploy<ServiceConfig> {
 
     const roleAuto = isAutoConfig(this.localConfig.role);
     // 存在需要角色的 auto 配置
-    if (this.hasFunctionAsyncConfig || logConfigAuto || vpcConfigAuto || nasConfigAuto || roleAuto) {
+    if (
+      this.hasFunctionAsyncConfig ||
+      logConfigAuto ||
+      vpcConfigAuto ||
+      nasConfigAuto ||
+      roleAuto
+    ) {
       // 如果角色为 auto 或者没有配置角色，则复用配置
       if (roleAuto || _.isEmpty(this.localConfig.role)) {
         if (!_.isEmpty(role)) {
@@ -559,7 +568,9 @@ export class FcService extends FcDeploy<ServiceConfig> {
         } else if (!_.isEmpty(resolvedAutoConfigInState.role)) {
           this.localConfig.role = resolvedAutoConfigInState.role;
         } else {
-          this.localConfig.role = _.isEmpty(this.localConfig.role) ? this.localConfig.role : FC_DEFAULT_ROLE;
+          this.localConfig.role = _.isEmpty(this.localConfig.role)
+            ? this.localConfig.role
+            : FC_DEFAULT_ROLE;
         }
       }
     }

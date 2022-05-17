@@ -41,6 +41,13 @@ export class AlicloudNas extends AlicloudClient {
     };
   }
 
+  static getUserId(runtime) {
+    if (runtime === 'custom' || runtime === 'custom-container') {
+      return 0;
+    }
+    return 10003;
+  }
+
   async getNasPopClient(): Promise<any> {
     return await this.getPopClient(`http://nas.${this.region}.aliyuncs.com`, '2017-06-26');
   }
@@ -55,66 +62,81 @@ export class AlicloudNas extends AlicloudClient {
     return zones.Zones.Zone;
   }
 
-  async ensureNasDir(nasServiceName: string, mountPoints: any[], nasGid: number, nasUid: number, vpcConfig: VpcConfig, role: string): Promise<void> {
-    const profileOfNas = replaceProjectName(this.serverlessProfile, `${this.serverlessProfile?.project.projectName}-nas-project`);
-
-    const nasComponent = new NasComponent(profileOfNas, {
-      mountPoints,
-      nasName: null,
-      nasDir: '',
-      nasGid,
-      nasUid,
-      vpcConfig,
-      role,
-      storageType: null,
-      zoneId: null,
-      assistServiceName: nasServiceName,
-    }, this.region, this.credentials, this.curPath);
-    const nasComponentInputs = nasComponent.genComponentInputs('nas');
-    logger.spinner?.stop();
-    const nasComponentIns = await core.load('devsapp/nas');
-    return await nasComponentIns.ensureNasDir(nasComponentInputs);
-  }
-
   async removeHelperService(serviceName: string) {
-    const profileOfNas = replaceProjectName(this.serverlessProfile, `${this.serverlessProfile?.project.projectName}-nas-project`);
-    // @ts-ignore 构建删除 nas 辅助函数的入参数
-    const nasComponent = new NasComponent(profileOfNas, {
-      vpcConfig: {},
-      assistServiceName: serviceName,
-    }, this.region, this.credentials, this.curPath);
+    const profileOfNas = replaceProjectName(
+      this.serverlessProfile,
+      `${this.serverlessProfile?.project.projectName}-nas-project`,
+    );
+    const nasComponent = new NasComponent(
+      profileOfNas,
+      // @ts-ignore 构建删除 nas 辅助函数的入参数
+      {
+        vpcConfig: {},
+        assistServiceName: serviceName,
+      },
+      this.region,
+      this.credentials,
+      this.curPath,
+    );
     const nasComponentInputs = nasComponent.genComponentInputs('nas');
     const nasComponentIns = await core.load('devsapp/nas');
     await nasComponentIns.removeHelperService(nasComponentInputs);
   }
 
-  async createDefaultNas(nasServiceName: string, vpcConfig: VpcConfig, nasDir: string, roleArn: string, assumeYes?: boolean): Promise<NasConfig> {
+  async createDefaultNas(
+    nasServiceName: string,
+    vpcConfig: VpcConfig,
+    nasDir: string,
+    roleArn: string,
+    assumeYes: boolean,
+    runtime: string,
+  ): Promise<NasConfig> {
     const nasZones = await this.describeNasZones();
-    const alicloudVpc = new AlicloudVpc(this.serverlessProfile, this.credentials, this.region, this.curPath);
-    // @ts-ignore: vSwitchIds 兼容 vswitchIds
-    const { zoneId, vswitchId, storageType } = await alicloudVpc.getAvailableVSwitchId(vpcConfig.vSwitchIds || vpcConfig.vswitchIds, nasZones, assumeYes);
-    this.logger.debug(`getAvailableVSwitchId done, available vswitchID: ${vswitchId}, zoneId: ${zoneId}, storageType: ${storageType}`);
-    const defaultNasUid = 10003;
-    const defaultNasGid = 10003;
+    const alicloudVpc = new AlicloudVpc(
+      this.serverlessProfile,
+      this.credentials,
+      this.region,
+      this.curPath,
+    );
+    const { zoneId, vswitchId, storageType } = await alicloudVpc.getAvailableVSwitchId(
+      // @ts-ignore: vSwitchIds 兼容 vswitchIds
+      vpcConfig.vSwitchIds || vpcConfig.vswitchIds,
+      nasZones,
+      assumeYes,
+    );
+    this.logger.debug(
+      `getAvailableVSwitchId done, available vswitchID: ${vswitchId}, zoneId: ${zoneId}, storageType: ${storageType}`,
+    );
+    const defaultNasUid = AlicloudNas.getUserId(runtime);
+    const defaultNasGid = AlicloudNas.getUserId(runtime);
     const defaultNasName = `Alibaba-FcDeployComponent-DefaultNas-${this.region}`;
-    const profileOfNas = replaceProjectName(this.serverlessProfile, `${this.serverlessProfile?.project.projectName}-nas-project`);
+    const profileOfNas = replaceProjectName(
+      this.serverlessProfile,
+      `${this.serverlessProfile?.project.projectName}-nas-project`,
+    );
     const defaultVpcConf: VpcConfig = {
       vpcId: vpcConfig.vpcId,
       vSwitchIds: [vswitchId],
       securityGroupId: vpcConfig.securityGroupId,
     };
-    const nasComponent = new NasComponent(profileOfNas, {
-      nasName: defaultNasName,
-      nasDir,
-      nasGid: defaultNasGid,
-      nasUid: defaultNasUid,
-      vpcConfig: defaultVpcConf,
-      role: roleArn,
-      storageType,
-      zoneId,
-      assistServiceName: nasServiceName,
-      mountPoints: null,
-    }, this.region, this.credentials, this.curPath);
+    const nasComponent = new NasComponent(
+      profileOfNas,
+      {
+        nasName: defaultNasName,
+        nasDir,
+        nasGid: defaultNasGid,
+        nasUid: defaultNasUid,
+        vpcConfig: defaultVpcConf,
+        role: roleArn,
+        storageType,
+        zoneId,
+        assistServiceName: nasServiceName,
+        mountPoints: null,
+      },
+      this.region,
+      this.credentials,
+      this.curPath,
+    );
     const nasComponentInputs = nasComponent.genComponentInputs('nas', assumeYes ? '-y' : null);
     logger.spinner?.stop();
     const nasComponentIns = await core.load('devsapp/nas');
