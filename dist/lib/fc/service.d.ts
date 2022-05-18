@@ -22,6 +22,7 @@ export declare class FcService extends FcDeploy<ServiceConfig> {
     static extractFcRole(role: any): any;
     readonly hasFunctionAsyncConfig: boolean;
     readonly hasCustomContainerConfig: boolean;
+    readonly runtime: string;
     hasAutoConfig: boolean;
     name: string;
     constructor(serviceConf: ServiceConfig, functionConf: FunctionConfig, serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string);
@@ -32,8 +33,8 @@ export declare class FcService extends FcDeploy<ServiceConfig> {
     setStatefulAutoConfig(): Promise<void>;
     generateServiceLog(): Promise<LogConfig>;
     generateServiceVpc(isNasAuto: boolean): Promise<VpcConfig>;
-    generateServiceNas(vpcConfig: VpcConfig, roleArn: string, assumeYes?: boolean, escapeNasCheck?: boolean): Promise<NasConfig>;
-    makeService(assumeYes?: boolean, escapeNasCheck?: boolean): Promise<ServiceConfig>;
+    generateServiceNas(vpcConfig: VpcConfig, roleArn: string, assumeYes?: boolean): Promise<NasConfig>;
+    makeService(assumeYes?: boolean): Promise<ServiceConfig>;
     initLocal(): Promise<void>;
     private initLocalConfig;
 }
