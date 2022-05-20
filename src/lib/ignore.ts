@@ -1,6 +1,7 @@
 import path from 'path';
 import globby from 'globby';
 import { fse } from '@serverless-devs/core';
+import logger from '../common/logger';
 
 const ignoredFile = ['.git', '.svn', '.env', '.DS_Store', 'template.packaged.yml', '.nas.yml', '.s/nas', '.s/tmp', '.s/package'];
 
@@ -62,7 +63,12 @@ export async function isIgnored(baseDir: string, runtime: string, actualCodeUri:
   // 因此需要将 .fcjgnore 中的路径对原始 codeUri 求相对路径后作为新的 ignore 内容
   if (ignoreRelativePath) {
     for (let i = 0; i < fileContentList.length; i++) {
-      fileContentList[i] = path.relative(ignoreRelativePath, fileContentList[i]);
+      const fileIgnoreRelativePath = path.relative(ignoreRelativePath, fileContentList[i]);
+      if (!fileIgnoreRelativePath.startsWith('..')) {
+        fileContentList[i] = fileIgnoreRelativePath;
+      } else {
+        logger.debug(`Error: ignore start '..', fileIgnoreRelativePath: ${fileIgnoreRelativePath}, ignoreRelativePath: ${ignoreRelativePath}, fileContentList[i]: ${fileContentList[i]}`);
+      }
     }
   }
   const ignoreDependencies = selectIgnored(runtime);
