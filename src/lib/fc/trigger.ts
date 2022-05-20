@@ -11,7 +11,7 @@ export interface TriggerConfig {
   triggerName?: string;
   lastModifiedTime?: any;
   name: string;
-  type: 'oss' | 'log' | 'timer' | 'http' | 'mns_topic' | 'cdn_events' | 'tablestore';
+  type: 'oss' | 'log' | 'timer' | 'eventbridge' | 'http' | 'mns_topic' | 'cdn_events' | 'tablestore';
   role?: string;
   sourceArn?: string;
   import?: boolean;
@@ -182,6 +182,10 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
 
   isHttpTrigger(): boolean {
     return this.localConfig.type === 'http';
+  }
+
+  isEBTrigger(): boolean {
+    return this.localConfig.type === 'eventbridge';
   }
 
   isTimerTrigger(): boolean {
@@ -405,7 +409,7 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
       delete remoteConfig.lastModifiedTime;
     }
 
-    if (!_.isNil(this.localConfig.role) || this.isHttpTrigger() || this.isTimerTrigger()) {
+    if (!_.isNil(this.localConfig.role) || this.isEBTrigger() || this.isHttpTrigger() || this.isTimerTrigger()) {
       return resolvedTriggerConf;
     }
     const role = await this.makeInvocationRole();
