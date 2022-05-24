@@ -58,7 +58,8 @@ export default class Component {
     let deleteTriggerList: string[];
     const yamlTriggerNames = triggers.map(({ name }) => name);
     const listTrigger = await this.getListData(`/services/${serviceName}/functions/${functionName}/triggers`, 'triggers');
-    const listTriggerNames = listTrigger.map((item) => item.triggerName);
+    // EB 触发器在 EB 创建的无法处理或者删除
+    const listTriggerNames = listTrigger.filter(({ triggerName }) => !triggerName.includes('#')).map((item) => item.triggerName);
 
     if (force) {
       deleteTriggerList = listTriggerNames;
