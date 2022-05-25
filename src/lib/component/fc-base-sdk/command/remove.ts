@@ -5,6 +5,7 @@ import { IProperties } from '../../../../common/entity';
 import { getStateFilePath, promptForConfirmOrDetails, tableShow } from '../../../utils/utils';
 import logger from '../../../../common/logger';
 import { getCreateResourceState } from '../../../utils/write-creat-cache';
+import { ENABLE_EB_TRIGGER_HEADER } from '../constants';
 
 const errorCode = ['ServiceNotFound', 'FunctionNotFound', 'TriggerNotFound'];
 interface RemoveInputsProps {
@@ -57,7 +58,8 @@ export default class Component {
 
     let deleteTriggerList: string[];
     const yamlTriggerNames = triggers.map(({ name }) => name);
-    const listTrigger = await this.getListData(`/services/${serviceName}/functions/${functionName}/triggers`, 'triggers');
+    const listTriggerPath = `/services/${serviceName}/functions/${functionName}/triggers`;
+    const listTrigger = await this.getListData(listTriggerPath, 'triggers', {}, ENABLE_EB_TRIGGER_HEADER);
     // EB 触发器在 EB 创建的无法处理或者删除
     const listTriggerNames = listTrigger.filter(({ triggerName }) => !triggerName.includes('#')).map((item) => item.triggerName);
 
@@ -252,6 +254,7 @@ export default class Component {
     return yamlArr;
   }
 
+  // TODO: get_all_list_data
   private async getListData(path, dataKeyword, options: { [key: string]: any } = {}, headers?) {
     try {
       let data = [];
