@@ -329,7 +329,7 @@ export default class Component {
       triggerConfig.qualifier = triggerConfig.qualifier.toString();
     }
 
-    const headers = triggerConfig.type === 'eventbridge' ? ENABLE_EB_TRIGGER_HEADER : undefined;
+    const headers = triggerConfig.triggerType === 'eventbridge' ? ENABLE_EB_TRIGGER_HEADER : undefined;
 
     let res;
     try {
