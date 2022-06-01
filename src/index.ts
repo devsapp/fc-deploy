@@ -456,7 +456,7 @@ export default class FcDeployComponent {
         if (fcTrigger.isHttpTrigger()) {
           const systemDomain = _.get(
             fcTrigger,
-            'remoteConfig.urlInternet',
+            'statefulConfig.urlInternet',
             await fcTrigger.generateSystemDomain(),
           );
           Object.assign(res, { systemDomain });
