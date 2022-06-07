@@ -456,7 +456,7 @@ export default class FcDeployComponent {
         if (fcTrigger.isHttpTrigger()) {
           const systemDomain = _.get(
             fcTrigger,
-            'remoteConfig.urlInternet',
+            'statefulConfig.urlInternet',
             await fcTrigger.generateSystemDomain(),
           );
           Object.assign(res, { systemDomain });
@@ -616,7 +616,7 @@ export default class FcDeployComponent {
       }
     }
 
-    if (nonOptionsArg !== 'domain' && nonOptionsArg === 'all' && _.isEmpty(this.fcCustomDomains)) {
+    if (!['domain', 'all'].includes(nonOptionsArg) || (nonOptionsArg === 'all' && _.isEmpty(this.fcCustomDomains))) {
       return removeRes;
     }
     // remove domain

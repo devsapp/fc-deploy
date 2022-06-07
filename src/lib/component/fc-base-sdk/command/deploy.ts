@@ -14,6 +14,7 @@ import { makeDestination } from './function-async-config';
 import logger from '../../../../common/logger';
 import { getFcEndpoint } from '../../../profile';
 import { writeCreatCache } from '../../../utils/write-creat-cache';
+import { ENABLE_EB_TRIGGER_HEADER } from '../constants';
 
 export default class Component {
   static configPath;
@@ -328,16 +329,18 @@ export default class Component {
       triggerConfig.qualifier = triggerConfig.qualifier.toString();
     }
 
+    const headers = triggerConfig.triggerType === 'eventbridge' ? ENABLE_EB_TRIGGER_HEADER : undefined;
+
     let res;
     try {
-      res = await fcClient.createTrigger(serviceName, functionName, triggerConfig);
+      res = await fcClient.createTrigger(serviceName, functionName, triggerConfig, headers);
     } catch (ex) {
       if (ex.code !== 'TriggerAlreadyExists') {
         logger.debug(`ex code: ${ex.code}, ex: ${ex.message}`);
         throw ex;
       }
       try {
-        res = await fcClient.updateTrigger(serviceName, functionName, triggerName, triggerConfig);
+        res = await fcClient.updateTrigger(serviceName, functionName, triggerName, triggerConfig, headers);
       } catch (e) {
         if (e.message.includes('Updating trigger is not supported yet.')) {
           logger.debug(
