@@ -216,7 +216,8 @@ export default class Component {
   private async deleteTrigger(serviceName, functionName, triggerName) {
     const vm = spinner(`Delete trigger ${serviceName}/${functionName}/${triggerName}...`);
     try {
-      await this.fcClient.deleteTrigger(serviceName, functionName, triggerName);
+      const headers = ENABLE_EB_TRIGGER_HEADER;
+      await this.fcClient.deleteTrigger(serviceName, functionName, triggerName, undefined, headers);
       vm.succeed(`Delete trigger ${serviceName}/${functionName}/${triggerName} success.`);
 
       this.removeNameList.triggers || (this.removeNameList.triggers = []);
