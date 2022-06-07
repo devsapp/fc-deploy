@@ -6,7 +6,7 @@ export interface TriggerConfig {
     triggerName?: string;
     lastModifiedTime?: any;
     name: string;
-    type: 'oss' | 'log' | 'timer' | 'http' | 'mns_topic' | 'cdn_events' | 'tablestore';
+    type: 'oss' | 'log' | 'timer' | 'eventbridge' | 'http' | 'mns_topic' | 'cdn_events' | 'tablestore';
     role?: string;
     sourceArn?: string;
     import?: boolean;
@@ -91,6 +91,7 @@ export declare class FcTrigger extends FcDeploy<TriggerConfig> {
     validateConfig(): void;
     private initLocalConfig;
     isHttpTrigger(): boolean;
+    isEBTrigger(): boolean;
     isTimerTrigger(): boolean;
     makeInvocationRole(): Promise<string>;
     generateSystemDomain(): Promise<string>;

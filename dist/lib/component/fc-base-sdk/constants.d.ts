@@ -21,3 +21,6 @@ export declare const REMOVE_HELP_INFO: ({
     content: string[];
     optionList?: undefined;
 })[];
+export declare const ENABLE_EB_TRIGGER_HEADER: {
+    'x-fc-enable-eventbridge-trigger': string;
+};

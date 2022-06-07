@@ -2,7 +2,7 @@ export interface ITriggerConfig {
     name: string;
     function?: string;
     service?: string;
-    type: 'oss' | 'log' | 'timer' | 'http' | 'mns_topic' | 'cdn_events' | 'tablestore';
+    type: 'oss' | 'log' | 'timer' | 'eventbridge' | 'http' | 'mns_topic' | 'cdn_events' | 'tablestore';
     qualifier?: string;
     role?: string;
     sourceArn?: string;

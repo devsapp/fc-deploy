@@ -4,7 +4,7 @@ export const REMOVE_HELP_INFO = [
     content: 'Specify RESOURCE to remove it and resource belonging to it.\n' +
       'If service is specified, service and its functions should be removed.\n' +
       'If function is specified, function and its triggers should be removed.\n' +
-      'If trigger is specified, you can specify the trigger name to remove the specific trigger or remove all triggers without name.\n'
+      'If trigger is specified, you can specify the trigger name to remove the specific trigger or remove all triggers without name.\n',
   },
   {
     header: 'Options',
@@ -45,4 +45,4 @@ export const REMOVE_HELP_INFO = [
 
 export const ENABLE_EB_TRIGGER_HEADER = {
   'x-fc-enable-eventbridge-trigger': 'enable',
-}
+};
