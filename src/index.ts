@@ -751,7 +751,7 @@ export default class FcDeployComponent {
     const appName: string = inputs?.appName;
     this.args = formatArgs(inputs?.args);
 
-    this.curPath = inputs?.path?.configPath;
+    this.curPath = inputs?.path?.configPath || process.cwd();
     const projectName: string = project?.projectName;
     const parsedArgs: { [key: string]: any } = core.commandParse(inputs, {
       boolean: ['help'],
