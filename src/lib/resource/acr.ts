@@ -5,6 +5,7 @@ import StdoutFormatter from '../component/stdout-formatter';
 import { extract } from '../utils/utils';
 import * as core from '@serverless-devs/core';
 import { promptForConfirmContinue, promptForInputContinue } from '../utils/prompt';
+import _ from 'lodash';
 
 export class AlicloudAcr extends AlicloudClient {
   readonly registry: string;
@@ -98,6 +99,38 @@ export class AlicloudAcr extends AlicloudClient {
     };
   }
 
+  async initPersonalRepo(image) {
+    const [, namespace, repoConfig] = image.split('/');
+    const [repoName, version] = repoConfig.split(':');
+    if (_.isEmpty(version)) {
+      this.logger.warn('It is detected that the version of image is empty, which may cause deployment failure');
+    }
+
+    const uriPath = `/repos/${namespace}/${repoName}`;
+    const headers: any = {
+      'Content-Type': 'application/json',
+    };
+    try {
+      await this.acrClient.request('GET', uriPath, {}, '', headers, {});
+    } catch (ex) {
+      if (ex?.statusCode === 404) {
+        const body = {
+          Repo: {
+            RepoNamespace: namespace,
+            RepoName: repoName,
+            Summary: 'init repo',
+            RepoType: 'PRIVATE',
+          }
+        };
+        try {
+          await this.acrClient.request('PUT', '/repos', {}, JSON.stringify(body), headers, {});
+        } catch (ex) {
+          this.logger.debug(ex?.toString())
+        }
+      }
+    }
+  }
+
   async pushImage(image: string, assumeYes?: boolean): Promise<void> {
     const imageArr = image.split('/');
     if (this.registry) {
@@ -116,6 +149,10 @@ export class AlicloudAcr extends AlicloudClient {
       imageArr[0],
       assumeYes,
     );
+    if (image.startsWith('registry')) {
+      await this.initPersonalRepo(image);
+    }
+
     this.logger.debug('Try to use a temporary token for docker login');
     try {
       execSync(`docker login --username=${dockerTmpUser} ${imageArr[0]} --password-stdin`, {
