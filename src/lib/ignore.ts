@@ -1,7 +1,7 @@
-
-import parser from 'git-ignore-parser';
 import path from 'path';
-import { fse, ignore } from '@serverless-devs/core';
+import globby from 'globby';
+import { fse, lodash as _ } from '@serverless-devs/core';
+import logger from '../common/logger';
 
 const ignoredFile = ['.git', '.svn', '.env', '.DS_Store', 'template.packaged.yml', '.nas.yml', '.s/nas', '.s/tmp', '.s/package'];
 
@@ -38,17 +38,18 @@ export async function isIgnoredInCodeUri(actualCodeUri: string, runtime: string)
   const ignoreFilePath = path.join(actualCodeUri, '.fcignore');
 
   const fileContent: string = await getIgnoreContent(ignoreFilePath);
-  const fileContentList: string[] = fileContent.split('\n');
+  const fileContentList: string[] = fileContent.split('\n').filter((v) => !_.isEmpty(v));
   const ignoreDependencies = selectIgnored(runtime);
-  // const ignoreList = await generateIgnoreFileFromNasYml(baseDir);
 
-  const ignoredPaths = parser(`${[...ignoredFile, ...ignoreDependencies, ...fileContentList].join('\n')}`);
-  const ig = ignore().add(ignoredPaths);
+  const packageJsonFilePaths = await globby([...ignoredFile, ...ignoreDependencies, ...fileContentList], {
+    cwd: actualCodeUri,
+    dot: true,
+    absolute: true,
+    onlyFiles: false,
+  });
 
   return function (f) {
-    const relativePath = path.relative(actualCodeUri, f);
-    if (relativePath === '') { return false; }
-    return ig.ignores(relativePath);
+    return packageJsonFilePaths.includes(f);
   };
 }
 
@@ -56,24 +57,30 @@ export async function isIgnored(baseDir: string, runtime: string, actualCodeUri:
   const ignoreFilePath = path.join(baseDir, '.fcignore');
 
   const fileContent: string = await getIgnoreContent(ignoreFilePath);
-  const fileContentList: string[] = fileContent.split('\n');
+  const fileContentList: string[] = fileContent.split('\n').filter((v) => !_.isEmpty(v));
   // 对于 build 后的构建物，会将 codeUri 中包含的子目录消除
   // 例如 codeUri: ./code，则 build 后，生成的 codeUri 为 ./.s/build/artifacts/${serviceName}/${functionName}
   // 因此需要将 .fcjgnore 中的路径对原始 codeUri 求相对路径后作为新的 ignore 内容
   if (ignoreRelativePath) {
     for (let i = 0; i < fileContentList.length; i++) {
-      fileContentList[i] = path.relative(ignoreRelativePath, fileContentList[i]);
+      const fileIgnoreRelativePath = path.relative(ignoreRelativePath, fileContentList[i]);
+      if (!fileIgnoreRelativePath.startsWith('..')) {
+        fileContentList[i] = fileIgnoreRelativePath;
+      } else {
+        logger.debug(`Error: ignore start '..', fileIgnoreRelativePath: ${fileIgnoreRelativePath}, ignoreRelativePath: ${ignoreRelativePath}, fileContentList[i]: ${fileContentList[i]}`);
+      }
     }
   }
   const ignoreDependencies = selectIgnored(runtime);
-  // const ignoreList = await generateIgnoreFileFromNasYml(baseDir);
 
-  const ignoredPaths = parser(`${[...ignoredFile, ...ignoreDependencies, ...fileContentList].join('\n')}`);
-  const ig = ignore().add(ignoredPaths);
+  const packageJsonFilePaths = await globby([...ignoredFile, ...ignoreDependencies, ...fileContentList], {
+    cwd: actualCodeUri,
+    dot: true,
+    absolute: true,
+    onlyFiles: false,
+  });
 
   return function (f) {
-    const relativePath = path.relative(actualCodeUri, f);
-    if (relativePath === '') { return false; }
-    return ig.ignores(relativePath);
+    return packageJsonFilePaths.includes(f);
   };
 }
