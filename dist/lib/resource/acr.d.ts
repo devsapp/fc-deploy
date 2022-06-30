@@ -9,6 +9,7 @@ export declare class AlicloudAcr extends AlicloudClient {
     getAuthorizationToken(): Promise<any>;
     createUserInfo(pwd: string): Promise<any>;
     getAuthorizationTokenOfRegisrty(registry: string, assumeYes?: boolean): Promise<any>;
+    initPersonalRepo(image: any): Promise<void>;
     pushImage(image: string, assumeYes?: boolean): Promise<void>;
     static isAcrRegistry(registry: string): boolean;
     static extractRegionFromAcrRegistry(registry: string): string;

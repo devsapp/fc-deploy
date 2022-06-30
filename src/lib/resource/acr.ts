@@ -120,12 +120,12 @@ export class AlicloudAcr extends AlicloudClient {
             RepoName: repoName,
             Summary: 'init repo',
             RepoType: 'PRIVATE',
-          }
+          },
         };
         try {
           await this.acrClient.request('PUT', '/repos', {}, JSON.stringify(body), headers, {});
-        } catch (ex) {
-          this.logger.debug(ex?.toString())
+        } catch (e) {
+          this.logger.debug(e?.toString());
         }
       }
     }

@@ -61,7 +61,7 @@ export default class Component {
     const listTriggerPath = `/services/${serviceName}/functions/${functionName}/triggers`;
     const listTrigger = await this.getListData(listTriggerPath, 'triggers', {}, ENABLE_EB_TRIGGER_HEADER);
     // EB 触发器在 EB 创建的无法处理或者删除
-    const listTriggerNames = listTrigger.filter(({ triggerName }) => !triggerName.includes('#')).map((item) => item.triggerName);
+    const listTriggerNames = listTrigger.filter(({ triggerName: tn }) => !tn.includes('#')).map((item) => item.triggerName);
 
     if (force) {
       deleteTriggerList = listTriggerNames;
