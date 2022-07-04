@@ -10,7 +10,7 @@
     "ali-oss": "^6.1.1",
     "deep-object-diff": "^1.1.0",
     "dockerode": "^3.3.0",
-    "globby": "^11.1.0",
+    "globby": "11.1.0",
     "lodash": "^4.17.21",
     "md5-file": "^5.0.0",
     "node-machine-id": "^1.1.12",
