@@ -46,6 +46,8 @@ export async function isIgnoredInCodeUri(actualCodeUri: string, runtime: string)
     dot: true,
     absolute: true,
     onlyFiles: false,
+    onlyDirectories: false,
+    expandDirectories: false,
   });
 
   return function (f) {
