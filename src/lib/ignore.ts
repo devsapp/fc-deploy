@@ -41,14 +41,14 @@ export async function isIgnoredInCodeUri(actualCodeUri: string, runtime: string)
   const fileContentList: string[] = fileContent.split('\n').filter((v) => !_.isEmpty(v));
   const ignoreDependencies = selectIgnored(runtime);
 
-  const packageJsonFilePaths = await globby([...ignoredFile, ...ignoreDependencies, ...fileContentList], {
+  const packageJsonFilePaths = (await globby([...ignoredFile, ...ignoreDependencies, ...fileContentList], {
     cwd: actualCodeUri,
     dot: true,
     absolute: true,
     onlyFiles: false,
     onlyDirectories: false,
     expandDirectories: false,
-  });
+  })).map(item => path.resolve(item));
 
   return function (f) {
     return packageJsonFilePaths.includes(f);
@@ -75,12 +75,12 @@ export async function isIgnored(baseDir: string, runtime: string, actualCodeUri:
   }
   const ignoreDependencies = selectIgnored(runtime);
 
-  const packageJsonFilePaths = await globby([...ignoredFile, ...ignoreDependencies, ...fileContentList], {
+  const packageJsonFilePaths = (await globby([...ignoredFile, ...ignoreDependencies, ...fileContentList], {
     cwd: actualCodeUri,
     dot: true,
     absolute: true,
     onlyFiles: false,
-  });
+  })).map(item => path.resolve(item));;
 
   return function (f) {
     return packageJsonFilePaths.includes(f);
