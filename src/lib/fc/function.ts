@@ -382,15 +382,6 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
 
     const relative = path.relative(absBaseDir, absCodeUri);
 
-    if (codeUri.startsWith('..') || relative.startsWith('..')) {
-      this.logger.warn(
-        StdoutFormatter.stdoutFormatter.warn(
-          '.fcignore',
-          `not supported for the codeUri: ${codeUri}`,
-        ),
-      );
-      return null;
-    }
     const ignoreFileInCodeUri: string = path.join(
       path.resolve(baseDir, this.localConfig?.codeUri),
       '.fcignore',
@@ -398,12 +389,24 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
     if (fse.pathExistsSync(ignoreFileInCodeUri) && fse.lstatSync(ignoreFileInCodeUri).isFile()) {
       return await isIgnoredInCodeUri(path.resolve(baseDir, this.localConfig?.codeUri), runtime);
     }
+
     const ignoreFileInBaseDir: string = path.join(baseDir, '.fcignore');
     if (fse.pathExistsSync(ignoreFileInBaseDir) && fse.lstatSync(ignoreFileInBaseDir).isFile()) {
       this.logger.warn(
-        '.fcignore file will be placed under codeUri only in the future. Please update it with the relative path and then move it to the codeUri as soon as possible.',
+        '.fcignore file only supports codeUri, please move it to codeUri as soon as possible.',
       );
+
+      if (codeUri.startsWith('..') || relative.startsWith('..')) {
+        this.logger.warn(
+          StdoutFormatter.stdoutFormatter.warn(
+            '.fcignore',
+            `not supported for the codeUri: ${codeUri}`,
+          ),
+        );
+        return null;
+      }
     }
+
     return await isIgnored(
       baseDir,
       runtime,

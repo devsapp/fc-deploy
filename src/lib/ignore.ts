@@ -88,6 +88,8 @@ export async function isIgnored(baseDir: string, runtime: string, actualCodeUri:
     dot: true,
     absolute: true,
     onlyFiles: false,
+    onlyDirectories: false,
+    expandDirectories: false,
   })).map(item => path.resolve(item));;
 
   return function (f) {
