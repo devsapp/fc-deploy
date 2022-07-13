@@ -376,6 +376,9 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
 
   async generateCodeIngore(baseDir: string): Promise<Function | null> {
     const codeUri = this.localConfig?.codeUri || FUNCTION_CONF_DEFAULT.codeUri;
+    if (fse.lstatSync(codeUri).isFile()) {
+      return null;
+    }
     const runtime = this.localConfig?.runtime || FUNCTION_CONF_DEFAULT.runtime;
     const absCodeUri = path.resolve(baseDir, codeUri);
     const absBaseDir = path.resolve(baseDir);
