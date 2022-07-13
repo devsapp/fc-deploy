@@ -376,21 +376,15 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
 
   async generateCodeIngore(baseDir: string): Promise<Function | null> {
     const codeUri = this.localConfig?.codeUri || FUNCTION_CONF_DEFAULT.codeUri;
+    if (fse.lstatSync(codeUri).isFile()) {
+      return null;
+    }
     const runtime = this.localConfig?.runtime || FUNCTION_CONF_DEFAULT.runtime;
     const absCodeUri = path.resolve(baseDir, codeUri);
     const absBaseDir = path.resolve(baseDir);
 
     const relative = path.relative(absBaseDir, absCodeUri);
 
-    if (codeUri.startsWith('..') || relative.startsWith('..')) {
-      this.logger.warn(
-        StdoutFormatter.stdoutFormatter.warn(
-          '.fcignore',
-          `not supported for the codeUri: ${codeUri}`,
-        ),
-      );
-      return null;
-    }
     const ignoreFileInCodeUri: string = path.join(
       path.resolve(baseDir, this.localConfig?.codeUri),
       '.fcignore',
@@ -398,12 +392,24 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
     if (fse.pathExistsSync(ignoreFileInCodeUri) && fse.lstatSync(ignoreFileInCodeUri).isFile()) {
       return await isIgnoredInCodeUri(path.resolve(baseDir, this.localConfig?.codeUri), runtime);
     }
+
     const ignoreFileInBaseDir: string = path.join(baseDir, '.fcignore');
     if (fse.pathExistsSync(ignoreFileInBaseDir) && fse.lstatSync(ignoreFileInBaseDir).isFile()) {
       this.logger.warn(
-        '.fcignore file will be placed under codeUri only in the future. Please update it with the relative path and then move it to the codeUri as soon as possible.',
+        '.fcignore file only supports codeUri, please move it to codeUri as soon as possible.',
       );
+
+      if (codeUri.startsWith('..') || relative.startsWith('..')) {
+        this.logger.warn(
+          StdoutFormatter.stdoutFormatter.warn(
+            '.fcignore',
+            `not supported for the codeUri: ${codeUri}`,
+          ),
+        );
+        return null;
+      }
     }
+
     return await isIgnored(
       baseDir,
       runtime,
