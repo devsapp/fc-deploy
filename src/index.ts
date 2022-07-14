@@ -182,7 +182,7 @@ export default class FcDeployComponent {
           for (let i = 0; i < this.fcTriggers.length; i++) {
             if (
               !_.isEmpty(targetTriggerNameArr) &&
-              targetTriggerNameArr.includes(this.fcTriggers[i].name)
+              !targetTriggerNameArr.includes(this.fcTriggers[i].name)
             ) {
               continue;
             }
