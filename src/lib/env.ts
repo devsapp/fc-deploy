@@ -1,100 +1,90 @@
 import * as _ from 'lodash';
 
-const sysLibs: string[] = [
-  '/usr/local/lib',
-  '/usr/lib',
-  '/usr/lib/x86_64-linux-gnu',
-  '/usr/lib64',
-  '/lib',
-  '/lib/x86_64-linux-gnu',
-  '/python/lib/python2.7/site-packages',
-  '/python/lib/python3.6/site-packages',
-];
+const prefix = '/code/.s';
 
-const fcLibs: string[] = [
-  '/code',
-  '/code/lib',
-  '/usr/local/lib',
-];
-
-const sysPaths: string[] = [
-  '/usr/local/bin',
-  '/usr/local/sbin',
-  '/usr/bin',
-  '/usr/sbin',
-  '/sbin',
-  '/bin',
-];
-
-const fcPaths: string[] = [
-  '/code',
-  '/code/node_modules/.bin',
-];
-
-
-const funPaths: string[] = [
-  '/python/bin',
-  '/node_modules/.bin',
-];
-
-function generateLibPath(envs, prefix) {
-  let libPath = _.union(
-    sysLibs.map((p) => `${prefix}/root${p}`),
-    fcLibs,
-  ).join(':');
-
-  if (envs.LD_LIBRARY_PATH) {
-    libPath = `${envs.LD_LIBRARY_PATH}:${libPath}`;
-  }
-  return duplicateRemoval(libPath);
-}
-
-function duplicateRemoval(str) {
+// 删除重复的数据
+function duplicateRemoval(str: string): string {
   const spliceValue = str.split(':');
   return _.union(spliceValue).join(':');
 }
 
-export function addEnv(envVars: any) {
-  const envs = Object.assign({}, envVars);
+const generateLibPath = (envs: any, runtime: string): string => {
+  const fcLibPath = '/code:/code/lib:/usr/local/lib';
+  const sysLibs: string[] = [
+    '/usr/local/lib',
+    '/usr/lib',
+    '/usr/lib/x86_64-linux-gnu',
+    '/usr/lib64',
+    '/lib',
+    '/lib/x86_64-linux-gnu',
+  ];
+  const runtimeLibs = {
+    'python2.7': '/python/lib/python2.7/site-packages',
+    'python3': '/python/lib/python3.6/site-packages',
+    'python3.9': '/python/lib/python3.9/site-packages',
+    'custom': '/python/lib/python3.7/site-packages',
+  };
 
-  const prefix = '/code/.s';
-
-  envs.LD_LIBRARY_PATH = generateLibPath(envs, prefix);
-  envs.PATH = generatePath(envs, prefix);
-  envs.NODE_PATH = generateNodePaths(envs, '/code');
-
-  const defaultPythonPath = `${prefix}/python`;
-  if (!envs.PYTHONUSERBASE) {
-    envs.PYTHONUSERBASE = defaultPythonPath;
+  const libs = sysLibs.map((p) => `${prefix}/root${p}`);
+  const runtimeLib = _.get(runtimeLibs, runtime, '');
+  if (runtimeLib) {
+    libs.push(runtimeLib);
   }
 
-  return envs;
-}
+  let libPath = `${libs.join(':')}:${fcLibPath}`;
+  if (envs.LD_LIBRARY_PATH) {
+    libPath = `${envs.LD_LIBRARY_PATH}:${libPath}`;
+  }
+  return duplicateRemoval(libPath);
+};
 
-function generatePath(envs, prefix) {
-  let path = _.union(
-    sysPaths.map((p) => `${prefix}/root${p}`),
-    fcPaths,
-    funPaths.map((p) => `${prefix}${p}`),
-    sysPaths,
-  ).join(':');
+const generatePath = (envs: any, runtime: string): string => {
+  const sysPaths: string[] = [
+    '/usr/local/bin',
+    '/usr/local/sbin',
+    '/usr/bin',
+    '/usr/sbin',
+    '/sbin',
+    '/bin',
+  ];
 
+  const paths = sysPaths.map((p) => `${prefix}/root${p}`); // build apt-get path
+  paths.push('/code'); // fc path
+  if (runtime.startsWith('nodejs') || runtime === 'custom') {
+    paths.push('/code/node_modules/.bin'); // fc path
+    paths.push(`${prefix}/node_modules/.bin`); // build path
+  }
+  if (runtime.startsWith('python') || runtime === 'custom') {
+    paths.push(`${prefix}/python/bin`); // build path
+  }
+  paths.push(...sysPaths);
+
+  let path = paths.join(':');
   if (envs.PATH) {
     path = `${envs.PATH}:${path}`;
   }
-
   return duplicateRemoval(path);
 }
 
-function generateNodePaths(envs, prefix) {
-  const defaultPath = '/usr/local/lib/node_modules';
-  const customPath = `${prefix}/node_modules`;
+function generateNodePaths(envs) {
+  const customPath = '/code/node_modules:/usr/local/lib/node_modules';
 
-  let path;
-  if (envs.NODE_PATH) {
-    path = `${envs.NODE_PATH}:${customPath}:${defaultPath}`;
-  } else {
-    path = `${customPath}:${defaultPath}`;
-  }
+  const path = envs.NODE_PATH ? `${envs.NODE_PATH}:${customPath}` : customPath;
   return duplicateRemoval(path);
+}
+
+export function addEnv(envVars: any, runtime: string) {
+  const envs = Object.assign({}, envVars);
+  
+  envs.LD_LIBRARY_PATH = generateLibPath(envs, runtime);
+  envs.PATH = generatePath(envs, runtime);
+
+  if (runtime.startsWith('nodejs') || runtime === 'custom') {
+    envs.NODE_PATH = generateNodePaths(envs);
+  }
+  if (runtime.startsWith('python') || runtime === 'custom') {
+    envs.PYTHONUSERBASE = _.get(envs, 'PYTHONUSERBASE', `${prefix}/python`);
+  }
+
+  return envs;
 }

@@ -199,7 +199,7 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
       this.originalCodeUri = this.localConfig.codeUri;
       this.isBuild = true;
       this.localConfig.codeUri = codeUri;
-      const resolvedEnvs: any = addEnv(this.localConfig.environmentVariables);
+      const resolvedEnvs: any = addEnv(this.localConfig.environmentVariables, this.localConfig.runtime);
       const details: any = detailedDiff(this.localConfig.environmentVariables, resolvedEnvs);
       if (_.isEmpty(details?.added)) {
         delete details.added;
