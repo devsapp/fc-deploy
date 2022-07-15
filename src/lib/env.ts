@@ -67,7 +67,7 @@ const generatePath = (envs: any, runtime: string): string => {
 }
 
 function generateNodePaths(envs) {
-  const customPath = '/code/node_modules:/usr/local/lib/node_modules';
+  const customPath = '/opt/node_modules:/code/node_modules:/usr/local/lib/node_modules';
 
   const path = envs.NODE_PATH ? `${envs.NODE_PATH}:${customPath}` : customPath;
   return duplicateRemoval(path);
