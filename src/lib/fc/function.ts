@@ -199,7 +199,7 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
       this.originalCodeUri = this.localConfig.codeUri;
       this.isBuild = true;
       this.localConfig.codeUri = codeUri;
-      const resolvedEnvs: any = addEnv(this.localConfig.environmentVariables);
+      const resolvedEnvs: any = addEnv(this.localConfig.environmentVariables, this.localConfig.runtime);
       const details: any = detailedDiff(this.localConfig.environmentVariables, resolvedEnvs);
       if (_.isEmpty(details?.added)) {
         delete details.added;
@@ -376,11 +376,11 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
 
   async generateCodeIngore(baseDir: string): Promise<Function | null> {
     const codeUri = this.localConfig?.codeUri || FUNCTION_CONF_DEFAULT.codeUri;
-    if (fse.lstatSync(codeUri).isFile()) {
+    const absCodeUri = path.resolve(baseDir, codeUri);
+    if (fse.lstatSync(absCodeUri).isFile()) {
       return null;
     }
     const runtime = this.localConfig?.runtime || FUNCTION_CONF_DEFAULT.runtime;
-    const absCodeUri = path.resolve(baseDir, codeUri);
     const absBaseDir = path.resolve(baseDir);
 
     const relative = path.relative(absBaseDir, absCodeUri);
