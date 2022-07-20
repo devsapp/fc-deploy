@@ -1,4 +1,4 @@
-import { inquirer } from '@serverless-devs/core';
+// import { inquirer } from '@serverless-devs/core';
 import Pop from '@alicloud/pop-core';
 import StdoutFormattter from '../../stdout-formatter';
 import { ICredentials, IProperties, IVpcConfig, IDeleteProperties } from '../interface';
@@ -203,11 +203,11 @@ export default class HandlerService {
     const { total, list: filterVpcs } = await this.findVpcs(regionId, vpcName);
     logger.debug(`filter vpcs:: ${JSON.stringify(filterVpcs)}`);
 
-    if (total === 1) {
+    if (total >= 1) {
       const vpcId = filterVpcs[0].VpcId;
       logger.debug(this.stdoutFormatter.using('vpcId', vpcId));
       return vpcId;
-    } else if (total > 1) {
+    } /** else if (total > 1) {
       logger.spinner?.stop();
       const { vpcId } = await inquirer.prompt({
         type: 'list',
@@ -219,7 +219,7 @@ export default class HandlerService {
       logger.debug(`vpcId is: ${vpcId}`);
 
       return vpcId;
-    }
+    } */
 
     if (onlyGet) {
       return '';
@@ -239,10 +239,10 @@ export default class HandlerService {
       zoneId,
     );
 
-    if (total === 1) {
+    if (total >= 1) {
       logger.debug('There is only one vSwitch, directly reuse the current vSwitch.');
       return vSwitches[0].VSwitchId;
-    } else if (total === 2) {
+    } /** else if (total === 2) {
       logger.spinner?.stop();
       const { vSwitchId } = await inquirer.prompt({
         type: 'list',
@@ -252,7 +252,7 @@ export default class HandlerService {
       });
       logger.spinner?.start();
       return vSwitchId;
-    }
+    } */
 
     if (onlyGet) {
       return '';
@@ -270,12 +270,12 @@ export default class HandlerService {
       securityGroupName,
     );
 
-    if (total === 1) {
+    if (total >= 1) {
       logger.debug(
         'There is only one securityGroup, directly reuse the current securityGroups.',
       );
       return securityGroups[0].SecurityGroupId;
-    } else if (total === 2) {
+    } /** else if (total === 2) {
       logger.spinner?.stop();
       const { securityGroup } = await inquirer.prompt({
         type: 'list',
@@ -285,7 +285,7 @@ export default class HandlerService {
       });
       logger.spinner?.start();
       return securityGroup;
-    }
+    }*/
 
     if (onlyGet) {
       return '';
