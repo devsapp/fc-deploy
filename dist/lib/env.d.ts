@@ -1,1 +1,1 @@
-export declare function addEnv(envVars: any): any;
+export declare function addEnv(envVars: any, runtime: string): any;

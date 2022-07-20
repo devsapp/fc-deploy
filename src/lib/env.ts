@@ -20,9 +20,9 @@ const generateLibPath = (envs: any, runtime: string): string => {
   ];
   const runtimeLibs = {
     'python2.7': '/python/lib/python2.7/site-packages',
-    'python3': '/python/lib/python3.6/site-packages',
+    python3: '/python/lib/python3.6/site-packages',
     'python3.9': '/python/lib/python3.9/site-packages',
-    'custom': '/python/lib/python3.7/site-packages',
+    custom: '/python/lib/python3.7/site-packages',
   };
 
   const libs = sysLibs.map((p) => `${prefix}/root${p}`);
@@ -64,7 +64,7 @@ const generatePath = (envs: any, runtime: string): string => {
     path = `${envs.PATH}:${path}`;
   }
   return duplicateRemoval(path);
-}
+};
 
 function generateNodePaths(envs) {
   const customPath = '/opt/node_modules:/code/node_modules:/usr/local/lib/node_modules';
@@ -75,7 +75,7 @@ function generateNodePaths(envs) {
 
 export function addEnv(envVars: any, runtime: string) {
   const envs = Object.assign({}, envVars);
-  
+
   envs.LD_LIBRARY_PATH = generateLibPath(envs, runtime);
   envs.PATH = generatePath(envs, runtime);
 

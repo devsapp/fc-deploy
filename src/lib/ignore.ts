@@ -30,11 +30,11 @@ async function getIgnoreContent(ignoreFilePath: string): Promise<string[]> {
   if (fse.existsSync(ignoreFilePath)) {
     return await new Promise((resolve, reject) => {
       const lines = [];
-  
+
       readline.createInterface({ input: fse.createReadStream(ignoreFilePath) })
         .on('line', (line) => {
           if (line?.length > 0) {
-            lines.push(line)
+            lines.push(line);
           }
         })
         .on('close', () => resolve(lines))
@@ -57,7 +57,7 @@ export async function isIgnoredInCodeUri(actualCodeUri: string, runtime: string)
     onlyFiles: false,
     onlyDirectories: false,
     expandDirectories: false,
-  })).map(item => path.resolve(item));
+  })).map((item) => path.resolve(item));
 
   return function (f) {
     return packageJsonFilePaths.includes(f);
@@ -90,7 +90,7 @@ export async function isIgnored(baseDir: string, runtime: string, actualCodeUri:
     onlyFiles: false,
     onlyDirectories: false,
     expandDirectories: false,
-  })).map(item => path.resolve(item));;
+  })).map((item) => path.resolve(item));
 
   return function (f) {
     return packageJsonFilePaths.includes(f);
