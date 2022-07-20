@@ -382,7 +382,7 @@ export default class HandlerService {
       CidrBlock: cidrBlock || '10.20.0.0/16',
     };
     logger.debug(`createVSwitch params is ${JSON.stringify(params)}.`);
-    const createRs: any = await this.vpcClient.request('CreateVSwitch', params, requestOption);
+    const createRs: any = await this.retryCreateVSwitch(params);
     const vswitchId = createRs.VSwitchId;
     await writeCreatCache({
       accountID: this.accountID,
@@ -393,6 +393,22 @@ export default class HandlerService {
       value: vswitchId,
     });
     return vswitchId;
+  }
+
+  async retryCreateVSwitch(params) {
+    try {
+      const createRs = await this.vpcClient.request('CreateVSwitch', params, requestOption);
+      return createRs;
+    } catch (ex) {
+      if (ex.code === 'InvalidCidrBlock.Overlapped') {
+        const { CidrBlock } = params;
+        const ips = CidrBlock.split('.');
+        ips[1] = ips[1] / 1 + 1;
+        params.CidrBlock = ips.join('.');
+        return await this.retryCreateVSwitch(params);
+      }
+      throw ex;
+    }
   }
 
   async createVpc({ regionId, vpcName, description, cidrBlock }: IMackVpc): Promise<string> {
