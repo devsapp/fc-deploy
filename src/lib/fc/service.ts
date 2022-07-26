@@ -506,7 +506,7 @@ export class FcService extends FcDeploy<ServiceConfig> {
     if (_.isEmpty(this.statefulAutoConfig) && _.isEmpty(this.remoteConfig)) {
       return;
     }
-    const { logConfig, vpcConfig, nasConfig, role } = this.remoteConfig || {};
+    const { logConfig, vpcConfig, role } = this.remoteConfig || {};
     const resolvedAutoConfigInState: any = this.statefulAutoConfig || {};
     // auto 优先使用线上配置，不存在时再使用缓存配置
     const logConfigAuto = isAutoConfig(this.localConfig.logConfig);
@@ -533,24 +533,6 @@ export class FcService extends FcDeploy<ServiceConfig> {
       }
     }
     const nasConfigAuto = isAutoConfig(this.localConfig.nasConfig);
-    if (nasConfigAuto) {
-      if (!_.isString(nasConfig) && !_.isEmpty(nasConfig?.mountPoints)) {
-        this.localConfig.nasConfig = {
-          userId: nasConfig.userId,
-          groupId: nasConfig.groupId,
-          mountPoints: nasConfig.mountPoints.map((item) =>
-            // @ts-ignore
-            AlicloudNas.transformMountpointFromRemoteToLocal(item)),
-        };
-      } else if (!_.isEmpty(resolvedAutoConfigInState.nasConfig?.mountPoints)) {
-        this.localConfig.nasConfig = {
-          userId: resolvedAutoConfigInState.nasConfig.userId,
-          groupId: resolvedAutoConfigInState.nasConfig.groupId,
-          mountPoints: resolvedAutoConfigInState.nasConfig.mountPoints.map((item) =>
-            AlicloudNas.transformMountpointFromRemoteToLocal(item)),
-        };
-      }
-    }
 
     const roleAuto = isAutoConfig(this.localConfig.role);
     // 存在需要角色的 auto 配置
