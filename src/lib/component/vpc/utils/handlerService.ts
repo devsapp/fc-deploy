@@ -1,4 +1,4 @@
-// import { inquirer } from '@serverless-devs/core';
+import { lodash } from '@serverless-devs/core';
 import Pop from '@alicloud/pop-core';
 import StdoutFormattter from '../../stdout-formatter';
 import { ICredentials, IProperties, IVpcConfig, IDeleteProperties } from '../interface';
@@ -204,22 +204,9 @@ export default class HandlerService {
     logger.debug(`filter vpcs:: ${JSON.stringify(filterVpcs)}`);
 
     if (total >= 1) {
-      const vpcId = filterVpcs[0].VpcId;
-      logger.debug(this.stdoutFormatter.using('vpcId', vpcId));
+      const vpcId = lodash.get(filterVpcs, '[0].VpcId', '');
       return vpcId;
-    } /** else if (total > 1) {
-      logger.spinner?.stop();
-      const { vpcId } = await inquirer.prompt({
-        type: 'list',
-        name: 'vpcId',
-        message: 'There are multiple vpcs, please select a vpc:',
-        choices: filterVpcs.map(({ VpcId }): string => VpcId),
-      });
-      logger.spinner?.start();
-      logger.debug(`vpcId is: ${vpcId}`);
-
-      return vpcId;
-    } */
+    }
 
     if (onlyGet) {
       return '';
@@ -242,17 +229,7 @@ export default class HandlerService {
     if (total >= 1) {
       logger.debug('There is only one vSwitch, directly reuse the current vSwitch.');
       return vSwitches[0].VSwitchId;
-    } /** else if (total === 2) {
-      logger.spinner?.stop();
-      const { vSwitchId } = await inquirer.prompt({
-        type: 'list',
-        name: 'vSwitchId',
-        message: 'There are multiple vSwitch, please select a vSwitch:',
-        choices: vSwitches.map(({ VSwitchId }): string => VSwitchId),
-      });
-      logger.spinner?.start();
-      return vSwitchId;
-    } */
+    }
 
     if (onlyGet) {
       return '';
@@ -275,17 +252,7 @@ export default class HandlerService {
         'There is only one securityGroup, directly reuse the current securityGroups.',
       );
       return securityGroups[0].SecurityGroupId;
-    } /** else if (total === 2) {
-      logger.spinner?.stop();
-      const { securityGroup } = await inquirer.prompt({
-        type: 'list',
-        name: 'securityGroup',
-        message: 'There are multiple securityGroup, please select a securityGroup:',
-        choices: securityGroups.map(({ SecurityGroupId }): string => SecurityGroupId),
-      });
-      logger.spinner?.start();
-      return securityGroup;
-    }*/
+    }
 
     if (onlyGet) {
       return '';
