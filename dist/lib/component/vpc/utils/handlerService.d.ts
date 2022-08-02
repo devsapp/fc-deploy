@@ -46,6 +46,7 @@ export default class HandlerService {
     findVSwitches(regionId: string, vpcId: string, vSwitchName?: string, zoneId?: string): Promise<IFindServiceRS>;
     findSecurityGroups(regionId: string, vpcId: string, securityGroupName: string): Promise<IFindServiceRS>;
     createVSwitch({ regionId, vpcId, zoneId, vSwitchName, description, cidrBlock, }: IMackVswitch): Promise<string>;
+    retryCreateVSwitch(params: any): any;
     createVpc({ regionId, vpcName, description, cidrBlock }: IMackVpc): Promise<string>;
     createSecurityGroup({ regionId, vpcId, securityGroupName, description, }: IMackSecurityGroup): Promise<string>;
     waitVpcUntilAvaliable(regionId: string, vpcId: string): Promise<void>;
