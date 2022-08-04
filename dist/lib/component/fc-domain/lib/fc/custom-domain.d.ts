@@ -30,6 +30,7 @@ export declare class FcCustomDomain {
         [key: string]: any;
     };
     deploy(payload: any): Promise<void>;
+    retryDomainNameNotResolved(payload: any, options: any): Promise<void>;
     remove(): Promise<void>;
 }
 export {};

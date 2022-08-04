@@ -1,1 +1,1 @@
-export default function promiseRetry(fn: any): Promise<any>;
+export default function promiseRetry(fn: any, options?: any): Promise<any>;
