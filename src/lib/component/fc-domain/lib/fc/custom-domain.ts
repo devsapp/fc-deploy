@@ -114,12 +114,40 @@ export class FcCustomDomain {
         }
       } catch (ex) {
         logger.debug(`error when createCustomDomain or updateCustomDomain, domainName is ${this.name}, options is ${JSON.stringify(options)}, error is: \n${ex}`);
+        if (times > 3 && !isDomainExistOnline && ex.code === 'DomainNameNotResolved' && _.endsWith(this.name, '.fc.devsapp.net')) {
+          return await this.retryDomainNameNotResolved(payload, options);
+        }
 
         const retryMsg = StdoutFormatter.stdoutFormatter.retry('custom domain', !isDomainExistOnline ? 'create' : 'update', this.name, times);
         logger.debug(retryMsg);
         retry(ex);
       }
     });
+  }
+
+  async retryDomainNameNotResolved(payload, options) {
+    await promiseRetry(async (retry: any, times: number): Promise<void> => {
+      try { 
+        await this.fcClient.createCustomDomain(this.name, options);
+        if (payload?.regionId && payload?.serviceName) {
+          await writeCreatCache({
+            accountID: this.credentials.AccountID,
+            region: payload.regionId,
+            serviceName: payload.serviceName,
+            configPath: payload.configPath,
+            key: 'domains',
+            value: this.name,
+          });
+        }
+      } catch (ex) {
+        logger.debug(`retryDomainNameNotResolved error, ${ex}\ntimes: ${times}`);
+        if (ex.code === 'DomainNameNotResolved') {
+          retry(ex);
+        } else {
+          throw ex;
+        }
+      }
+    }, { retries: 60, minTimeout: 5, randomize: false, factor: 1 })
   }
 
   async remove(): Promise<void> {
