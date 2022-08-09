@@ -243,7 +243,7 @@ export default class Component {
       }
 
       if (onlyDeployCode) {
-        await fcClient.updateFunction(serviceName, functionName, { code: functionConfig.code });
+        await fcClient.updateFunction(serviceName, functionName, { code: functionConfig.code, withoutCodeLimit: functionConfig.withoutCodeLimit });
         return;
       }
     }
