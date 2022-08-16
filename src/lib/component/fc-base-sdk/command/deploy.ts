@@ -274,13 +274,14 @@ export default class Component {
           `${serviceName}/${functionName} runtime is custom-container, but customContainerConfig is not configured.`,
         );
       }
+      logger.debug(`handler function caPort: ${functionConfig.caPort}`);
     } else if (!onlyDeployConfig && !isCode(functionConfig.code)) {
       throw new Error(`${serviceName}/${functionName} code is not configured.`);
     }
 
     let res;
     // debug 输出代码包的 base64，导致无法调试
-    // logger.debug(`handler function config: ${JSON.stringify(functionConfig, null, 2)}`);
+    // logger.info(`handler function config: ${JSON.stringify(functionConfig, null, 2)}`);
     try {
       res = await fcClient.updateFunction(serviceName, functionName, functionConfig);
     } catch (ex) {
