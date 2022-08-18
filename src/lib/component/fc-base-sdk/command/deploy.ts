@@ -333,26 +333,31 @@ export default class Component {
     const headers = triggerConfig.triggerType === 'eventbridge' ? ENABLE_EB_TRIGGER_HEADER : undefined;
 
     let res;
+
+    try {
+      await fcClient.getTrigger(serviceName, functionName, triggerName, headers);
+
+      res = await fcClient.updateTrigger(serviceName, functionName, triggerName, triggerConfig, headers);
+      return res;
+    } catch(ex) {
+      if (ex.message.includes('Updating trigger is not supported yet.')) {
+        logger.debug(
+          `Updating ${serviceName}/${functionName}/${triggerName} is not supported yet.`,
+        );
+        return triggerConfig;
+      }
+      logger.debug(`makeTrigger error message: ${ex?.toString()}`);
+    }
+
     try {
       res = await fcClient.createTrigger(serviceName, functionName, triggerConfig, headers);
+      logger.debug('Created trigger success.');
     } catch (ex) {
       if (ex.code !== 'TriggerAlreadyExists') {
         logger.debug(`ex code: ${ex.code}, ex: ${ex.message}`);
         throw ex;
       }
-      try {
-        res = await fcClient.updateTrigger(serviceName, functionName, triggerName, triggerConfig, headers);
-      } catch (e) {
-        if (e.message.includes('Updating trigger is not supported yet.')) {
-          logger.debug(
-            `Updating ${serviceName}/${functionName}/${triggerName} is not supported yet.`,
-          );
-          return triggerConfig;
-        }
-        throw e;
-      }
     }
-
     return res;
   }
 }
