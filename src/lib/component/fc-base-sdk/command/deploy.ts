@@ -15,6 +15,7 @@ import logger from '../../../../common/logger';
 import { getFcEndpoint } from '../../../profile';
 import { writeCreatCache } from '../../../utils/write-creat-cache';
 import { ENABLE_EB_TRIGGER_HEADER } from '../constants';
+import { useFcBackend } from '../../../../constant';
 
 export default class Component {
   static configPath;
@@ -175,7 +176,7 @@ export default class Component {
     } else {
       serviceConfig.tracingConfig = {};
     }
-
+    // TODO: 
     let res;
     try {
       res = await fcClient.createService(name, serviceConfig);
@@ -225,7 +226,7 @@ export default class Component {
 
     if (!onlyDeployConfig) {
       if (filename) {
-        if (fs.statSync(filename).size > 52428800) {
+        if (fs.statSync(filename).size > 52428800 || useFcBackend) {
           functionConfig.withoutCodeLimit = true;
           functionConfig.code = {
             zipFile: filename,
