@@ -15,6 +15,7 @@ import logger from '../../../../common/logger';
 import { getFcEndpoint } from '../../../profile';
 import { writeCreatCache } from '../../../utils/write-creat-cache';
 import { ENABLE_EB_TRIGGER_HEADER } from '../constants';
+import { useFcBackend } from '../../../../constant';
 
 export default class Component {
   static configPath;
@@ -124,7 +125,7 @@ export default class Component {
   }
 
   static async makeService(fcClient, sourceServiceConfig) {
-    const { name, vpcConfig, nasConfig, logConfig, role } = sourceServiceConfig;
+    const { name, vpcBinding = [], vpcConfig, nasConfig, logConfig, role } = sourceServiceConfig;
     const serviceConfig = _.cloneDeep(sourceServiceConfig);
 
     if (!logConfig) {
@@ -175,7 +176,7 @@ export default class Component {
     } else {
       serviceConfig.tracingConfig = {};
     }
-
+    // TODO: 
     let res;
     try {
       res = await fcClient.createService(name, serviceConfig);
@@ -193,6 +194,34 @@ export default class Component {
         throw ex;
       }
       res = await fcClient.updateService(name, serviceConfig);
+    }
+
+    try {
+      const { data: vpcBindingRes } = await fcClient._listVpcbinding(name);
+      const remoteVpcBinding = _.get(vpcBindingRes, 'vpcIds');
+      const toAdd = _.difference(vpcBinding, remoteVpcBinding);
+      for (const item of toAdd) {
+        try {
+          await fcClient._createVpcBinding(name, { vpcId: item });
+        } catch (ex) {
+          logger.spinner?.stop();
+          logger.error(`Create ${name} vpcBinding error: ${ex.toString()}`);
+          logger.spinner?.start();
+        }
+      }
+
+      const toRemove = _.difference(remoteVpcBinding, vpcBinding);
+      for (const item of toRemove) {
+        try {
+          await fcClient._deleteVpcBinding(name, { vpcId: item });
+        } catch (ex) {
+          logger.spinner?.stop();
+          logger.error(`Delete ${name} vpcBinding error: ${ex.toString()}`);
+          logger.spinner?.start();
+        }
+      }
+    } catch (ex) {
+      logger.debug(`handler vpc binding error: ${ex.toString()}`);
     }
 
     return res;
@@ -225,7 +254,7 @@ export default class Component {
 
     if (!onlyDeployConfig) {
       if (filename) {
-        if (fs.statSync(filename).size > 52428800) {
+        if (fs.statSync(filename).size > 52428800 || useFcBackend) {
           functionConfig.withoutCodeLimit = true;
           functionConfig.code = {
             zipFile: filename,
