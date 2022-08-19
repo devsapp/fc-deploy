@@ -125,7 +125,7 @@ export default class Component {
   }
 
   static async makeService(fcClient, sourceServiceConfig) {
-    const { name, vpcConfig, nasConfig, logConfig, role } = sourceServiceConfig;
+    const { name, vpcBinding = [], vpcConfig, nasConfig, logConfig, role } = sourceServiceConfig;
     const serviceConfig = _.cloneDeep(sourceServiceConfig);
 
     if (!logConfig) {
@@ -194,6 +194,34 @@ export default class Component {
         throw ex;
       }
       res = await fcClient.updateService(name, serviceConfig);
+    }
+
+    try {
+      const { data: vpcBindingRes } = await fcClient._listVpcbinding(name);
+      const remoteVpcBinding = _.get(vpcBindingRes, 'vpcIds');
+      const toAdd = _.difference(vpcBinding, remoteVpcBinding);
+      for (const item of toAdd) {
+        try {
+          await fcClient._createVpcBinding(name, { vpcId: item });
+        } catch (ex) {
+          logger.spinner?.stop();
+          logger.error(`Create ${name} vpcBinding error: ${ex.toString()}`);
+          logger.spinner?.start();
+        }
+      }
+
+      const toRemove = _.difference(remoteVpcBinding, vpcBinding);
+      for (const item of toRemove) {
+        try {
+          await fcClient._deleteVpcBinding(name, { vpcId: item });
+        } catch (ex) {
+          logger.spinner?.stop();
+          logger.error(`Delete ${name} vpcBinding error: ${ex.toString()}`);
+          logger.spinner?.start();
+        }
+      }
+    } catch (ex) {
+      logger.debug(`handler vpc binding error: ${ex.toString()}`);
     }
 
     return res;
