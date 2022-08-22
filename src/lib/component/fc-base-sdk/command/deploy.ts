@@ -176,7 +176,7 @@ export default class Component {
     } else {
       serviceConfig.tracingConfig = {};
     }
-    // TODO: 
+    // TODO:
     let res;
     try {
       res = await fcClient.createService(name, serviceConfig);
