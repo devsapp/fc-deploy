@@ -719,7 +719,7 @@ export default class FcDeployComponent {
     if (resourceType === 'trigger' && resourceName) {
       for (const fcTrigger of this.fcTriggers) {
         if (resourceName.includes(fcTrigger?.name) && _.isEmpty(fcTrigger?.remoteConfig)) {
-          logger.error(`Trigger ${resourceName} dose not exist online.`);
+          logger.error(`Trigger ${fcTrigger?.name} dose not exist online.`);
           return false;
         }
       }
@@ -727,7 +727,7 @@ export default class FcDeployComponent {
       let triggersExistOnline = false;
       for (const fcTrigger of this.fcTriggers) {
         if (_.isEmpty(fcTrigger?.remoteConfig)) {
-          logger.error(`Trigger ${resourceName} dose not exist online.`);
+          logger.error(`Trigger ${fcTrigger?.name} dose not exist online.`);
         } else {
           triggersExistOnline = true;
         }
