@@ -14,4 +14,5 @@ export default class Component {
     static makeService(fcClient: any, sourceServiceConfig: any): Promise<any>;
     static makeFunction(fcClient: any, sourceFunctionConfig: any, type: any): Promise<any>;
     static makeTrigger(fcClient: any, serviceName: any, functionName: any, triggerConfig: any): Promise<any>;
+    private static handlerUpdateTrigger;
 }
