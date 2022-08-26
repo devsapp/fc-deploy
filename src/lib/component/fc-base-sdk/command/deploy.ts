@@ -383,6 +383,7 @@ export default class Component {
       await fcClient.getTrigger(serviceName, functionName, triggerName, headers);
     } catch (ex) {
       logger.debug(`makeTrigger error message: ${ex?.toString()}`);
+      return;
     }
 
     try {
@@ -395,8 +396,9 @@ export default class Component {
         );
       } else if (ex.code !== 'TriggerNotFound') {
         logger.debug(`ex code: ${ex.code}, ex: ${ex.message}`);
+      } else {
+        throw ex;
       }
-      throw ex;
     }
   }
 }
