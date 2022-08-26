@@ -388,7 +388,7 @@ export default class Component {
     try {
       return await fcClient.updateTrigger(serviceName, functionName, triggerName, triggerConfig, headers);
     } catch (ex) {
-      if (!ex.message.includes('Updating trigger is not supported yet.')) {
+      if (ex.message.includes('Updating trigger is not supported yet.')) {
         logger.log('');
         logger.warn(
           `Updating ${serviceName}/${functionName}/${triggerName} is not supported yet.`,
