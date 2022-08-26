@@ -160,11 +160,11 @@ export default class Component {
     if (serviceConfig.tracingConfig === 'Enable') {
       const xtraceClient = Client.xtraceClient();
       try {
-        const { Token: token } = await xtraceClient.request('GetToken', {}, {});
+        const { Token: token }: any = await xtraceClient.request('GetToken', {}, {});
         serviceConfig.tracingConfig = {
           type: 'Jaeger',
           params: {
-            endpoint: `${token.InternalDomain}/adapt_${token.LicenseKey}_${token.Pid}/api/traces`,
+            endpoint: `${token?.InternalDomain}/adapt_${token?.LicenseKey}_${token?.Pid}/api/traces`,
           },
         };
       } catch (e) {
@@ -361,32 +361,42 @@ export default class Component {
 
     const headers = triggerConfig.triggerType === 'eventbridge' ? ENABLE_EB_TRIGGER_HEADER : undefined;
 
-    let res;
-
-    try {
-      await fcClient.getTrigger(serviceName, functionName, triggerName, headers);
-
-      res = await fcClient.updateTrigger(serviceName, functionName, triggerName, triggerConfig, headers);
-      return res;
-    } catch (ex) {
-      if (ex.message.includes('Updating trigger is not supported yet.')) {
-        logger.debug(
-          `Updating ${serviceName}/${functionName}/${triggerName} is not supported yet.`,
-        );
-        return triggerConfig;
-      }
-      logger.debug(`makeTrigger error message: ${ex?.toString()}`);
+    const updateRes = await this.handlerUpdateTrigger(fcClient, serviceName, functionName, triggerName, triggerConfig, headers);
+    if (updateRes) {
+      return updateRes;
     }
 
     try {
-      res = await fcClient.createTrigger(serviceName, functionName, triggerConfig, headers);
+      const createRes = await fcClient.createTrigger(serviceName, functionName, triggerConfig, headers);
       logger.debug('Created trigger success.');
+      return createRes;
     } catch (ex) {
       if (ex.code !== 'TriggerAlreadyExists') {
         logger.debug(`ex code: ${ex.code}, ex: ${ex.message}`);
         throw ex;
       }
     }
-    return res;
+  }
+
+  private static async handlerUpdateTrigger(fcClient, serviceName, functionName, triggerName, triggerConfig, headers) {
+    try {
+      await fcClient.getTrigger(serviceName, functionName, triggerName, headers);
+    } catch (ex) {
+      logger.debug(`makeTrigger error message: ${ex?.toString()}`);
+    }
+
+    try {
+      return await fcClient.updateTrigger(serviceName, functionName, triggerName, triggerConfig, headers);
+    } catch (ex) {
+      if (!ex.message.includes('Updating trigger is not supported yet.')) {
+        logger.log('');
+        logger.warn(
+          `Updating ${serviceName}/${functionName}/${triggerName} is not supported yet.`,
+        );
+      } else if (ex.code !== 'TriggerNotFound') {
+        logger.debug(`ex code: ${ex.code}, ex: ${ex.message}`);
+      }
+      throw ex;
+    }
   }
 }
