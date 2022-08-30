@@ -196,7 +196,7 @@ export default class Component {
   private async deleteFunction(serviceName, functionName) {
     const vm = spinner(`Delete function ${serviceName}/${functionName}...`);
     try {
-      await this.fcClient.deleteFunction(serviceName, functionName, undefined, ENABLE_EB_TRIGGER_HEADER);
+      await this.fcClient.deleteFunction(serviceName, functionName);
       vm.succeed(`Delete function ${serviceName}/${functionName} success.`);
 
       this.removeNameList.functions || (this.removeNameList.functions = []);
