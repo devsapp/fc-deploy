@@ -111,6 +111,24 @@ export class AlicloudRam extends AlicloudClient {
     const roleArn = await ramComponentIns.deploy(ramComponentInputs);
     return roleArn;
   }
+
+  async checkRoleExist({ arn }): Promise<any> {
+    const roleName = extractRoleNameFromArn(arn);
+    const ramComponent = new RamComponent(
+      this.serverlessProfile,
+      { roleName } as any,
+      this.region,
+      this.credentials,
+      this.curPath,
+    );
+    const ramComponentInputs = ramComponent.genComponentInputs('ram', '');
+    logger.spinner?.stop();
+    const ramComponentIns = await core.loadComponent('devsapp/ram');
+    logger.spinner?.start();
+    const roleExist = await ramComponentIns.check(ramComponentInputs);
+    this.logger.debug(`roleExist: ${roleExist}`);
+    return roleExist;
+  }
 }
 
 export function extractRoleNameFromArn(roleArn: string): string {

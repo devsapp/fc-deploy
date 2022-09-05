@@ -355,7 +355,7 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
         assumeRolePolicy,
         null,
         '  ',
-      )}, policy: ${policyConf}`,
+      )}, policy: ${JSON.stringify(policyConf)}`,
     );
     const alicloudRam = new AlicloudRam(
       this.serverlessProfile,
@@ -409,7 +409,32 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
       delete remoteConfig.lastModifiedTime;
     }
 
-    if (!_.isNil(this.localConfig.role) || this.isEBTrigger() || this.isHttpTrigger() || this.isTimerTrigger()) {
+    if (this.isEBTrigger()) {
+      // TODO: https://github.com/devsapp/fc/issues/827
+    }
+
+    if (this.isEBTrigger() || this.isHttpTrigger() || this.isTimerTrigger()) {
+      return resolvedTriggerConf;
+    }
+
+    // check role ( https://github.com/devsapp/fc/issues/805 )
+    if (!_.isNil(this.localConfig.role)) {
+      try {
+        const arn = this.localConfig.role;
+        const alicloudRam = new AlicloudRam(
+          this.serverlessProfile,
+          this.credentials,
+          this.region,
+          this.curPath,
+        );;
+        const roleExist = await alicloudRam.checkRoleExist({ arn });
+        if (!roleExist) {
+          this.logger.log('');
+          this.logger.warn(`It is detected that the role(${arn}) configured by the trigger does not exist. Please go to the ram console(https://ram.console.aliyun.com/roles)Reconfirm`);
+        }
+      } catch (ex) {
+        this.logger.debug(`Check role exist error: ${ex}`);
+      }
       return resolvedTriggerConf;
     }
     const role = await this.makeInvocationRole();
