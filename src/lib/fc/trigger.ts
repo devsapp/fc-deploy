@@ -1,4 +1,4 @@
-import * as _ from 'lodash';
+import { lodash as _, CatchableError } from '@serverless-devs/core';
 import { generateRamResourceName, CustomPolicyConfig, AlicloudRam } from '../resource/ram';
 import { DESCRIPTION } from '../static';
 import { ServerlessProfile, ICredentials, getFcEndpoint } from '../profile';
@@ -381,6 +381,42 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
     return `${endpoint}/2016-08-15/proxy/${this.serviceName}/${this.functionName}/`;
   }
 
+  async handlerEbSlr() {
+    const eventSourceType = _.get(this.localConfig, 'config.eventSourceConfig.eventSourceType');
+    if (_.isEmpty(eventSourceType) || !_.isString(eventSourceType)) {
+      throw new CatchableError('Eventbridge trigger config.eventSourceConfig.eventSourceType (required)');
+    }
+    const alicloudRam = new AlicloudRam(
+      this.serverlessProfile,
+      this.credentials,
+      this.region,
+      this.curPath,
+    );
+    try {
+      await alicloudRam.createServiceLinkedRole({ serviceName: 'sendevent-fc.eventbridge.aliyuncs.com' });
+      this.logger.debug('createServiceLinkedRole: SendToFC success');
+    } catch (ex) {
+      this.logger.debug(`handler SendToFC error: ${ex}`);
+    }
+
+    try {
+      const SOURCE_TYPE = {
+        Default: ['source-cms.eventbridge.aliyuncs.com', 'source-actiontrail.eventbridge.aliyuncs.com'],
+        MNS: ['sendevent-mns.eventbridge.aliyuncs.com'],
+        RocketMQ: ['source-rocketmq.eventbridge.aliyuncs.com'],
+        RabbitMQ: ['source-rabbitmq.eventbridge.aliyuncs.com'],
+        Kafka: ['source-kafka.eventbridge.aliyuncs.com'],
+      };
+      const sourceType = _.get(SOURCE_TYPE, eventSourceType, []);
+      for (const serviceName of sourceType) {
+        await alicloudRam.createServiceLinkedRole({ serviceName });
+        this.logger.debug(`createServiceLinkedRole ${serviceName} success`);
+      }
+    } catch (ex) {
+      this.logger.debug(`handler Eb Slr error: ${ex}`);
+    }
+  }
+
   async makeTrigger(): Promise<TriggerConfig> {
     if (this.useRemote) {
       this.statefulConfig = _.cloneDeep(this.remoteConfig);
@@ -411,9 +447,11 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
 
     if (this.isEBTrigger()) {
       // TODO: https://github.com/devsapp/fc/issues/827
+      await this.handlerEbSlr();
+      return resolvedTriggerConf;
     }
 
-    if (this.isEBTrigger() || this.isHttpTrigger() || this.isTimerTrigger()) {
+    if (this.isHttpTrigger() || this.isTimerTrigger()) {
       return resolvedTriggerConf;
     }
 
@@ -426,17 +464,18 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
           this.credentials,
           this.region,
           this.curPath,
-        );;
+        );
         const roleExist = await alicloudRam.checkRoleExist({ arn });
         if (!roleExist) {
           this.logger.log('');
-          this.logger.warn(`It is detected that the role(${arn}) configured by the trigger does not exist. Please go to the ram console(https://ram.console.aliyun.com/roles)Reconfirm`);
+          this.logger.warn(`It is detected that the role(${arn}) configured by the trigger does not exist. Please go to the ram console(https://ram.console.aliyun.com/roles) reconfirm`);
         }
       } catch (ex) {
         this.logger.debug(`Check role exist error: ${ex}`);
       }
       return resolvedTriggerConf;
     }
+
     const role = await this.makeInvocationRole();
     Object.assign(resolvedTriggerConf, {
       role,
