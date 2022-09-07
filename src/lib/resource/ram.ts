@@ -111,6 +111,42 @@ export class AlicloudRam extends AlicloudClient {
     const roleArn = await ramComponentIns.deploy(ramComponentInputs);
     return roleArn;
   }
+
+  async checkRoleExist({ arn }): Promise<any> {
+    const roleName = extractRoleNameFromArn(arn);
+    const ramComponent = new RamComponent(
+      this.serverlessProfile,
+      { roleName } as any,
+      this.region,
+      this.credentials,
+      this.curPath,
+    );
+    const ramComponentInputs = ramComponent.genComponentInputs('ram', '');
+    logger.spinner?.stop();
+    const ramComponentIns = await core.loadComponent('devsapp/ram');
+    logger.spinner?.start();
+    const roleExist = await ramComponentIns.check(ramComponentInputs);
+    this.logger.debug(`roleExist: ${roleExist}`);
+    return roleExist;
+  }
+
+  // 此 serviceName 不是fc的服务，而是ram的服务关联角色的云服务的服务 说明链接 https://help.aliyun.com/document_detail/160674.htm?spm=a2c4g.11186623.0.0.6a0c315chezXDu
+  async createServiceLinkedRole({ serviceName }): Promise<any> {
+    const ramComponent = new RamComponent(
+      this.serverlessProfile,
+      { serviceName } as any,
+      this.region,
+      this.credentials,
+      this.curPath,
+    );
+    const ramComponentInputs = ramComponent.genComponentInputs('ram', '');
+    logger.spinner?.stop();
+    const ramComponentIns = await core.loadComponent('devsapp/ram');
+    logger.spinner?.start();
+    const roleExist = await ramComponentIns.createServiceLinkedRole(ramComponentInputs);
+    this.logger.debug(`roleExist: ${roleExist}`);
+    return roleExist;
+  }
 }
 
 export function extractRoleNameFromArn(roleArn: string): string {

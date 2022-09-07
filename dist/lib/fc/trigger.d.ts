@@ -95,5 +95,6 @@ export declare class FcTrigger extends FcDeploy<TriggerConfig> {
     isTimerTrigger(): boolean;
     makeInvocationRole(): Promise<string>;
     generateSystemDomain(): Promise<string>;
+    handlerEbSlr(): Promise<void>;
     makeTrigger(): Promise<TriggerConfig>;
 }
