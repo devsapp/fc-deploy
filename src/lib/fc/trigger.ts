@@ -405,16 +405,18 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
         MNS: ['sendevent-mns.eventbridge.aliyuncs.com'],
         RocketMQ: ['source-rocketmq.eventbridge.aliyuncs.com'],
         RabbitMQ: ['source-rabbitmq.eventbridge.aliyuncs.com'],
-        Kafka: ['source-kafka.eventbridge.aliyuncs.com'],
+        Kafka: ['source-kafka.eventbridge.aliyuncs.com', 'connect-vpc.eventbridge.aliyuncs.com'],
       };
       const sourceType = _.get(SOURCE_TYPE, eventSourceType, []);
       for (const serviceName of sourceType) {
-        await alicloudRam.createServiceLinkedRole({ serviceName });
+        try {
+          await alicloudRam.createServiceLinkedRole({ serviceName });
+        } catch (ex) {
+          this.logger.debug(`handler Eb Slr error: ${ex}`);
+        }
         this.logger.debug(`createServiceLinkedRole ${serviceName} success`);
       }
-    } catch (ex) {
-      this.logger.debug(`handler Eb Slr error: ${ex}`);
-    }
+    } catch (_ex) { }
   }
 
   async makeTrigger(): Promise<TriggerConfig> {
