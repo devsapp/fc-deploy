@@ -6,6 +6,7 @@ import { extract } from '../utils/utils';
 import * as core from '@serverless-devs/core';
 import { promptForConfirmContinue, promptForInputContinue } from '../utils/prompt';
 import _ from 'lodash';
+import logger from '../../common/logger';
 
 export class AlicloudAcr extends AlicloudClient {
   readonly registry: string;
@@ -77,15 +78,18 @@ export class AlicloudAcr extends AlicloudClient {
         // 子账号需要先设置 Regisrty 的登陆密码后才能获取登录 Registry 的临时账号和临时密码
         const msg = `Aliyun ACR need the sub account to set password for logging in the registry ${registry} first if you want fc component to push image automatically. Do you want to continue?`;
         if (assumeYes || (await promptForConfirmContinue(msg))) {
+          logger.spinner?.stop();
           const pwd: string = (
             await promptForInputContinue(`Input password for logging in the registry ${registry}`)
           ).input;
+          logger.spinner?.start();
           await this.createUserInfo(pwd);
           response = await this.getAuthorizationToken();
         } else {
           this.logger.debug(
             'Fc component will not push image for you. Please make the image exist online.',
           );
+          logger.spinner?.start();
           return {};
         }
       } else {
