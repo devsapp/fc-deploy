@@ -3,9 +3,9 @@ import * as _ from 'lodash';
 import retry from 'promise-retry';
 import { AlicloudAcr } from '../resource/acr';
 import path from 'path';
-import { isIgnored, isIgnoredInCodeUri } from '../ignore';
+import { IsIgnored, isIgnored, isIgnoredInCodeUri } from '../ignore';
 import { pack } from '../zip';
-import { ServerlessProfile, ICredentials, replaceProjectName } from '../profile';
+import { ICredentials, replaceProjectName, ServerlessProfile } from '../profile';
 import FcDeploy from './fc-deploy';
 import FcSync from '../component/fc-sync';
 import * as core from '@serverless-devs/core';
@@ -198,6 +198,7 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
       isBuild: true,
     };
   }
+
   async initLocalConfig(assumeYes?: boolean): Promise<void> {
     if (this.existOnline) {
       Object.assign(this.localConfig, {
@@ -269,6 +270,7 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
   genStateID(): string {
     return `${this.credentials.AccountID}-${this.region}-${this.serviceName}-${this.name}`;
   }
+
   validateConfig() {
     if (!_.isNil(this.localConfig?.codeUri) && !_.isNil(this.localConfig?.ossKey)) {
       throw new Error("'codeUri' and 'ossKey' can not both exist in function config.");
@@ -413,7 +415,7 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
     return resolvedFunctionConf;
   }
 
-  async generateCodeIgnore(baseDir: string): Promise<Function | null> {
+  async generateCodeIgnore(baseDir: string): Promise<IsIgnored | null> {
     const codeUri = this.localConfig?.codeUri || FUNCTION_CONF_DEFAULT.codeUri;
     const absCodeUri = path.resolve(baseDir, codeUri);
     if (fse.lstatSync(absCodeUri).isFile()) {
@@ -487,7 +489,7 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
       codeAbsPath = path.resolve(baseDir, './');
     }
 
-    const codeignore = await this.generateCodeIgnore(baseDir);
+    const myIsIgnored = await this.generateCodeIgnore(baseDir);
 
     // await detectLibrary(codeAbsPath, runtime, baseDir, functionName, '\t');
     await fse.mkdirp(FC_CODE_CACHE_DIR);
@@ -508,7 +510,7 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
       }, true);
     }
 
-    return await pack(codeAbsPath, codeignore, zipPath);
+    return await pack(codeAbsPath, myIsIgnored, zipPath);
   }
 
   async removeZipCode(codeZipPath: string): Promise<void> {
@@ -548,6 +550,7 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
       }
     }
   }
+
   async packRemoteCode(): Promise<any> {
     const syncedCodePath: string = await this.syncRemoteCode();
     await fse.mkdirp(FC_CODE_CACHE_DIR);

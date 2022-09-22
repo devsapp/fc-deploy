@@ -70,7 +70,7 @@ export async function isIgnored(baseDir: string, runtime: string, actualCodeUri:
   const fileContentList: string[] = await getIgnoreContent(ignoreFilePath);
   // 对于 build 后的构建物，会将 codeUri 中包含的子目录消除
   // 例如 codeUri: ./code，则 build 后，生成的 codeUri 为 ./.s/build/artifacts/${serviceName}/${functionName}
-  // 因此需要将 .fcjgnore 中的路径对原始 codeUri 求相对路径后作为新的 ignore 内容
+  // 因此需要将 .fcignore 中的路径对原始 codeUri 求相对路径后作为新的 ignore 内容
   if (ignoreRelativePath) {
     for (let i = 0; i < fileContentList.length; i++) {
       const fileIgnoreRelativePath = path.relative(ignoreRelativePath, fileContentList[i]);
@@ -103,4 +103,4 @@ export async function isIgnored(baseDir: string, runtime: string, actualCodeUri:
  * @param file the file to be test
  * @return true: it is ignored. Otherwise it will be deployed to the remote.
  */
-export type IsIgnored = (file: string) => boolean
+export type IsIgnored = (file: string) => boolean;
