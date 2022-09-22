@@ -44,7 +44,7 @@ async function getIgnoreContent(ignoreFilePath: string): Promise<string[]> {
   return [];
 }
 
-export async function isIgnoredInCodeUri(actualCodeUri: string, runtime: string): Promise<Function> {
+export async function isIgnoredInCodeUri(actualCodeUri: string, runtime: string): Promise<IsIgnored> {
   const ignoreFilePath = path.join(actualCodeUri, '.fcignore');
 
   const fileContentList: string[] = await getIgnoreContent(ignoreFilePath);
@@ -64,7 +64,7 @@ export async function isIgnoredInCodeUri(actualCodeUri: string, runtime: string)
   };
 }
 
-export async function isIgnored(baseDir: string, runtime: string, actualCodeUri: string, ignoreRelativePath?: string): Promise<Function> {
+export async function isIgnored(baseDir: string, runtime: string, actualCodeUri: string, ignoreRelativePath?: string): Promise<IsIgnored> {
   const ignoreFilePath = path.join(baseDir, '.fcignore');
 
   const fileContentList: string[] = await getIgnoreContent(ignoreFilePath);
@@ -96,3 +96,11 @@ export async function isIgnored(baseDir: string, runtime: string, actualCodeUri:
     return packageJsonFilePaths.includes(f);
   };
 }
+
+/**
+ * A function used to test whether a file is ignored when deploying or not.
+ *
+ * @param file the file to be test
+ * @return true: it is ignored. Otherwise it will be deployed to the remote.
+ */
+export type IsIgnored = (file: string) => boolean
