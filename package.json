@@ -58,9 +58,5 @@
   },
   "lint-staged": {
     "**/*.{js,jsx,ts}": "f2elint exec eslint"
-  },
-  "jest": {
-    "preset": "ts-jest",
-    "testEnvironment": "node"
   }
 }
