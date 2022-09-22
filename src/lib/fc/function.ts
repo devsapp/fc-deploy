@@ -413,7 +413,7 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
     return resolvedFunctionConf;
   }
 
-  async generateCodeIngore(baseDir: string): Promise<Function | null> {
+  async generateCodeIgnore(baseDir: string): Promise<Function | null> {
     const codeUri = this.localConfig?.codeUri || FUNCTION_CONF_DEFAULT.codeUri;
     const absCodeUri = path.resolve(baseDir, codeUri);
     if (fse.lstatSync(absCodeUri).isFile()) {
@@ -487,7 +487,7 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
       codeAbsPath = path.resolve(baseDir, './');
     }
 
-    const codeignore = await this.generateCodeIngore(baseDir);
+    const codeignore = await this.generateCodeIgnore(baseDir);
 
     // await detectLibrary(codeAbsPath, runtime, baseDir, functionName, '\t');
     await fse.mkdirp(FC_CODE_CACHE_DIR);
