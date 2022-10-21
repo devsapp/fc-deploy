@@ -5,8 +5,9 @@ import StdoutFormatter from '../component/stdout-formatter';
 import { extract } from '../utils/utils';
 import * as core from '@serverless-devs/core';
 import { promptForConfirmContinue, promptForInputContinue } from '../utils/prompt';
-import _ from 'lodash';
 import logger from '../../common/logger';
+
+const _ = core.lodash;
 
 export class AlicloudAcr extends AlicloudClient {
   readonly pushRegistry: string;
@@ -61,19 +62,23 @@ export class AlicloudAcr extends AlicloudClient {
     await this.acrClient.request(httpMethod, uriPath, queries, body, headers, requestOption);
   }
 
+  async getAuthorizationTokenForAcrEE(instanceID: string) {
+    const client = await this.getAcrPopClient();
+    const requestOption = {
+      method: 'POST',
+      formatParams: false,
+    };
+
+    const result = await client.request('GetAuthorizationToken', { InstanceId: instanceID }, requestOption);
+    return {
+      dockerTmpUser: result.TempUsername,
+      dockerTmpToken: result.AuthorizationToken,
+    };
+  }
+
   async getAuthorizationTokenOfRegisrty(registry: string, instanceID?: string, assumeYes?: boolean): Promise<any> {
     if (instanceID) {
-      const client = await this.getAcrPopClient();
-      const requestOption = {
-        method: 'POST',
-        formatParams: false,
-      };
-
-      const result = await client.request('GetAuthorizationToken', { InstanceId: instanceID }, requestOption);
-      return {
-        dockerTmpUser: result.TempUsername,
-        dockerTmpToken: result.AuthorizationToken,
-      };
+      return await this.getAuthorizationTokenForAcrEE(instanceID);
     }
 
     let response;
@@ -147,12 +152,10 @@ export class AlicloudAcr extends AlicloudClient {
 
   async pushImage(image: string, instanceID?: string, assumeYes?: boolean): Promise<void> {
     const imageArr = image.split('/');
-    if (this.pushRegistry === 'acr-internet') {
-      imageArr[0] = AlicloudAcr.replaceVpcRegistry(this.region, imageArr[0]);
-    } else if (this.pushRegistry === 'acr-vpc') {
-      imageArr[0] = AlicloudAcr.replaceInternetRegistry(this.region, imageArr[0]);
+    if (this.pushRegistry === 'acr-vpc') {
+      imageArr[0] = AlicloudAcr.internetImageToVpcImage(this.region, imageArr[0]);
     } else {
-      imageArr[0] = AlicloudAcr.replaceVpcRegistry(this.region, imageArr[0]);
+      imageArr[0] = AlicloudAcr.vpcImageToInternetImage(this.region, imageArr[0]);
     }
 
     const resolvedImage = imageArr.join('/');
@@ -226,13 +229,13 @@ export class AlicloudAcr extends AlicloudClient {
   static isVpcAcrRegistry(registry: string): boolean {
     return registry.includes('registry-vpc');
   }
-  static replaceVpcRegistry(region: string, registry: string): string {
+  static vpcImageToInternetImage (region: string, registry: string): string {
     if (AlicloudAcr.isVpcAcrRegistry(registry)) {
       return _.replace(registry, `registry-vpc.${region}`, `registry.${region}`);
     }
     return registry;
   }
-  static replaceInternetRegistry(region: string, registry: string): string {
+  static internetImageToVpcImage (region: string, registry: string): string {
     if (AlicloudAcr.isVpcAcrRegistry(registry)) {
       return _.replace(registry, `registry.${region}`, `registry-vpc.${region}`);
     }
