@@ -1,18 +1,25 @@
 import { AlicloudClient } from './client';
 import { ServerlessProfile, ICredentials } from '../profile';
 export declare class AlicloudAcr extends AlicloudClient {
-    readonly registry: string;
+    readonly pushRegistry: string;
     readonly acrClient: any;
     constructor(pushRegistry: string, serverlessProfile: ServerlessProfile, credentials: ICredentials, region: string, curPath?: string, args?: string, timeout?: number);
     getAcrPopClient(): Promise<any>;
     getAcrClient(): any;
     getAuthorizationToken(): Promise<any>;
     createUserInfo(pwd: string): Promise<any>;
-    getAuthorizationTokenOfRegisrty(registry: string, assumeYes?: boolean): Promise<any>;
+    getAuthorizationTokenForAcrEE(instanceID: string): Promise<{
+        dockerTmpUser: any;
+        dockerTmpToken: any;
+    }>;
+    getAuthorizationTokenOfRegisrty(registry: string, instanceID?: string, assumeYes?: boolean): Promise<any>;
     initPersonalRepo(image: any): Promise<void>;
-    pushImage(image: string, assumeYes?: boolean): Promise<void>;
+    pushImage(image: string, instanceID?: string, assumeYes?: boolean): Promise<void>;
     static isAcrRegistry(registry: string): boolean;
+    static isAciRegistry(registry: string): boolean;
     static extractRegionFromAcrRegistry(registry: string): string;
     static extractRegistryFromAcrUrl(imageUrl: string): string;
     static isVpcAcrRegistry(registry: string): boolean;
+    static vpcImageToInternetImage(region: string, registry: string): string;
+    static internetImageToVpcImage(region: string, registry: string): string;
 }
