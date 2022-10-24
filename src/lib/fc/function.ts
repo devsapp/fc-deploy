@@ -274,7 +274,11 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
       const imageRegistry: string = AlicloudAcr.extractRegistryFromAcrUrl(
         this.localConfig?.customContainerConfig?.image,
       );
-      if (!AlicloudAcr.isAcrRegistry(imageRegistry)) {
+      if (AlicloudAcr.isAciRegistry(imageRegistry)) {
+        if (!this.localConfig?.customContainerConfig?.instanceID) {
+          throw new core.CatchableError(`When an enterprise version instance is selected for the container image, you need to add an instance ID to the enterprise version of the container image service. Refer to: https://docs.serverless-devs.com/fc/yaml/function#customcontainerconfig`);
+        }
+      } else if (!AlicloudAcr.isAcrRegistry(imageRegistry)) {
         throw new Error(
           `Custom container function only support ACR image.\nPlease use ACR: https://help.aliyun.com/product/60716.html and make the registry in ACR format: registry.${this.region}.aliyuncs.com`,
         );
@@ -539,7 +543,8 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
             this.credentials,
             this.region,
           );
-          await alicloudAcr.pushImage(this.localConfig?.customContainerConfig.image, assumeYes);
+          const { image, instanceID } = this.localConfig?.customContainerConfig || {};
+          await alicloudAcr.pushImage(image, instanceID, assumeYes);
         }
       } catch (e) {
         handleKnownErrors(e);

@@ -5,11 +5,12 @@ import StdoutFormatter from '../component/stdout-formatter';
 import { extract } from '../utils/utils';
 import * as core from '@serverless-devs/core';
 import { promptForConfirmContinue, promptForInputContinue } from '../utils/prompt';
-import _ from 'lodash';
 import logger from '../../common/logger';
 
+const _ = core.lodash;
+
 export class AlicloudAcr extends AlicloudClient {
-  readonly registry: string;
+  readonly pushRegistry: string;
   readonly acrClient: any;
   constructor(
     pushRegistry: string,
@@ -21,11 +22,7 @@ export class AlicloudAcr extends AlicloudClient {
     timeout?: number,
   ) {
     super(serverlessProfile, credentials, region, curPath, args, timeout);
-    if (pushRegistry === 'acr-internet') {
-      this.registry = `registry.${this.region}.aliyuncs.com`;
-    } else if (pushRegistry === 'acr-vpc') {
-      this.registry = `registry-vpc.${this.region}.aliyuncs.com`;
-    }
+    this.pushRegistry = pushRegistry;
     this.acrClient = this.getAcrClient();
   }
 
@@ -65,7 +62,25 @@ export class AlicloudAcr extends AlicloudClient {
     await this.acrClient.request(httpMethod, uriPath, queries, body, headers, requestOption);
   }
 
-  async getAuthorizationTokenOfRegisrty(registry: string, assumeYes?: boolean): Promise<any> {
+  async getAuthorizationTokenForAcrEE(instanceID: string) {
+    const client = await this.getAcrPopClient();
+    const requestOption = {
+      method: 'POST',
+      formatParams: false,
+    };
+
+    const result = await client.request('GetAuthorizationToken', { InstanceId: instanceID }, requestOption);
+    return {
+      dockerTmpUser: result.TempUsername,
+      dockerTmpToken: result.AuthorizationToken,
+    };
+  }
+
+  async getAuthorizationTokenOfRegisrty(registry: string, instanceID?: string, assumeYes?: boolean): Promise<any> {
+    if (instanceID) {
+      return await this.getAuthorizationTokenForAcrEE(instanceID);
+    }
+
     let response;
     try {
       response = await this.getAuthorizationToken();
@@ -135,22 +150,20 @@ export class AlicloudAcr extends AlicloudClient {
     }
   }
 
-  async pushImage(image: string, assumeYes?: boolean): Promise<void> {
+  async pushImage(image: string, instanceID?: string, assumeYes?: boolean): Promise<void> {
     const imageArr = image.split('/');
-    if (this.registry) {
-      imageArr[0] = this.registry;
+    if (this.pushRegistry === 'acr-vpc') {
+      imageArr[0] = AlicloudAcr.internetImageToVpcImage(this.region, imageArr[0]);
+    } else {
+      imageArr[0] = AlicloudAcr.vpcImageToInternetImage(this.region, imageArr[0]);
     }
-    let resolvedImage = imageArr.join('/');
 
-    if (AlicloudAcr.isVpcAcrRegistry(imageArr[0])) {
-      // 没有 --push-registry 参数且是 vpc registry
-      imageArr[0] = `registry.${this.region}.aliyuncs.com`;
-      resolvedImage = imageArr.join('/');
-    }
+    const resolvedImage = imageArr.join('/');
     this.logger.debug(StdoutFormatter.stdoutFormatter.using('image registry', imageArr[0]));
 
     const { dockerTmpUser, dockerTmpToken } = await this.getAuthorizationTokenOfRegisrty(
       imageArr[0],
+      instanceID,
       assumeYes,
     );
     if (image.startsWith('registry')) {
@@ -184,12 +197,12 @@ export class AlicloudAcr extends AlicloudClient {
       this.logger.debug(`Push image: ${image} failed， error is ${e}`);
     }
 
-    const tagVm = core.spinner(`Tagging image ${image} as ${resolvedImage}`);
+    const tagVm = core.spinner(`Tagging image ${image} as ${resolvedImage}\t`);
     try {
       execSync(`docker tag ${image} ${resolvedImage}`, { stdio: 'inherit' });
-      tagVm.succeed(`Tag image ${image} as ${resolvedImage}`);
+      tagVm.succeed(`Tag image ${image} as ${resolvedImage}\t`);
     } catch (e) {
-      tagVm.fail(`Tag image ${image} as ${resolvedImage} failed.`);
+      tagVm.fail(`Tag image ${image} as ${resolvedImage} failed.\t`);
       throw e;
     }
 
@@ -198,17 +211,34 @@ export class AlicloudAcr extends AlicloudClient {
   }
 
   static isAcrRegistry(registry: string): boolean {
-    return registry.includes('registry') && registry.endsWith('.aliyuncs.com');
+    return registry.startsWith('registry') && registry.endsWith('.aliyuncs.com');
+  }
+  static isAciRegistry(registry: string): boolean { // 容器镜像企业服务
+    return registry.includes('registry') && registry.endsWith('cr.aliyuncs.com');
   }
   static extractRegionFromAcrRegistry(registry: string): string {
-    return extract(/^registry(|-vpc).([^.]+).aliyuncs.com$/, registry, 2);
+    if (registry.startsWith('registry')) {
+      return extract(/^registry(|-vpc).([^.]+).aliyuncs.com$/, registry, 2);
+    }
+    return extract(/-registry(|-vpc).([^.]+).cr.aliyuncs.com$/, registry, 2);
   }
   static extractRegistryFromAcrUrl(imageUrl: string): string {
     const imageArr = imageUrl.split('/');
     return imageArr[0];
   }
-
   static isVpcAcrRegistry(registry: string): boolean {
     return registry.includes('registry-vpc');
+  }
+  static vpcImageToInternetImage (region: string, registry: string): string {
+    if (AlicloudAcr.isVpcAcrRegistry(registry)) {
+      return _.replace(registry, `registry-vpc.${region}`, `registry.${region}`);
+    }
+    return registry;
+  }
+  static internetImageToVpcImage (region: string, registry: string): string {
+    if (AlicloudAcr.isVpcAcrRegistry(registry)) {
+      return _.replace(registry, `registry.${region}`, `registry-vpc.${region}`);
+    }
+    return registry;
   }
 }
