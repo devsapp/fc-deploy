@@ -119,6 +119,36 @@ export default class FcDeployComponent {
       (needDeployAll && type !== 'code') || (!command && type !== 'code') || command === 'trigger';
     let needDeployAllTriggers = true;
 
+    // deploy custom domain
+    let hasAutoCustomDomainNameInDomains = false;
+    const resolvedCustomDomainConfs: CustomDomainConfig[] = [];
+    const needDeployDomain = needDeployAll || (!command && type !== 'code') || command === 'domain';
+    if (!_.isEmpty(this.fcCustomDomains) && needDeployDomain) {
+      logger.spinner?.stop();
+      const spin = core.spinner('Generated auto custom domain...');
+      try {
+        for (let i = 0; i < this.fcCustomDomains.length; i++) {
+          await this.fcCustomDomains[i].initLocal(useLocal, useRemote, _.cloneDeep(inputs));
+          if (this.fcCustomDomains[i].useRemote) {
+            continue;
+          }
+          const resolvedCustomDomainConf: CustomDomainConfig = await this.fcCustomDomains[
+            i
+          ].makeCustomDomain(this.args, this.credentials);
+          hasAutoCustomDomainNameInDomains =
+            hasAutoCustomDomainNameInDomains || this.fcCustomDomains[i].isDomainNameAuto;
+          resolvedCustomDomainConfs.push(resolvedCustomDomainConf);
+          logger.debug(
+            `resolved custom domain: \n${JSON.stringify(resolvedCustomDomainConf, null, '  ')}`,
+          );
+        }
+        spin.succeed('Generated auto custom domain succeed');
+      } catch (error) {
+        spin.fail('Generated auto custom domain failed');
+        throw error;
+      }
+    }
+
     await logger.task('Checking', [
       {
         title: `Checking Service ${this.fcService?.name} exists`,
@@ -359,32 +389,7 @@ export default class FcDeployComponent {
       }
     }
 
-    // deploy custom domain
-    let hasAutoCustomDomainNameInDomains = false;
-    const resolvedCustomDomainConfs: CustomDomainConfig[] = [];
-    const needDeployDomain = needDeployAll || (!command && type !== 'code') || command === 'domain';
     await logger.task('Creating custom domain', [
-      {
-        title: 'Generated auto custom domain...',
-        enabled: () => !_.isEmpty(this.fcCustomDomains) && needDeployDomain,
-        task: async () => {
-          for (let i = 0; i < this.fcCustomDomains.length; i++) {
-            await this.fcCustomDomains[i].initLocal(useLocal, useRemote, _.cloneDeep(inputs));
-            if (this.fcCustomDomains[i].useRemote) {
-              continue;
-            }
-            const resolvedCustomDomainConf: CustomDomainConfig = await this.fcCustomDomains[
-              i
-            ].makeCustomDomain(this.args, this.credentials);
-            hasAutoCustomDomainNameInDomains =
-              hasAutoCustomDomainNameInDomains || this.fcCustomDomains[i].isDomainNameAuto;
-            resolvedCustomDomainConfs.push(resolvedCustomDomainConf);
-            logger.debug(
-              `resolved custom domain: \n${JSON.stringify(resolvedCustomDomainConf, null, '  ')}`,
-            );
-          }
-        },
-      },
       {
         title: 'Check domain config auto dns...',
         enabled: () => !_.isEmpty(resolvedCustomDomainConfs),
