@@ -386,6 +386,23 @@ export default class FcDeployComponent {
         },
       },
       {
+        title: 'Check domain config auto dns...',
+        enabled: () => !_.isEmpty(resolvedCustomDomainConfs),
+        task: async () => {
+          for (const fcCustomDomain of this.fcCustomDomains) {
+            if (fcCustomDomain.useRemote || !fcCustomDomain.isDomainNameAuto) {
+              continue;
+            }
+            logger.debug(`check domain props: ${fcCustomDomain.customDomainConf.domainName}`);
+            try {
+              await fcCustomDomain.checkCname();
+            } catch (ex) {
+              logger.debug(`check domain dns error: ${ex.message}`);
+            }
+          }
+        },
+      },
+      {
         title: 'Creating custom domain...',
         enabled: () => !_.isEmpty(resolvedCustomDomainConfs),
         task: async () => {
