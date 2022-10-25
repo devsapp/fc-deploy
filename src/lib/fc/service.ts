@@ -250,6 +250,7 @@ export class FcService extends FcDeploy<ServiceConfig> {
       );
       return roleArn;
     } catch (ex) {
+      // UnauthorizedError
       if (ex.code === 'NoPermission') {
         this.logger.debug(`handler role no permission, error: ${ex}`);
         return `acs:ram::${accountID}:role/aliyunfcdefaultrole`;

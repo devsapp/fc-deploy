@@ -229,13 +229,13 @@ export class AlicloudAcr extends AlicloudClient {
   static isVpcAcrRegistry(registry: string): boolean {
     return registry.includes('registry-vpc');
   }
-  static vpcImageToInternetImage (region: string, registry: string): string {
+  static vpcImageToInternetImage(region: string, registry: string): string {
     if (AlicloudAcr.isVpcAcrRegistry(registry)) {
       return _.replace(registry, `registry-vpc.${region}`, `registry.${region}`);
     }
     return registry;
   }
-  static internetImageToVpcImage (region: string, registry: string): string {
+  static internetImageToVpcImage(region: string, registry: string): string {
     if (AlicloudAcr.isVpcAcrRegistry(registry)) {
       return _.replace(registry, `registry.${region}`, `registry-vpc.${region}`);
     }

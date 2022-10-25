@@ -276,7 +276,7 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
       );
       if (AlicloudAcr.isAciRegistry(imageRegistry)) {
         if (!this.localConfig?.customContainerConfig?.instanceID) {
-          throw new core.CatchableError(`When an enterprise version instance is selected for the container image, you need to add an instance ID to the enterprise version of the container image service. Refer to: https://docs.serverless-devs.com/fc/yaml/function#customcontainerconfig`);
+          throw new core.CatchableError('When an enterprise version instance is selected for the container image, you need to add an instance ID to the enterprise version of the container image service. Refer to: https://docs.serverless-devs.com/fc/yaml/function#customcontainerconfig');
         }
       } else if (!AlicloudAcr.isAcrRegistry(imageRegistry)) {
         throw new Error(
