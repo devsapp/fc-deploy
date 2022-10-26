@@ -40,5 +40,6 @@ export declare class FcCustomDomain extends IInputsBase {
     delStatedCustomDomainConf(): Promise<void>;
     getStatedCustomDomainConf(): Promise<string>;
     makeCustomDomain(args: string, credentials: any): Promise<CustomDomainConfig>;
+    checkCname(): Promise<boolean>;
 }
 export {};
