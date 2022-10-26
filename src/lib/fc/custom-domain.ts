@@ -294,4 +294,20 @@ export class FcCustomDomain extends IInputsBase {
 
     return resolvedCustomDomainConf;
   }
+
+  async checkCname(): Promise<boolean> {
+    const domainComponentInputs = {
+      ..._.cloneDeep(this.serverlessProfile),
+      props: {
+        region: this.region,
+        domain: this.customDomainConf.domainName,
+      },
+    };
+    logger.spinner?.stop();
+    const domainComponentIns = await core.load('devsapp/domain');
+    logger.spinner?.start();
+    const status = await domainComponentIns.checkCname(domainComponentInputs);
+    logger.debug(`check domain status: ${status}`);
+    return status;
+  }
 }
