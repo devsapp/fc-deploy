@@ -19,6 +19,7 @@ import { AlicloudOss } from '../resource/oss';
 import { imageExist } from '../utils/docker';
 import { handleKnownErrors } from '../error';
 import { checkBuildAvailable } from '../utils/utils';
+import { useFcBackend } from '../../constant';
 
 const { fse } = core;
 
@@ -664,12 +665,10 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
   }
 
   async checkRemoteFunctionStatus() {
-    if (isCustomContainerRuntime(this.localConfig?.runtime)) {
+    if (isCustomContainerRuntime(this.localConfig?.runtime) && useFcBackend) {
 
-      const spin = core.spinner('Check custom container acceleration status...');
       try {
         const fcClient = await this.getFcClient();
-
         // 检测镜像函数加速状态：间隔 3，最大次数 100 次
         const retries = 100;
         const minTimeout = 3 * 1000;
@@ -690,10 +689,8 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
           minTimeout,
           factor: 1,
         });
-        spin.stop('');
       } catch (ex) {
         this.logger.debug(`check remote function error: ${ex?.message}`);
-        spin.fail('Check custom container acceleration abnormal');
       }
     }
   }

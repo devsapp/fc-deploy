@@ -478,7 +478,13 @@ export default class FcDeployComponent {
       delete returnedFunctionConf.import;
       delete returnedFunctionConf.protect;
 
-      await this.fcFunction.checkRemoteFunctionStatus();
+      await logger.task('Checking', [{
+        title: 'custom container acceleration status...',
+        task: async () => {
+          await this.fcFunction.checkRemoteFunctionStatus();
+        },
+      }]);
+      
       Object.assign(res, { function: returnedFunctionConf });
     }
     if (!_.isEmpty(resolvedTriggerConfs) && needDeployTrigger) {
@@ -518,7 +524,7 @@ export default class FcDeployComponent {
         logger.log('\nThere is generated role config in the triggers config', 'yellow');
       }
     }
-    // logger.spinner?.stop();
+
     return res;
   }
 
