@@ -391,8 +391,13 @@ export default class FcDeployComponent {
 
     await logger.task('Creating custom domain', [
       {
-        title: 'Check domain config auto dns...',
-        enabled: () => !_.isEmpty(resolvedCustomDomainConfs),
+        title: 'Checking Domain config ... (Binding the test domain will take some time. Please wait.)',
+        enabled: () => {
+          if (process.env.CLOSE_CHECK_DOMAIN_CON) {
+            return false;
+          }
+          return !_.isEmpty(resolvedCustomDomainConfs);
+        },
         task: async () => {
           for (const fcCustomDomain of this.fcCustomDomains) {
             if (fcCustomDomain.useRemote || !fcCustomDomain.isDomainNameAuto) {
