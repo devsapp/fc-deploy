@@ -41,11 +41,8 @@ export class AlicloudNas extends AlicloudClient {
     };
   }
 
-  static getUserId(runtime) {
-    if (runtime === 'custom' || runtime === 'custom-container') {
-      return 0;
-    }
-    return 10003;
+  static getUserId(_runtime) {
+    return 0;
   }
 
   async getNasPopClient(): Promise<any> {
