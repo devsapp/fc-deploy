@@ -33,6 +33,7 @@ export declare class FcCustomDomain extends IInputsBase {
     readonly stateId: string;
     isDomainNameAuto: boolean;
     useRemote: boolean;
+    generatedDomain: string;
     constructor(customDomainConf: CustomDomainConfig, serviceName: string, functionName: string, triggerConfs: TriggerConfig[], serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string);
     initLocal(useLocal: any, useRemote: any, inputs: any): Promise<void>;
     validateConfig(): void;

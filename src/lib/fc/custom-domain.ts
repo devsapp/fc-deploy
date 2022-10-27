@@ -52,6 +52,7 @@ export class FcCustomDomain extends IInputsBase {
   readonly stateId: string;
   isDomainNameAuto: boolean;
   useRemote: boolean;
+  generatedDomain: string;
 
   constructor(
     customDomainConf: CustomDomainConfig,
@@ -285,6 +286,7 @@ export class FcCustomDomain extends IInputsBase {
         const domainComponentIns = await core.load('devsapp/domain');
         logger.spinner?.start();
         generatedDomain = await domainComponentIns.get(domainComponentInputs);
+        this.generatedDomain = generatedDomain;
       }
       this.logger.debug(`Generated auto custom domain: ${generatedDomain}`);
       Object.assign(resolvedCustomDomainConf, {
@@ -300,7 +302,7 @@ export class FcCustomDomain extends IInputsBase {
       ..._.cloneDeep(this.serverlessProfile),
       props: {
         region: this.region,
-        domain: this.customDomainConf.domainName,
+        domain: this.generatedDomain || this?.customDomainConf?.domainName,
       },
     };
     logger.spinner?.stop();
