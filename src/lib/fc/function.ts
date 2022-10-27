@@ -1,5 +1,6 @@
 import { FUNCTION_CONF_DEFAULT, FC_CODE_CACHE_DIR } from '../static';
 import * as _ from 'lodash';
+import retry from 'promise-retry';
 import { AlicloudAcr } from '../resource/acr';
 import path from 'path';
 import { isIgnored, isIgnoredInCodeUri } from '../ignore';
@@ -660,5 +661,40 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
     }
 
     return resolvedFunctionConf;
+  }
+
+  async checkRemoteFunctionStatus() {
+    if (isCustomContainerRuntime(this.localConfig?.runtime)) {
+
+      const spin = core.spinner('Check custom container acceleration status...');
+      try {
+        const fcClient = await this.getFcClient();
+
+        // 检测镜像函数加速状态：间隔 3，最大次数 100 次
+        const retries = 100;
+        const minTimeout = 3 * 1000;
+        await retry(async (ry: any, times: number) => {
+
+          const { data } = await fcClient.getFunction(this.serviceName, this.name);
+          const accelerationStatus = _.get(data, 'customContainerConfig.accelerationInfo.status');
+          this.logger.debug(`${this.name} acceleration status: ${accelerationStatus}`);
+          if (_.isEmpty(accelerationStatus)) { // 如果没有状态则直接跳出
+            return;
+          }
+          if (['Failed', 'Preparing', 'Ready'].includes(accelerationStatus) || times === retries) { // 终态或者到时间要跳出
+            return accelerationStatus;
+          }
+          ry('');
+        }, {
+          retries,
+          minTimeout,
+          factor: 1,
+        });
+        spin.stop('');
+      } catch (ex) {
+        this.logger.debug(`check remote function error: ${ex?.message}`);
+        spin.fail('Check custom container acceleration abnormal');
+      }
+    }
   }
 }

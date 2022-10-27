@@ -477,6 +477,8 @@ export default class FcDeployComponent {
     if (!_.isEmpty(resolvedFunctionConf) && needDeployFunction) {
       delete returnedFunctionConf.import;
       delete returnedFunctionConf.protect;
+
+      await this.fcFunction.checkRemoteFunctionStatus();
       Object.assign(res, { function: returnedFunctionConf });
     }
     if (!_.isEmpty(resolvedTriggerConfs) && needDeployTrigger) {
@@ -516,7 +518,7 @@ export default class FcDeployComponent {
         logger.log('\nThere is generated role config in the triggers config', 'yellow');
       }
     }
-
+    // logger.spinner?.stop();
     return res;
   }
 
