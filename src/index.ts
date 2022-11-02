@@ -477,6 +477,14 @@ export default class FcDeployComponent {
     if (!_.isEmpty(resolvedFunctionConf) && needDeployFunction) {
       delete returnedFunctionConf.import;
       delete returnedFunctionConf.protect;
+
+      await logger.task('Checking', [{
+        title: 'custom container acceleration status...',
+        task: async () => {
+          await this.fcFunction.checkRemoteFunctionStatus();
+        },
+      }]);
+      
       Object.assign(res, { function: returnedFunctionConf });
     }
     if (!_.isEmpty(resolvedTriggerConfs) && needDeployTrigger) {

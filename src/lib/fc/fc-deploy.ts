@@ -271,5 +271,14 @@ export default abstract class FcDeploy<T> extends IInputsBase {
     // }
   }
 
+  async getFcClient() {
+    const fcCore = await core.loadComponent('devsapp/fc-core');
+    return await fcCore.makeFcClient({
+      access: this.serverlessProfile?.project?.access,
+      credentials: this.credentials,
+      region: this.region,
+    });
+  }
+
   abstract genStateID(): string;
 }
