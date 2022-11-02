@@ -96,4 +96,5 @@ export declare class FcFunction extends FcDeploy<FunctionConfig> {
         codeOssObject?: string;
     }>;
     makeFunction(baseDir: string, type: string, pushRegistry?: string, assumeYes?: boolean, skipAutoPush?: boolean): Promise<FunctionConfig>;
+    checkRemoteFunctionStatus(): Promise<void>;
 }
