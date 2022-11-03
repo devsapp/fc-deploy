@@ -38,6 +38,8 @@ export interface FunctionConfig {
   runtime: string;
   timeout?: number;
   layers?: string[];
+  cpu?: number;
+  diskSize?: number;
   environmentVariables?: {
     [key: string]: any;
   };
@@ -312,6 +314,16 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
       instanceType: this.localConfig?.instanceType || FUNCTION_CONF_DEFAULT.instanceType,
       runtime: this.localConfig?.runtime || FUNCTION_CONF_DEFAULT.runtime,
     };
+    if (!_.isNil(this.localConfig?.cpu)) {
+      Object.assign(resolvedFunctionConf, {
+        cpu: this.localConfig?.cpu,
+      });
+    }
+    if (!_.isNil(this.localConfig?.diskSize)) {
+      Object.assign(resolvedFunctionConf, {
+        diskSize: this.localConfig?.diskSize,
+      });
+    }
     if (!_.isNil(this.localConfig?.asyncConfiguration)) {
       Object.assign(resolvedFunctionConf, {
         asyncConfiguration: this.localConfig?.asyncConfiguration,
