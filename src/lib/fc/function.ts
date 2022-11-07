@@ -678,14 +678,12 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
 
   async checkRemoteFunctionStatus() {
     if (isCustomContainerRuntime(this.localConfig?.runtime) && useFcBackend) {
-
       try {
         const fcClient = await this.getFcClient();
         // 检测镜像函数加速状态：间隔 3，最大次数 100 次
         const retries = 100;
         const minTimeout = 3 * 1000;
         await retry(async (ry: any, times: number) => {
-
           const { data } = await fcClient.getFunction(this.serviceName, this.name);
           const accelerationStatus = _.get(data, 'customContainerConfig.accelerationInfo.status');
           this.logger.debug(`${this.name} acceleration status: ${accelerationStatus}`);

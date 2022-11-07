@@ -147,7 +147,7 @@ export default class FcDeployComponent {
           } catch (error) {
             throw error;
           }
-        }
+        },
       }]);
     }
 
@@ -484,7 +484,7 @@ export default class FcDeployComponent {
           await this.fcFunction.checkRemoteFunctionStatus();
         },
       }]);
-      
+
       Object.assign(res, { function: returnedFunctionConf });
     }
     if (!_.isEmpty(resolvedTriggerConfs) && needDeployTrigger) {
