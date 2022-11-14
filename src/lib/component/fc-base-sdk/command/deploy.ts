@@ -394,7 +394,7 @@ export default class Component {
         logger.warn(
           `Updating ${serviceName}/${functionName}/${triggerName} is not supported yet.`,
         );
-      } else if (ex.code !== 'TriggerNotFound') {
+      } else if (ex.code === 'TriggerNotFound') {
         logger.debug(`ex code: ${ex.code}, ex: ${ex.message}`);
       } else {
         throw ex;
