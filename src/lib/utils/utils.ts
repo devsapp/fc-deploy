@@ -45,7 +45,7 @@ export function extract(regex, endpoint, idx) {
 }
 
 export function generateResourceName(serviceName: string, region: string, accountID: string) {
-  const prefix = serviceName.slice(0, 6);
+  const prefix = serviceName.slice(0, 6).toLocaleLowerCase();
 
   const md5Uid = crypto.createHmac('md5', accountID).update(serviceName).digest('hex');
   return `${prefix}-${md5Uid.slice(0, 7)}-${region}`;
