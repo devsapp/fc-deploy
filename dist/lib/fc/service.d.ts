@@ -14,6 +14,14 @@ export interface ServiceConfig {
     role?: string | RoleConfig;
     vpcConfig?: VpcConfig | 'auto' | 'Auto';
     nasConfig?: NasConfig | 'auto' | 'Auto';
+    ossMountConfig?: {
+        mountPoints: Array<{
+            endpoint: string;
+            bucketName: string;
+            mountDir: string;
+            readOnly?: boolean;
+        }>;
+    };
     tracingConfig?: 'Enable' | 'Disable';
     vpcBinding?: string[];
     import?: boolean;
@@ -24,6 +32,7 @@ export declare class FcService extends FcDeploy<ServiceConfig> {
     readonly hasFunctionAsyncConfig: boolean;
     readonly hasCustomContainerConfig: boolean;
     readonly hasVpcBindingConfig: boolean;
+    readonly hasOssMountConfig: boolean;
     readonly runtime: string;
     hasAutoConfig: boolean;
     name: string;
