@@ -31,12 +31,12 @@ export interface ServiceConfig {
   vpcConfig?: VpcConfig | 'auto' | 'Auto';
   nasConfig?: NasConfig | 'auto' | 'Auto';
   ossMountConfig?: {
-    mountPoints: {
+    mountPoints: Array<{
       endpoint: string;
       bucketName: string;
       mountDir: string;
       readOnly?: boolean;
-    }[]
+    }>;
   };
   tracingConfig?: 'Enable' | 'Disable';
   vpcBinding?: string[];
@@ -136,7 +136,7 @@ export class FcService extends FcDeploy<ServiceConfig> {
       logger.debug(StdoutFormatter.stdoutFormatter.using('role', `extracted name is ${roleName}`));
       return serviceRole as string;
     }
-  
+
     const defaultRole = `acs:ram::${accountID}:role/aliyunfcdefaultrole`;
     const needAppendNetworkInterface = !_.isEmpty(vpcConfig) || !_.isEmpty(nasConfig);
     const alicloudRam = new AlicloudRam(
@@ -174,7 +174,7 @@ export class FcService extends FcDeploy<ServiceConfig> {
           throw ex;
         }
       }
-    } 
+    }
 
     let roleDescription: string;
     const attachedPolicies = [];

@@ -416,7 +416,7 @@ export class FcTrigger extends FcDeploy<TriggerConfig> {
         }
         this.logger.debug(`createServiceLinkedRole ${serviceName} success`);
       }
-    } catch (_ex) { }
+    } catch (_ex) { /* 不阻塞主流程 */ }
   }
 
   async makeTrigger(): Promise<TriggerConfig> {

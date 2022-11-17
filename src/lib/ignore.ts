@@ -1,6 +1,6 @@
 import path from 'path';
 import globby from 'globby';
-import { fse, lodash as _ } from '@serverless-devs/core';
+import { fse } from '@serverless-devs/core';
 import readline from 'readline';
 import logger from '../common/logger';
 

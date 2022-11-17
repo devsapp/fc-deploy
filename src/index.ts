@@ -128,24 +128,20 @@ export default class FcDeployComponent {
         title: 'Generated auto custom domain...',
         id: 'domain',
         task: async () => {
-          try {
-            for (let i = 0; i < this.fcCustomDomains.length; i++) {
-              await this.fcCustomDomains[i].initLocal(useLocal, useRemote, _.cloneDeep(inputs));
-              if (this.fcCustomDomains[i].useRemote) {
-                continue;
-              }
-              const resolvedCustomDomainConf: CustomDomainConfig = await this.fcCustomDomains[
-                i
-              ].makeCustomDomain(this.args, this.credentials);
-              hasAutoCustomDomainNameInDomains =
-                hasAutoCustomDomainNameInDomains || this.fcCustomDomains[i].isDomainNameAuto;
-              resolvedCustomDomainConfs.push(resolvedCustomDomainConf);
-              logger.debug(
-                `resolved custom domain: \n${JSON.stringify(resolvedCustomDomainConf, null, '  ')}`,
-              );
+          for (let i = 0; i < this.fcCustomDomains.length; i++) {
+            await this.fcCustomDomains[i].initLocal(useLocal, useRemote, _.cloneDeep(inputs));
+            if (this.fcCustomDomains[i].useRemote) {
+              continue;
             }
-          } catch (error) {
-            throw error;
+            const resolvedCustomDomainConf: CustomDomainConfig = await this.fcCustomDomains[
+              i
+            ].makeCustomDomain(this.args, this.credentials);
+            hasAutoCustomDomainNameInDomains =
+              hasAutoCustomDomainNameInDomains || this.fcCustomDomains[i].isDomainNameAuto;
+            resolvedCustomDomainConfs.push(resolvedCustomDomainConf);
+            logger.debug(
+              `resolved custom domain: \n${JSON.stringify(resolvedCustomDomainConf, null, '  ')}`,
+            );
           }
         },
       }]);

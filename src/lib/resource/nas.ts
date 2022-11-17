@@ -41,7 +41,8 @@ export class AlicloudNas extends AlicloudClient {
     };
   }
 
-  static getUserId(_runtime) {
+  static getUserId(runtime) {
+    logger.debug(`getUserId runtime: ${runtime}`);
     return 0;
   }
 
