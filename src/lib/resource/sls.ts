@@ -22,7 +22,7 @@ export const generateProjectName = (accountID, region: string) => {
 export const generateLogstoreName = (serviceName: string, region: string, accountID: string) => {
   // -20 是因为要抛去生成名称的前缀（fc-service-）和后缀（-logstore）
   if (serviceName.length > (LOGSTROE_NAME_MAX_LENGTH - 20)) {
-    return generateResourceName(serviceName, region, accountID);
+    return generateResourceName(serviceName, region, accountID).toLocaleLowerCase();
   }
 
   const defaultLogstore = `fc-service-${serviceName}-logstore`.toLocaleLowerCase();
