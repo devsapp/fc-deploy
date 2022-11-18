@@ -21,7 +21,7 @@ export declare class AlicloudNas extends AlicloudClient {
         nasDir: any;
         fcDir: any;
     }): any;
-    static getUserId(_runtime: any): number;
+    static getUserId(runtime: any): number;
     getNasPopClient(): Promise<any>;
     describeNasZones(): Promise<any>;
     removeHelperService(serviceName: string): Promise<void>;
