@@ -442,7 +442,17 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
     if (codeUri) {
       codeAbsPath = path.resolve(baseDir, codeUri);
 
-      if (codeUri.endsWith('.zip') || codeUri.endsWith('.jar') || codeUri.endsWith('.war')) {
+      let needZipJar = false;
+      if (codeUri.endsWith('.jar') && isCustomRuntime(this.localConfig?.runtime)) {
+        const command = _.get(this.localConfig, 'customRuntimeConfig.command', []);
+        const args = _.get(this.localConfig, 'customRuntimeConfig.args', []);
+        const commandStr = `${_.join(command, ' ')} ${_.join(args, ' ')}`;
+        needZipJar = commandStr.includes('java -jar');
+      }
+
+      this.logger.debug(`needZipJar: ${needZipJar}`);
+
+      if (codeUri.endsWith('.zip') || needZipJar || codeUri.endsWith('.war')) {
         const zipFileSizeInBytes: number = await getFileSize(codeUri);
         return {
           filePath: codeAbsPath,
@@ -533,8 +543,8 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
       return true;
     }
     if (!(await imageExist(this.localConfig.customContainerConfig.image))) {
-      this.logger.debug(
-        `Image ${this.localConfig.customContainerConfig.image} dose not exist locally.\nMaybe you need to run 's build' first if it dose not exist remotely.`,
+      this.logger.info(
+        `\nImage ${this.localConfig.customContainerConfig.image} dose not exist locally.\nMaybe you need to run 's build' first if it dose not exist remotely.`,
       );
       return false;
     }
