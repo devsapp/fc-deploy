@@ -1,7 +1,7 @@
 {
   "name": "fc-delpoy",
   "main": "./dist/index.js",
-  "version": "0.0.61",
+  "version": "0.0.103",
   "dependencies": {
     "@alicloud/fc2": "^2.3.0",
     "@alicloud/pop-core": "^1.7.10",
@@ -41,7 +41,7 @@
     "ln": "ln -s $(pwd)/dist ~/.s/components/devsapp.cn/devsapp/fc-deploy/dist",
     "start": "npm run prebuild && npm run watch",
     "watch": "npx tsc -w -p tsconfig.json",
-    "prebuild": "rm -rf node_modules && rm -rf package-lock.json && npm i && rimraf dist",
+    "prebuild": "npm i && rimraf dist",
     "build": "npm run fix && npm run lint && npm run esbuild",
     "esbuild": "ncc build src/index.ts -m -e @serverless-devs/core -o dist",
     "test-integration": "jest --testNamePattern ^Integration::",
