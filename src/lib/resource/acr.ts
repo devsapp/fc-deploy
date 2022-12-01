@@ -150,7 +150,17 @@ export class AlicloudAcr extends AlicloudClient {
     }
   }
 
-  async pushImage(image: string, instanceID?: string, assumeYes?: boolean): Promise<void> {
+  async pushImage(imageConfig: string, instanceID?: string, assumeYes?: boolean): Promise<boolean> {
+    // 如果是加速镜像则转换成非加速镜像
+    let image = imageConfig;
+    let retryErrorAcrNotExist = false;
+    if (instanceID && _.endsWith(image, '_accelerated')) {
+      logger.debug(`Image is acree and ends with _accelerated, transfrom image: ${image}`);
+      image = _.trimEnd(image, '_accelerated');
+      logger.debug(`To image is: ${image}`);
+      retryErrorAcrNotExist = true;
+    }
+
     const imageArr = image.split('/');
     if (this.pushRegistry === 'acr-vpc') {
       imageArr[0] = AlicloudAcr.internetImageToVpcImage(this.region, imageArr[0]);
@@ -188,7 +198,7 @@ export class AlicloudAcr extends AlicloudClient {
     try {
       this.logger.log(`Pushing docker image: ${image}...`, 'yellow');
       execSync(`docker push ${image}`, { stdio: 'inherit' });
-      return;
+      return retryErrorAcrNotExist;
     } catch (e) {
       if (image === resolvedImage) {
         throw e;
@@ -197,23 +207,24 @@ export class AlicloudAcr extends AlicloudClient {
       this.logger.debug(`Push image: ${image} failed， error is ${e}`);
     }
 
-    const tagVm = core.spinner(`Tagging image ${image} as ${resolvedImage}\t`);
+    const tagVm = core.spinner(`Tagging image ${imageConfig} as ${resolvedImage}\t`);
     try {
-      execSync(`docker tag ${image} ${resolvedImage}`, { stdio: 'inherit' });
-      tagVm.succeed(`Tag image ${image} as ${resolvedImage}\t`);
+      execSync(`docker tag ${imageConfig} ${resolvedImage}`, { stdio: 'inherit' });
+      tagVm.succeed(`Tag image ${imageConfig} as ${resolvedImage}\t`);
     } catch (e) {
-      tagVm.fail(`Tag image ${image} as ${resolvedImage} failed.\t`);
+      tagVm.fail(`Tag image ${imageConfig} as ${resolvedImage} failed.\t`);
       throw e;
     }
 
     this.logger.log(`Pushing docker image: ${resolvedImage}...`, 'yellow');
     execSync(`docker push ${resolvedImage}`, { stdio: 'inherit' });
+    return retryErrorAcrNotExist;
   }
 
   static isAcrRegistry(registry: string): boolean {
     return registry.startsWith('registry') && registry.endsWith('.aliyuncs.com');
   }
-  static isAciRegistry(registry: string): boolean { // 容器镜像企业服务
+  static isAcreeRegistry(registry: string): boolean { // 容器镜像企业服务
     return registry.includes('registry') && registry.endsWith('cr.aliyuncs.com');
   }
   static extractRegionFromAcrRegistry(registry: string): string {
