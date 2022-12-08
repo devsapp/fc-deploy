@@ -453,11 +453,11 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
       this.logger.debug(`skipZipJar: ${skipZipJar}`);
 
       if (codeUri.endsWith('.zip') || skipZipJar || codeUri.endsWith('.war')) {
-        const zipFileSizeInBytes: number = await getFileSize(codeUri);
+        const zipFileSizeInBytes: number = await getFileSize(codeAbsPath);
         return {
           filePath: codeAbsPath,
           fileSizeInBytes: zipFileSizeInBytes,
-          fileHash: await getFileHash(codeUri),
+          fileHash: await getFileHash(codeAbsPath),
         };
       }
     } else {
