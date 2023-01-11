@@ -700,7 +700,7 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
           if (_.isEmpty(accelerationStatus)) { // 如果没有状态则直接跳出
             return;
           }
-          if (['Failed', 'Preparing', 'Ready'].includes(accelerationStatus) || times === retries) { // 终态或者到时间要跳出
+          if (['Failed', 'Ready'].includes(accelerationStatus) || times === retries) { // 终态或者到时间要跳出
             return accelerationStatus;
           }
           ry('');
