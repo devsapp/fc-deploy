@@ -125,7 +125,7 @@ export default class Component {
   }
 
   static async makeService(fcClient, sourceServiceConfig) {
-    const { name, vpcBinding = [], vpcConfig, nasConfig, logConfig, role } = sourceServiceConfig;
+    const { name, vpcBinding = [], vpcConfig, nasConfig, logConfig, role, ossMountConfig } = sourceServiceConfig;
     const serviceConfig = _.cloneDeep(sourceServiceConfig);
 
     if (!logConfig) {
@@ -151,6 +151,9 @@ export default class Component {
         securityGroupId: '',
         vpcId: '',
       };
+    }
+    if (_.isEmpty(ossMountConfig)) {
+      serviceConfig.ossMountConfig = {};
     }
 
     if (_.isNil(role)) {
