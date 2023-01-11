@@ -104,7 +104,7 @@ export function isCustomContainerRuntime(runtime: string): boolean {
 }
 
 export function isCustomRuntime(runtime: string): boolean {
-  return runtime === 'custom';
+  return runtime === 'custom' || core.lodash.startsWith('runtime', 'custom.');
 }
 
 export class FcFunction extends FcDeploy<FunctionConfig> {
@@ -442,22 +442,22 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
     if (codeUri) {
       codeAbsPath = path.resolve(baseDir, codeUri);
 
-      let skipZipJar = codeUri.endsWith('.jar');
-      if (skipZipJar && isCustomRuntime(this.localConfig?.runtime)) {
+      let needZipJar = false;
+      if (codeUri.endsWith('.jar') && isCustomRuntime(this.localConfig?.runtime)) {
         const command = _.get(this.localConfig, 'customRuntimeConfig.command', []);
         const args = _.get(this.localConfig, 'customRuntimeConfig.args', []);
         const commandStr = `${_.join(command, ' ')} ${_.join(args, ' ')}`;
-        skipZipJar = !commandStr.includes('java -jar');
+        needZipJar = commandStr.includes('java -jar');
       }
 
-      this.logger.debug(`skipZipJar: ${skipZipJar}`);
+      this.logger.debug(`needZipJar: ${needZipJar}`);
 
-      if (codeUri.endsWith('.zip') || skipZipJar || codeUri.endsWith('.war')) {
-        const zipFileSizeInBytes: number = await getFileSize(codeAbsPath);
+      if (codeUri.endsWith('.zip') || needZipJar || codeUri.endsWith('.war')) {
+        const zipFileSizeInBytes: number = await getFileSize(codeUri);
         return {
           filePath: codeAbsPath,
           fileSizeInBytes: zipFileSizeInBytes,
-          fileHash: await getFileHash(codeAbsPath),
+          fileHash: await getFileHash(codeUri),
         };
       }
     } else {
