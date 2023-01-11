@@ -33,6 +33,7 @@ export interface FunctionConfig {
   ossKey?: string; // conflict with codeUri
   caPort?: number;
   customRuntimeConfig?: CustomRuntimeConfig;
+  customHealthCheckConfig?: CustomHealthCheckConfig;
   customContainerConfig?: CustomContainerConfig;
   handler?: string;
   memorySize?: number;
@@ -54,6 +55,15 @@ export interface FunctionConfig {
   instanceLifecycleConfig?: InstanceLifecycleConfig;
   asyncConfiguration?: AsyncConfiguration;
   customDNS?: CustomDNS;
+}
+
+export interface CustomHealthCheckConfig {
+  httpGetUrl: string;
+  initialDelaySeconds: number;
+  periodSeconds: number;
+  timeoutSeconds: number;
+  failureThreshold: number;
+  successThreshold: number;
 }
 
 export interface CustomRuntimeConfig {
@@ -362,6 +372,7 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
       Object.assign(resolvedFunctionConf, {
         caPort: this.localConfig?.caPort || FUNCTION_CONF_DEFAULT.caPort,
         customRuntimeConfig: this.localConfig?.customRuntimeConfig || FUNCTION_CONF_DEFAULT.customRuntimeConfig,
+        customHealthCheckConfig: this.localConfig?.customHealthCheckConfig,
       });
     }
     if (isCustomContainerRuntime(this.localConfig?.runtime)) {
@@ -621,7 +632,7 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
       }
       // upload code to oss
       const defaultObjectName = `fcComponentGeneratedDir/${this.serviceName}-${this.name
-      }-${zipCodeFileHash.substring(0, 5)}`;
+        }-${zipCodeFileHash.substring(0, 5)}`;
       const uploadVm = core.spinner(
         `Uploading zipped code: ${zipCodeFilePath} to oss://${this.localConfig?.ossBucket}/${defaultObjectName}`,
       );

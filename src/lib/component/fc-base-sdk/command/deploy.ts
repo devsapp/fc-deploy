@@ -153,7 +153,9 @@ export default class Component {
       };
     }
     if (_.isEmpty(ossMountConfig)) {
-      serviceConfig.ossMountConfig = {};
+      serviceConfig.ossMountConfig = {
+        mountPoints: [],
+      };
     }
 
     if (_.isNil(role)) {
