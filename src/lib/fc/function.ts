@@ -556,7 +556,7 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
     }
     if (!(await imageExist(this.localConfig.customContainerConfig.image))) {
       this.logger.info(
-        `\nImage ${this.localConfig.customContainerConfig.image} dose not exist locally.\nMaybe you need to run 's build' first if it dose not exist remotely.`,
+        `\nImage ${this.localConfig.customContainerConfig.image} does not exist locally.\nMaybe you need to run 's build' first if it does not exist remotely.`,
       );
       return false;
     }
