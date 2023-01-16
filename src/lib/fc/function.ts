@@ -368,7 +368,6 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
         environmentVariables: this.localConfig?.environmentVariables,
       });
     }
-    console.log(isCustomRuntime(this.localConfig?.runtime));
     if (isCustomRuntime(this.localConfig?.runtime)) {
       Object.assign(resolvedFunctionConf, {
         caPort: this.localConfig?.caPort || FUNCTION_CONF_DEFAULT.caPort,
