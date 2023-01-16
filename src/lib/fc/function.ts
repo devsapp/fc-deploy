@@ -458,7 +458,7 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
         const command = _.get(this.localConfig, 'customRuntimeConfig.command', []);
         const args = _.get(this.localConfig, 'customRuntimeConfig.args', []);
         const commandStr = `${_.join(command, ' ')} ${_.join(args, ' ')}`;
-        needZipJar = commandStr.includes('java -jar');
+        needZipJar = !commandStr.includes('java -jar');
       }
 
       this.logger.debug(`needZipJar: ${needZipJar}`);
@@ -632,7 +632,7 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
       }
       // upload code to oss
       const defaultObjectName = `fcComponentGeneratedDir/${this.serviceName}-${this.name
-      }-${zipCodeFileHash.substring(0, 5)}`;
+        }-${zipCodeFileHash.substring(0, 5)}`;
       const uploadVm = core.spinner(
         `Uploading zipped code: ${zipCodeFilePath} to oss://${this.localConfig?.ossBucket}/${defaultObjectName}`,
       );
