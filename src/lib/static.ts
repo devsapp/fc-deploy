@@ -10,6 +10,7 @@ export const FUNCTION_CONF_DEFAULT = {
   timeout: 3,
   caPort: 9000,
   instanceConcurrency: 1,
+  instanceSoftConcurrency: 1,
   instanceType: 'e1',
   codeUri: './',
   customRuntimeConfig: { command: null, args: null },
@@ -118,10 +119,10 @@ export const REMOVE_HELP_INFO = [
   {
     header: 'Remove',
     content: 'Specify RESOURCE to remove it and resource belonging to it.\n' +
-'If {bold service} is specified, service and its functions should be removed.\n' +
-'If {bold function} is specified, function and its triggers should be removed.\n' +
-'If {bold trigger} is specified, you can specify the trigger name to remove the specific trigger or remove all triggers without trigger name.\n' +
-'If {bold domain} is specified, you can specify the domain name to remove the specific domain or remove all domains without domain name.',
+      'If {bold service} is specified, service and its functions should be removed.\n' +
+      'If {bold function} is specified, function and its triggers should be removed.\n' +
+      'If {bold trigger} is specified, you can specify the trigger name to remove the specific trigger or remove all triggers without trigger name.\n' +
+      'If {bold domain} is specified, you can specify the domain name to remove the specific domain or remove all domains without domain name.',
   },
   {
     header: 'Usage',
