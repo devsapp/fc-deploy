@@ -10,7 +10,7 @@ export const FUNCTION_CONF_DEFAULT = {
   timeout: 3,
   caPort: 9000,
   instanceConcurrency: 1,
-  instanceSoftConcurrency: 1,
+  instanceSoftConcurrency: null,
   instanceType: 'e1',
   codeUri: './',
   customRuntimeConfig: { command: null, args: null },

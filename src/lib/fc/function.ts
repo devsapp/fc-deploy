@@ -308,9 +308,12 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
     }
 
     const instanceSoftConcurrency = _.get(this.localConfig, 'instanceSoftConcurrency');
-    const instanceConcurrency = _.get(this.localConfig, 'instanceConcurrency');
-    if (_.isNumber(instanceSoftConcurrency) && _.isNumber(instanceConcurrency)) {
-      if (instanceSoftConcurrency > instanceConcurrency) {
+    if (_.isNumber(instanceSoftConcurrency)) {
+      if (instanceSoftConcurrency === 0) {
+        throw new core.CatchableError("InstanceSoftConcurrency is too small (min: 1, actual: '0').If turned off, set the same value as instanceConcurrency");
+      }
+      const instanceConcurrency = _.get(this.localConfig, 'instanceConcurrency');
+      if (_.isNumber(instanceConcurrency) && instanceSoftConcurrency > instanceConcurrency) {
         throw new core.CatchableError(`InstanceConcurrency ${instanceConcurrency} should larger than InstanceSoftConcurrency ${instanceSoftConcurrency}.`);
       }
     }
@@ -332,7 +335,7 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
       timeout: this.localConfig?.timeout || FUNCTION_CONF_DEFAULT.timeout,
       instanceConcurrency:
         this.localConfig?.instanceConcurrency || FUNCTION_CONF_DEFAULT.instanceConcurrency,
-      instanceSoftConcurrency: this.localConfig?.instanceSoftConcurrency,
+      instanceSoftConcurrency: this.localConfig?.instanceSoftConcurrency || FUNCTION_CONF_DEFAULT.instanceSoftConcurrency,
       instanceType: this.localConfig?.instanceType || FUNCTION_CONF_DEFAULT.instanceType,
       runtime: this.localConfig?.runtime || FUNCTION_CONF_DEFAULT.runtime,
     };

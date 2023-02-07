@@ -6,7 +6,7 @@ export declare const FUNCTION_CONF_DEFAULT: {
     timeout: number;
     caPort: number;
     instanceConcurrency: number;
-    instanceSoftConcurrency: number;
+    instanceSoftConcurrency: any;
     instanceType: string;
     codeUri: string;
     customRuntimeConfig: {
