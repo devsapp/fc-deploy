@@ -466,17 +466,19 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
     if (codeUri) {
       codeAbsPath = path.resolve(baseDir, codeUri);
 
-      let needZipJar = false;
+      // 如果是官方的 runtime，那么不需要压缩
+      let notCompressJar = codeUri.endsWith('.jar') && !isCustomRuntime(this.localConfig?.runtime);
+      // 如果是 custom runtime，并且启动命令包含 java -jar 就需要压缩
       if (codeUri.endsWith('.jar') && isCustomRuntime(this.localConfig?.runtime)) {
         const command = _.get(this.localConfig, 'customRuntimeConfig.command', []);
         const args = _.get(this.localConfig, 'customRuntimeConfig.args', []);
         const commandStr = `${_.join(command, ' ')} ${_.join(args, ' ')}`;
-        needZipJar = !commandStr.includes('java -jar');
+        notCompressJar = !commandStr.includes('java -jar');
       }
 
-      this.logger.debug(`needZipJar: ${needZipJar}`);
+      this.logger.debug(`notCompressJar: ${notCompressJar}`);
 
-      if (codeUri.endsWith('.zip') || needZipJar || codeUri.endsWith('.war')) {
+      if (codeUri.endsWith('.zip') || notCompressJar || codeUri.endsWith('.war')) {
         const zipFileSizeInBytes: number = await getFileSize(codeAbsPath);
         return {
           filePath: codeAbsPath,
