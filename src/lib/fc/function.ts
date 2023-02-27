@@ -123,6 +123,7 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
   readonly name: string;
   originalCodeUri: string; // build 场景下赋值
   isBuild = false; // 是否执行了 build
+  retryErrorAcrNotExist: boolean; // 是否需要 retry 函数错误：ARTIFACT_NOT_EXIST
 
   static readonly DEFAULT_BUILD_ARTIFACTS_PATH_SUFFIX: string = path.join(
     '.s',
@@ -289,7 +290,7 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
       const imageRegistry: string = AlicloudAcr.extractRegistryFromAcrUrl(
         this.localConfig?.customContainerConfig?.image,
       );
-      if (AlicloudAcr.isAciRegistry(imageRegistry)) {
+      if (AlicloudAcr.isAcreeRegistry(imageRegistry)) {
         if (!this.localConfig?.customContainerConfig?.instanceID) {
           throw new core.CatchableError('When an enterprise version instance is selected for the container image, you need to add an instance ID to the enterprise version of the container image service. Refer to: https://docs.serverless-devs.com/fc/yaml/function#customcontainerconfig');
         }
@@ -569,8 +570,9 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
       return true;
     }
     if (!(await imageExist(this.localConfig.customContainerConfig.image))) {
-      this.logger.info(
-        `\nImage ${this.localConfig.customContainerConfig.image} does not exist locally.\nMaybe you need to run 's build' first if it does not exist remotely.`,
+      this.logger.log(
+        `\nImage ${this.localConfig.customContainerConfig.image} dose not exist locally.\nMaybe you need to run 's build' first if it dose not exist remotely.`,
+        'red',
       );
       return false;
     }
@@ -594,7 +596,7 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
             this.region,
           );
           const { image, instanceID } = this.localConfig?.customContainerConfig || {};
-          await alicloudAcr.pushImage(image, instanceID, assumeYes);
+          this.retryErrorAcrNotExist = await alicloudAcr.pushImage(image, instanceID, assumeYes);
         }
       } catch (e) {
         handleKnownErrors(e);
@@ -647,7 +649,7 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
       }
       // upload code to oss
       const defaultObjectName = `fcComponentGeneratedDir/${this.serviceName}-${this.name
-      }-${zipCodeFileHash.substring(0, 5)}`;
+        }-${zipCodeFileHash.substring(0, 5)}`;
       const uploadVm = core.spinner(
         `Uploading zipped code: ${zipCodeFilePath} to oss://${this.localConfig?.ossBucket}/${defaultObjectName}`,
       );

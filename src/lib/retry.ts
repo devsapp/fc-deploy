@@ -1,20 +1,41 @@
 'use strict';
 
+import { lodash } from '@serverless-devs/core';
 import retry from 'promise-retry';
 import { isSlsNotExistException } from './error';
 import { sleep } from './utils/time';
 import logger from '../common/logger';
+import { isDeployFunctionErrorAcrNotExist } from './utils/utils';
 
 const defaultRetries = 2;
 
-export async function promiseRetry(fn: any): Promise<any> {
-  const retryOptions = {
+export async function promiseRetry(fn: any, retryOptions?): Promise<any> {
+  return retry(fn, lodash.defaults(retryOptions, {
     retries: defaultRetries,
     factor: 2,
     minTimeout: 1 * 1000,
     randomize: true,
-  };
-  return retry(fn, retryOptions);
+  }));
+}
+
+export async function retryDeployFunctionErrorAcrNotExist(
+  componentInstance: any,
+  componentInputs: any,
+  retryTimes = 36,
+) {
+  let slsRetry = 0;
+  do {
+    try {
+      await componentInstance.deploy(componentInputs);
+      return;
+    } catch (e) {
+      if (!isDeployFunctionErrorAcrNotExist(e.message)) {
+        return;
+      }
+      slsRetry++;
+      await sleep(5000);
+    }
+  } while (slsRetry < retryTimes);
 }
 
 export async function retryDeployUntilSlsCreated(

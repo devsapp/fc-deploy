@@ -22,8 +22,8 @@ import {
 } from './lib/profile';
 import { IProperties, IInputs } from './interface';
 import * as path from 'path';
-import { formatArgs, hasHttpPrefix } from './lib/utils/utils';
-import { promiseRetry, retryDeployUntilSlsCreated } from './lib/retry';
+import { formatArgs, hasHttpPrefix, isDeployFunctionErrorAcrNotExist } from './lib/utils/utils';
+import { promiseRetry, retryDeployFunctionErrorAcrNotExist, retryDeployUntilSlsCreated } from './lib/retry';
 import { isSlsNotExistException } from './lib/error';
 import StdoutFormatter from './lib/component/stdout-formatter';
 import { isAutoConfig } from './lib/definition';
@@ -932,18 +932,27 @@ export default class FcDeployComponent {
         }
         return;
       } catch (ex) {
+        logger.debug(
+          `error when create service/function/trigger or update service/function/trigger, error is: \n${ex}`,
+        );
+
+        // 需要 retry 镜像，并且报错中含有下面信息的 retry 3min, 如果还报错则跳出循环
+        if (isDeployFunctionErrorAcrNotExist(ex.message) && this.fcFunction.retryErrorAcrNotExist) {
+          logger.debug('Need to retry deploy function');
+          await retryDeployFunctionErrorAcrNotExist(fcBaseComponentIns, fcBaseComponentInputs);
+          retry(ex);
+        }
+        // 代码包问题给出方案跳出
         if (/^the size of file \d+ could not greater than \d+$/.test(ex.message)) {
           throw new core.CatchableError(
             ex.message,
             'For large code package upload, please refer to https://github.com/awesome-fc/fc-faq/blob/main/docs/大代码包部署的实践案例.md',
           );
         }
+        // 权限问题或者日志 auto 的问题直接跳出
         if (ex.code === 'AccessDenied' || (logConfigIsAuto && isSlsNotExistException(ex))) {
           throw ex;
         }
-        logger.debug(
-          `error when create service/function/trigger or update service/function/trigger, error is: \n${ex}`,
-        );
         logger.debug(StdoutFormatter.stdoutFormatter.retry('fc', 'create', '', times));
         retry(ex);
       }

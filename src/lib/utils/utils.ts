@@ -219,3 +219,6 @@ export function objectDeepTransfromString(source) {
 
   return source;
 }
+
+
+export const isDeployFunctionErrorAcrNotExist = (message: string) => _.includes(message, 'ErrorMessage: Repo artifact is not exist. , ErrorCode: ARTIFACT_NOT_EXIST;');
