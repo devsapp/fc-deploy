@@ -125,7 +125,7 @@ export default class Component {
   }
 
   static async makeService(fcClient, sourceServiceConfig) {
-    const { name, vpcBinding = [], vpcConfig, nasConfig, logConfig, role } = sourceServiceConfig;
+    const { name, vpcBinding = [], vpcConfig, nasConfig, logConfig, role, ossMountConfig } = sourceServiceConfig;
     const serviceConfig = _.cloneDeep(sourceServiceConfig);
 
     if (!logConfig) {
@@ -150,6 +150,11 @@ export default class Component {
         vswitchIds: [],
         securityGroupId: '',
         vpcId: '',
+      };
+    }
+    if (_.isEmpty(ossMountConfig)) {
+      serviceConfig.ossMountConfig = {
+        mountPoints: [],
       };
     }
 
@@ -271,8 +276,23 @@ export default class Component {
         };
       }
 
+      if (runtime === 'custom-container') {
+        if (!isCustomContainerConfig(customContainerConfig)) {
+          throw new Error(
+            `${serviceName}/${functionName} runtime is custom-container, but customContainerConfig is not configured.`,
+          );
+        }
+        logger.debug(`handler function caPort: ${functionConfig.caPort}`);
+      } else if (!isCode(functionConfig.code)) {
+        throw new Error(`${serviceName}/${functionName} code is not configured.`);
+      }
+
       if (onlyDeployCode) {
-        await fcClient.updateFunction(serviceName, functionName, { code: functionConfig.code, withoutCodeLimit: functionConfig.withoutCodeLimit });
+        if (runtime === 'custom-container') {
+          await fcClient.updateFunction(serviceName, functionName, { customContainerConfig });
+        } else {
+          await fcClient.updateFunction(serviceName, functionName, { code: functionConfig.code, withoutCodeLimit: functionConfig.withoutCodeLimit });
+        }
         return;
       }
     }
@@ -295,17 +315,6 @@ export default class Component {
     // 如果自定义 endpoint，layers 配置不能兜底
     if (_.isEmpty(layers) && !(await getFcEndpoint())) {
       functionConfig.layers = [];
-    }
-
-    if (runtime === 'custom-container') {
-      if (!isCustomContainerConfig(customContainerConfig)) {
-        throw new Error(
-          `${serviceName}/${functionName} runtime is custom-container, but customContainerConfig is not configured.`,
-        );
-      }
-      logger.debug(`handler function caPort: ${functionConfig.caPort}`);
-    } else if (!onlyDeployConfig && !isCode(functionConfig.code)) {
-      throw new Error(`${serviceName}/${functionName} code is not configured.`);
     }
 
     let res;

@@ -263,7 +263,7 @@ export default class HandlerService {
   }
 
   async findVpcs(regionId: string, vpcName?: string): Promise<IFindServiceRS> {
-    const pageSize = 2; // max value is 50.
+    const pageSize = 50; // max value is 50.
     let requestPageNumber = 0;
     let totalCount: number;
     let pageNumber: number;

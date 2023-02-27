@@ -33,6 +33,7 @@ export interface FunctionConfig {
   ossKey?: string; // conflict with codeUri
   caPort?: number;
   customRuntimeConfig?: CustomRuntimeConfig;
+  customHealthCheckConfig?: CustomHealthCheckConfig;
   customContainerConfig?: CustomContainerConfig;
   handler?: string;
   memorySize?: number;
@@ -48,12 +49,22 @@ export interface FunctionConfig {
   initializationTimeout?: number;
   initializer?: string;
   instanceConcurrency?: number;
+  instanceSoftConcurrency?: number;
   instanceType?: string;
   import?: boolean;
   protect?: boolean;
   instanceLifecycleConfig?: InstanceLifecycleConfig;
   asyncConfiguration?: AsyncConfiguration;
   customDNS?: CustomDNS;
+}
+
+export interface CustomHealthCheckConfig {
+  httpGetUrl: string;
+  initialDelaySeconds: number;
+  periodSeconds: number;
+  timeoutSeconds: number;
+  failureThreshold: number;
+  successThreshold: number;
 }
 
 export interface CustomRuntimeConfig {
@@ -104,7 +115,7 @@ export function isCustomContainerRuntime(runtime: string): boolean {
 }
 
 export function isCustomRuntime(runtime: string): boolean {
-  return runtime === 'custom';
+  return runtime === 'custom' || core.lodash.startsWith(runtime, 'custom.');
 }
 
 export class FcFunction extends FcDeploy<FunctionConfig> {
@@ -296,6 +307,17 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
         );
       }
     }
+
+    const instanceSoftConcurrency = _.get(this.localConfig, 'instanceSoftConcurrency');
+    if (_.isNumber(instanceSoftConcurrency)) {
+      if (instanceSoftConcurrency === 0) {
+        throw new core.CatchableError("InstanceSoftConcurrency is too small (min: 1, actual: '0').If turned off, set the same value as instanceConcurrency");
+      }
+      const instanceConcurrency = _.get(this.localConfig, 'instanceConcurrency');
+      if (_.isNumber(instanceConcurrency) && instanceSoftConcurrency > instanceConcurrency) {
+        throw new core.CatchableError(`InstanceConcurrency ${instanceConcurrency} should larger than InstanceSoftConcurrency ${instanceSoftConcurrency}.`);
+      }
+    }
   }
 
   makeFunctionConfig(): FunctionConfig {
@@ -314,6 +336,7 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
       timeout: this.localConfig?.timeout || FUNCTION_CONF_DEFAULT.timeout,
       instanceConcurrency:
         this.localConfig?.instanceConcurrency || FUNCTION_CONF_DEFAULT.instanceConcurrency,
+      instanceSoftConcurrency: this.localConfig?.instanceSoftConcurrency || FUNCTION_CONF_DEFAULT.instanceSoftConcurrency,
       instanceType: this.localConfig?.instanceType || FUNCTION_CONF_DEFAULT.instanceType,
       runtime: this.localConfig?.runtime || FUNCTION_CONF_DEFAULT.runtime,
     };
@@ -363,6 +386,7 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
       Object.assign(resolvedFunctionConf, {
         caPort: this.localConfig?.caPort || FUNCTION_CONF_DEFAULT.caPort,
         customRuntimeConfig: this.localConfig?.customRuntimeConfig || FUNCTION_CONF_DEFAULT.customRuntimeConfig,
+        customHealthCheckConfig: this.localConfig?.customHealthCheckConfig,
       });
     }
     if (isCustomContainerRuntime(this.localConfig?.runtime)) {
@@ -443,22 +467,24 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
     if (codeUri) {
       codeAbsPath = path.resolve(baseDir, codeUri);
 
-      let needZipJar = false;
+      // 如果是官方的 runtime，那么不需要压缩
+      let notCompressJar = codeUri.endsWith('.jar') && !isCustomRuntime(this.localConfig?.runtime);
+      // 如果是 custom runtime，并且启动命令包含 java -jar 就需要压缩
       if (codeUri.endsWith('.jar') && isCustomRuntime(this.localConfig?.runtime)) {
         const command = _.get(this.localConfig, 'customRuntimeConfig.command', []);
         const args = _.get(this.localConfig, 'customRuntimeConfig.args', []);
         const commandStr = `${_.join(command, ' ')} ${_.join(args, ' ')}`;
-        needZipJar = commandStr.includes('java -jar');
+        notCompressJar = !commandStr.includes('java -jar');
       }
 
-      this.logger.debug(`needZipJar: ${needZipJar}`);
+      this.logger.debug(`notCompressJar: ${notCompressJar}`);
 
-      if (codeUri.endsWith('.zip') || needZipJar || codeUri.endsWith('.war')) {
-        const zipFileSizeInBytes: number = await getFileSize(codeUri);
+      if (codeUri.endsWith('.zip') || notCompressJar || codeUri.endsWith('.war')) {
+        const zipFileSizeInBytes: number = await getFileSize(codeAbsPath);
         return {
           filePath: codeAbsPath,
           fileSizeInBytes: zipFileSizeInBytes,
-          fileHash: await getFileHash(codeUri),
+          fileHash: await getFileHash(codeAbsPath),
         };
       }
     } else {
@@ -544,7 +570,7 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
       return true;
     }
     if (!(await imageExist(this.localConfig.customContainerConfig.image))) {
-      this.logger.info(
+      this.logger.log(
         `\nImage ${this.localConfig.customContainerConfig.image} dose not exist locally.\nMaybe you need to run 's build' first if it dose not exist remotely.`,
         'red',
       );
@@ -623,7 +649,7 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
       }
       // upload code to oss
       const defaultObjectName = `fcComponentGeneratedDir/${this.serviceName}-${this.name
-      }-${zipCodeFileHash.substring(0, 5)}`;
+        }-${zipCodeFileHash.substring(0, 5)}`;
       const uploadVm = core.spinner(
         `Uploading zipped code: ${zipCodeFilePath} to oss://${this.localConfig?.ossBucket}/${defaultObjectName}`,
       );
@@ -702,7 +728,7 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
           if (_.isEmpty(accelerationStatus)) { // 如果没有状态则直接跳出
             return;
           }
-          if (['Failed', 'Preparing', 'Ready'].includes(accelerationStatus) || times === retries) { // 终态或者到时间要跳出
+          if (['Failed', 'Ready'].includes(accelerationStatus) || times === retries) { // 终态或者到时间要跳出
             return accelerationStatus;
           }
           ry('');

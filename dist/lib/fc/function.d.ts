@@ -10,6 +10,7 @@ export interface FunctionConfig {
     ossKey?: string;
     caPort?: number;
     customRuntimeConfig?: CustomRuntimeConfig;
+    customHealthCheckConfig?: CustomHealthCheckConfig;
     customContainerConfig?: CustomContainerConfig;
     handler?: string;
     memorySize?: number;
@@ -25,12 +26,21 @@ export interface FunctionConfig {
     initializationTimeout?: number;
     initializer?: string;
     instanceConcurrency?: number;
+    instanceSoftConcurrency?: number;
     instanceType?: string;
     import?: boolean;
     protect?: boolean;
     instanceLifecycleConfig?: InstanceLifecycleConfig;
     asyncConfiguration?: AsyncConfiguration;
     customDNS?: CustomDNS;
+}
+export interface CustomHealthCheckConfig {
+    httpGetUrl: string;
+    initialDelaySeconds: number;
+    periodSeconds: number;
+    timeoutSeconds: number;
+    failureThreshold: number;
+    successThreshold: number;
 }
 export interface CustomRuntimeConfig {
     command: string[];
