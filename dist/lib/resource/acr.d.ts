@@ -14,9 +14,9 @@ export declare class AlicloudAcr extends AlicloudClient {
     }>;
     getAuthorizationTokenOfRegisrty(registry: string, instanceID?: string, assumeYes?: boolean): Promise<any>;
     initPersonalRepo(image: any): Promise<void>;
-    pushImage(image: string, instanceID?: string, assumeYes?: boolean): Promise<void>;
+    pushImage(imageConfig: string, instanceID?: string, assumeYes?: boolean): Promise<boolean>;
     static isAcrRegistry(registry: string): boolean;
-    static isAciRegistry(registry: string): boolean;
+    static isAcreeRegistry(registry: string): boolean;
     static extractRegionFromAcrRegistry(registry: string): string;
     static extractRegistryFromAcrUrl(imageUrl: string): string;
     static isVpcAcrRegistry(registry: string): boolean;

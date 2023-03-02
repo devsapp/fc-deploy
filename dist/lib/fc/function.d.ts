@@ -87,6 +87,7 @@ export declare class FcFunction extends FcDeploy<FunctionConfig> {
     readonly name: string;
     originalCodeUri: string;
     isBuild: boolean;
+    retryErrorAcrNotExist: boolean;
     static readonly DEFAULT_BUILD_ARTIFACTS_PATH_SUFFIX: string;
     static readonly DEFAULT_SYNC_CODE_PATH: string;
     constructor(functionConf: FunctionConfig, serviceName: string, serverlessProfile: ServerlessProfile, region: string, credentials: ICredentials, curPath?: string);

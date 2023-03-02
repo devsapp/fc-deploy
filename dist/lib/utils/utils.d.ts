@@ -35,3 +35,4 @@ export declare function getTargetTriggers(sourceTriggers: any[], onlyDelpoyTrigg
  * @returns object
  */
 export declare function objectDeepTransfromString(source: any): any;
+export declare const isDeployFunctionErrorAcrNotExist: (message: string) => boolean;
