@@ -403,7 +403,7 @@ export class FcService extends FcDeploy<ServiceConfig> {
     roleArn: string,
     assumeYes?: boolean,
   ): Promise<NasConfig> {
-    const { nasConfig } = this.localConfig;
+    let { nasConfig } = this.localConfig;
     const alicloudNas = new AlicloudNas(
       this.serverlessProfile,
       this.credentials,
@@ -420,7 +420,7 @@ export class FcService extends FcDeploy<ServiceConfig> {
           ),
         );
         try {
-          const nasDefaultConfig = await alicloudNas.createDefaultNas(
+          nasConfig = await alicloudNas.createDefaultNas(
             this.name,
             vpcConfig,
             `/${this.name}`,
@@ -429,14 +429,13 @@ export class FcService extends FcDeploy<ServiceConfig> {
             this.runtime,
           );
           this.logger.debug(
-            `Generated nasConfig: \n${yaml.dump(nasDefaultConfig, {
+            `Generated nasConfig: \n${yaml.dump(nasConfig, {
               styles: {
                 '!!null': 'canonical', // dump null as ~
               },
               sortKeys: true, // sort object keys
             })}`,
           );
-          return nasDefaultConfig;
         } catch (ex) {
           if (
             (ex?.message || '').includes(
@@ -450,6 +449,11 @@ export class FcService extends FcDeploy<ServiceConfig> {
       } else {
         throw new Error('nasConfig only support auto/Auto when set to string.');
       }
+    }
+
+    const abnormalAssociation = await alicloudNas.checkMountAssociationVpcId(vpcConfig.vpcId, nasConfig as NasConfig);
+    if (abnormalAssociation) {
+      throw new core.CatchableError(`The mount point ${abnormalAssociation} and vpcId ${vpcConfig.vpcId} do not match`);
     }
 
     return nasConfig as NasConfig;
