@@ -6,6 +6,8 @@ import { replaceProjectName } from '../profile';
 import * as path from 'path';
 import logger from '../../common/logger';
 
+const _ = core.lodash;
+
 export interface NasConfig {
   userId?: number;
   groupId?: number;
@@ -144,5 +146,35 @@ export class AlicloudNas extends AlicloudClient {
       groupId: defaultNasGid,
       mountPoints: nasDeployRes.mountPoints,
     };
+  }
+
+  async checkMountAssociationVpcId(vpcId: string, nasConfig: NasConfig): Promise<string> {
+    try {
+      const mountPoints: MountPoint[] = _.get(nasConfig, 'mountPoints', []);
+      if (_.isEmpty(mountPoints)) {
+        return;
+      }
+
+      const params = {
+        RegionId: this.region,
+        PageSize: 100,
+        VpcId: vpcId,
+      };
+      const nasClient = await this.getNasPopClient();
+      const rs: any = await nasClient.request('DescribeFileSystems', params, requestOption);
+      const fileSystems = _.get(rs, 'FileSystems.FileSystem', []);
+      const mountTargets = [];
+      for (const fileSystem of fileSystems) {
+        const mountTargetsConfig = _.get(fileSystem, 'MountTargets.MountTarget', []);
+        mountTargets.push(...mountTargetsConfig);
+      }
+      for (const { serverAddr } of mountPoints) {
+        if (!_.find(mountTargets, { MountTargetDomain: serverAddr })) {
+          return serverAddr;
+        }
+      }
+    } catch (ex) {
+      logger.error(`check mount association vpc ${vpcId} failed, error: ${ex.message}`);
+    }
   }
 }
