@@ -451,7 +451,7 @@ export class FcService extends FcDeploy<ServiceConfig> {
       }
     }
 
-    const abnormalAssociation = await alicloudNas.checkMountAssociationVpcId(vpcConfig.vpcId, nasConfig as NasConfig);
+    const abnormalAssociation = await alicloudNas.getInvalidMountAssociationVpcId(vpcConfig.vpcId, nasConfig as NasConfig);
     if (abnormalAssociation) {
       throw new core.CatchableError(`The mount point ${abnormalAssociation} and vpcId ${vpcConfig.vpcId} do not match`);
     }
