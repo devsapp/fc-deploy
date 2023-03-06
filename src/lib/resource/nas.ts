@@ -148,7 +148,7 @@ export class AlicloudNas extends AlicloudClient {
     };
   }
 
-  async checkMountAssociationVpcId(vpcId: string, nasConfig: NasConfig): Promise<string> {
+  async getInvalidMountAssociationVpcId(vpcId: string, nasConfig: NasConfig): Promise<string> {
     try {
       const mountPoints: MountPoint[] = _.get(nasConfig, 'mountPoints', []);
       if (_.isEmpty(mountPoints)) {
