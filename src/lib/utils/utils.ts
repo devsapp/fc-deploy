@@ -8,6 +8,10 @@ import Table from 'tty-table';
 const { fse, colors, inquirer } = core;
 const { green, white } = colors;
 
+export function isCustomRuntime(runtime: string): boolean {
+  return runtime === 'custom' || core.lodash.startsWith(runtime, 'custom.');
+}
+
 export function createProgressBar(format, options) {
   const opts = Object.assign({
     complete: green('█'),
