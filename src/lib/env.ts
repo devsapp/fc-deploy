@@ -1,4 +1,5 @@
 import * as _ from 'lodash';
+import { isCustomRuntime } from './utils/utils';
 
 const prefix = '/code/.s';
 
@@ -50,11 +51,11 @@ const generatePath = (envs: any, runtime: string): string => {
 
   const paths = sysPaths.map((p) => `${prefix}/root${p}`); // build apt-get path
   paths.push('/code'); // fc path
-  if (runtime.startsWith('nodejs') || runtime === 'custom') {
+  if (runtime.startsWith('nodejs') || isCustomRuntime(runtime)) {
     paths.push('/code/node_modules/.bin'); // fc path
     paths.push(`${prefix}/node_modules/.bin`); // build path
   }
-  if (runtime.startsWith('python') || runtime === 'custom') {
+  if (runtime.startsWith('python') || isCustomRuntime(runtime)) {
     paths.push(`${prefix}/python/bin`); // build path
   }
   paths.push(...sysPaths);
@@ -79,10 +80,10 @@ export function addEnv(envVars: any, runtime: string) {
   envs.LD_LIBRARY_PATH = generateLibPath(envs, runtime);
   envs.PATH = generatePath(envs, runtime);
 
-  if (runtime.startsWith('nodejs') || runtime === 'custom') {
+  if (runtime.startsWith('nodejs') || isCustomRuntime(runtime)) {
     envs.NODE_PATH = generateNodePaths(envs);
   }
-  if (runtime.startsWith('python') || runtime === 'custom') {
+  if (runtime.startsWith('python') || isCustomRuntime(runtime)) {
     envs.PYTHONUSERBASE = _.get(envs, 'PYTHONUSERBASE', `${prefix}/python`);
   }
 

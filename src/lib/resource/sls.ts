@@ -48,7 +48,7 @@ export class AlicloudSls extends AlicloudClient {
       logstore: defaultLogstore,
       enableRequestMetrics: true,
       enableInstanceMetrics: true,
-      logBeginRule: null,
+      logBeginRule: 'DefaultRegex',
     };
   }
 }

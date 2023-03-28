@@ -18,7 +18,7 @@ import { getFileHash, getFileSize } from '../utils/file';
 import { AlicloudOss } from '../resource/oss';
 import { imageExist } from '../utils/docker';
 import { handleKnownErrors } from '../error';
-import { checkBuildAvailable } from '../utils/utils';
+import { checkBuildAvailable, isCustomRuntime } from '../utils/utils';
 import { useFcBackend } from '../../constant';
 
 const { fse } = core;
@@ -112,10 +112,6 @@ export interface CustomContainerConfig {
 
 export function isCustomContainerRuntime(runtime: string): boolean {
   return runtime === 'custom-container';
-}
-
-export function isCustomRuntime(runtime: string): boolean {
-  return runtime === 'custom' || core.lodash.startsWith(runtime, 'custom.');
 }
 
 export class FcFunction extends FcDeploy<FunctionConfig> {
