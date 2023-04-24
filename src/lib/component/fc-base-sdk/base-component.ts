@@ -37,6 +37,8 @@ export class FcBaseSdkComponent extends Component {
     if (isAutoConfig(resolvedServiceConf?.nasConfig)) {
       this.logger.debug('Detect nasConfig: auto in fc-base inputs, fc will delete it.');
       delete resolvedServiceConf.nasConfig;
+    } else if (_.isString(resolvedServiceConf?.nasConfig)) {
+      this.logger.error(`NasConfig is of type string(${resolvedServiceConf?.nasConfig}), but not auto, skipping generation`);
     } else if (!_.isEmpty(resolvedServiceConf?.nasConfig)) {
       const resolvedNasConf = {
         // @ts-ignore
