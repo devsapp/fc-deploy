@@ -178,9 +178,29 @@ export class AlicloudVpc extends AlicloudClient {
     return null;
   }
 
-  async getAvailableVSwitchId(vswitchIds: string[], nasZones: any, assumeYes?: boolean): Promise<any> {
+  async getAvailableVSwitchId(vswitchIds: string[], nasZones: any, isExtreme: boolean, assumeYes: boolean): Promise<any> {
     const fcZones = await this.convertToFcAllowedZones(vswitchIds);
-    const availableZones = fcZones.filter((fcZone) => { return _.includes(nasZones.map((m) => { return m.ZoneId; }), fcZone.zoneId); });
+    const availableZones = fcZones.filter((fcZone) => _.includes(nasZones.map((m) => { return m.ZoneId; }), fcZone.zoneId));
+
+    if (isExtreme) {
+      const useZoneConfig = _.find(nasZones, (nasZone) => {
+        for (const z of availableZones) {
+          if (z.zoneId === nasZone.ZoneId) {
+            return true;
+          }
+        }
+      });
+      const zoneId = _.get(useZoneConfig, 'ZoneId') || _.get(nasZones, '0.ZoneId');
+      const storageType = _.get(useZoneConfig, 'InstanceTypes.InstanceType.0.StorageType') || _.get(nasZones, '0.InstanceTypes.InstanceType.0.StorageType');
+      const fcAllowVswitchId = _.head(fcZones).vswitchId;
+      const result = {
+        zoneId,
+        storageType,
+        vswitchId: fcAllowVswitchId,
+      };
+      logger.debug(`Get extreme nas(getAvailableVSwitchId) result: ${JSON.stringify(result)}`);
+      return result;
+    }
 
     const performances = [];
     const capacities = [];

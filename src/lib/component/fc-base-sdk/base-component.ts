@@ -4,7 +4,8 @@ import { TriggerConfig } from '../../fc/trigger';
 import * as _ from 'lodash';
 import { ServerlessProfile, ICredentials } from '../../profile';
 import { Component } from '../component';
-import { isAutoConfig } from '../../definition';
+import { isAutoConfig, isAutoPerformanceAsNas } from '../../definition';
+import { NasConfig } from '../../resource/nas';
 
 export class FcBaseSdkComponent extends Component {
   readonly serviceConf: ServiceConfig;
@@ -34,21 +35,19 @@ export class FcBaseSdkComponent extends Component {
       delete resolvedServiceConf.logConfig;
     }
 
-    if (isAutoConfig(resolvedServiceConf?.nasConfig)) {
-      this.logger.debug('Detect nasConfig: auto in fc-base inputs, fc will delete it.');
+    const localNasConfig = _.get(resolvedServiceConf, 'nasConfig');
+    if (isAutoConfig(localNasConfig) || isAutoPerformanceAsNas(localNasConfig)) {
+      this.logger.debug(`Detect nasConfig: ${localNasConfig} in fc-base inputs, fc will delete it.`);
       delete resolvedServiceConf.nasConfig;
-    } else if (_.isString(resolvedServiceConf?.nasConfig)) {
+    } else if (_.isString(localNasConfig)) {
       this.logger.error(`NasConfig is of type string(${resolvedServiceConf?.nasConfig}), but not auto, skipping generation`);
-    } else if (!_.isEmpty(resolvedServiceConf?.nasConfig)) {
+    } else if (!_.isEmpty(localNasConfig)) {
       const resolvedNasConf = {
-        // @ts-ignore
-        userId: this.serviceConf.nasConfig.userId,
-        // @ts-ignore
-        groupId: this.serviceConf.nasConfig.groupId,
+        userId: (this.serviceConf.nasConfig as NasConfig).userId,
+        groupId: (this.serviceConf.nasConfig as NasConfig).groupId,
       };
       const resolvedMountPoints = [];
-      // @ts-ignore
-      for (const mountPoint of this.serviceConf.nasConfig.mountPoints) {
+      for (const mountPoint of (this.serviceConf.nasConfig as NasConfig).mountPoints) {
         const resolvedMountPoint = {
           serverAddr: `${mountPoint.serverAddr}:${mountPoint.nasDir}`,
           mountDir: mountPoint.fcDir,

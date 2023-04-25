@@ -15,7 +15,7 @@ import * as definition from '../definition';
 import { FC_DEFAULT_ROLE } from '../static';
 import { ServerlessProfile, ICredentials } from '../profile';
 import FcDeploy from './fc-deploy';
-import { isAutoConfig } from '../definition';
+import { isAutoConfig, isAutoPerformanceAsNas } from '../definition';
 import StdoutFormatter from '../component/stdout-formatter';
 import * as core from '@serverless-devs/core';
 import logger from '../../common/logger';
@@ -29,7 +29,7 @@ export interface ServiceConfig {
   logConfig?: LogConfig | 'auto' | 'Auto';
   role?: string | RoleConfig;
   vpcConfig?: VpcConfig | 'auto' | 'Auto';
-  nasConfig?: NasConfig | 'auto' | 'Auto';
+  nasConfig?: NasConfig | 'auto' | 'Auto' | 'autoPerformance';
   ossMountConfig?: {
     mountPoints: Array<{
       endpoint: string;
@@ -276,10 +276,11 @@ export class FcService extends FcDeploy<ServiceConfig> {
     const stateID: string = this.genStateID();
     const state: any = await this.getState();
     const statefulAutoConfig: any = state?.statefulAutoConfig || {};
+    const nasIsAuto = definition.isAutoConfig(this.localConfig?.nasConfig) || definition.isAutoPerformanceAsNas(this.localConfig?.nasConfig);
     if (
       !this.useRemote &&
       this.statefulConfig?.nasConfig &&
-      definition.isAutoConfig(this.localConfig?.nasConfig)
+      nasIsAuto
     ) {
       Object.assign(statefulAutoConfig, {
         nasConfig: this.statefulConfig.nasConfig,
@@ -288,8 +289,7 @@ export class FcService extends FcDeploy<ServiceConfig> {
     if (
       !this.useRemote &&
       this.statefulConfig?.vpcConfig &&
-      (definition.isAutoConfig(this.localConfig?.vpcConfig) ||
-        definition.isAutoConfig(this.localConfig?.nasConfig))
+      (definition.isAutoConfig(this.localConfig?.vpcConfig) || nasIsAuto)
     ) {
       Object.assign(statefulAutoConfig, {
         vpcConfig: this.statefulConfig.vpcConfig,
@@ -411,7 +411,8 @@ export class FcService extends FcDeploy<ServiceConfig> {
       this.curPath,
     );
     if (_.isString(nasConfig)) {
-      if (definition.isAutoConfig(nasConfig)) {
+      const isExtreme = definition.isAutoPerformanceAsNas(nasConfig);
+      if (definition.isAutoConfig(nasConfig) || isExtreme) {
         this.hasAutoConfig = true;
         this.logger.debug(
           StdoutFormatter.stdoutFormatter.using(
@@ -419,11 +420,12 @@ export class FcService extends FcDeploy<ServiceConfig> {
             'fc will try to generate related nas file system automatically',
           ),
         );
+        alicloudNas.setFileSystemType(isExtreme);
         try {
           nasConfig = await alicloudNas.createDefaultNas(
             this.name,
             vpcConfig,
-            `/${this.name}`,
+            isExtreme ? `/share/${this.name}` : `/${this.name}`,
             roleArn,
             assumeYes,
             this.runtime,
@@ -447,7 +449,7 @@ export class FcService extends FcDeploy<ServiceConfig> {
           throw ex;
         }
       } else {
-        throw new Error('nasConfig only support auto/Auto when set to string.');
+        throw new core.CatchableError('nasConfig only support auto/Auto/autoPerformance when set to string.');
       }
     }
 
@@ -497,7 +499,7 @@ export class FcService extends FcDeploy<ServiceConfig> {
       Object.assign(resolvedServiceConf, { logConfig: resolvedLogConfig });
     }
     const { nasConfig } = this.localConfig;
-    const isNasAuto = definition.isAutoConfig(nasConfig);
+    const isNasAuto = definition.isAutoConfig(nasConfig) || definition.isAutoPerformanceAsNas(nasConfig);
 
     if (!_.isEmpty(this.localConfig.vpcConfig) || isNasAuto) {
       // vpc
@@ -552,9 +554,10 @@ export class FcService extends FcDeploy<ServiceConfig> {
       }
     }
 
+    const nasConfigAuto = isAutoConfig(this.localConfig.nasConfig) || isAutoPerformanceAsNas(this.localConfig.nasConfig);
     const vpcConfigAuto =
       isAutoConfig(this.localConfig.vpcConfig) ||
-      (isAutoConfig(this.localConfig.nasConfig) && _.isEmpty(this.localConfig.vpcConfig));
+      (nasConfigAuto && _.isEmpty(this.localConfig.vpcConfig));
     if (vpcConfigAuto) {
       // @ts-ignore: check online config
       if (vpcConfig?.vpcId) {
@@ -565,7 +568,6 @@ export class FcService extends FcDeploy<ServiceConfig> {
         this.localConfig.vpcConfig = 'auto';
       }
     }
-    const nasConfigAuto = isAutoConfig(this.localConfig.nasConfig);
 
     const roleAuto = isAutoConfig(this.localConfig.role);
     // 存在需要角色的 auto 配置
