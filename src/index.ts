@@ -498,6 +498,13 @@ export default class FcDeployComponent {
             await fcTrigger.generateSystemDomain(),
           );
           Object.assign(res, { systemDomain });
+          const systemIntranetDomain = _.get(
+            fcTrigger,
+            'statefulConfig.urlIntranet',
+          );
+          if (systemIntranetDomain) {
+            Object.assign(res, { systemIntranetDomain });
+          }
         }
       }
       Object.assign(res, {
