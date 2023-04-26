@@ -26,5 +26,5 @@ export declare class AlicloudVpc extends AlicloudClient {
         vswitchId: any;
         storageType: string;
     };
-    getAvailableVSwitchId(vswitchIds: string[], nasZones: any, assumeYes?: boolean): Promise<any>;
+    getAvailableVSwitchId(vswitchIds: string[], nasZones: any, isExtreme: boolean, assumeYes: boolean): Promise<any>;
 }

@@ -12,6 +12,8 @@ export interface NasSemiAutoConfig {
     fcDir?: string;
 }
 export declare class AlicloudNas extends AlicloudClient {
+    private fileSystemType;
+    private isExtreme;
     static transformMountpointFromRemoteToLocal({ serverAddr, mountDir }: {
         serverAddr: any;
         mountDir: any;
@@ -22,6 +24,7 @@ export declare class AlicloudNas extends AlicloudClient {
         fcDir: any;
     }): any;
     static getUserId(runtime: any): number;
+    setFileSystemType(isExtreme: boolean): void;
     getNasPopClient(): Promise<any>;
     describeNasZones(): Promise<any>;
     removeHelperService(serviceName: string): Promise<void>;
