@@ -26,6 +26,8 @@ const requestOption = {
 };
 
 export class AlicloudNas extends AlicloudClient {
+  private fileSystemType: 'extreme' | 'standard' = 'standard';
+  private isExtreme = false;
   static transformMountpointFromRemoteToLocal({ serverAddr, mountDir }): MountPoint {
     const subscript: number = serverAddr.indexOf(':/');
     const itemConfig: MountPoint = {
@@ -48,6 +50,11 @@ export class AlicloudNas extends AlicloudClient {
     return 0;
   }
 
+  setFileSystemType(isExtreme: boolean) {
+    this.isExtreme = isExtreme;
+    this.fileSystemType = isExtreme ? 'extreme' : 'standard';
+  }
+
   async getNasPopClient(): Promise<any> {
     return await this.getPopClient(`http://nas.${this.region}.aliyuncs.com`, '2017-06-26');
   }
@@ -55,6 +62,7 @@ export class AlicloudNas extends AlicloudClient {
   async describeNasZones() {
     const params = {
       RegionId: this.region,
+      FileSystemType: this.fileSystemType,
     };
     const nasClient = await this.getNasPopClient();
     const zones = await nasClient.request('DescribeZones', params, requestOption);
@@ -102,6 +110,7 @@ export class AlicloudNas extends AlicloudClient {
       // @ts-ignore: vSwitchIds 兼容 vswitchIds
       vpcConfig.vSwitchIds || vpcConfig.vswitchIds,
       nasZones,
+      this.isExtreme,
       assumeYes,
     );
     this.logger.debug(
@@ -109,7 +118,7 @@ export class AlicloudNas extends AlicloudClient {
     );
     const defaultNasUid = AlicloudNas.getUserId(runtime);
     const defaultNasGid = AlicloudNas.getUserId(runtime);
-    const defaultNasName = `Alibaba-FcDeployComponent-DefaultNas-${this.region}`;
+    const defaultNasName = `Alibaba-FcDeployComponent-${this.isExtreme ? 'DefaultExtremeNas' : 'DefaultNas'}-${this.region}`;
     const profileOfNas = replaceProjectName(
       this.serverlessProfile,
       `${this.serverlessProfile?.project.projectName}-nas-project`,

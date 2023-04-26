@@ -26,7 +26,7 @@ import { formatArgs, hasHttpPrefix, isDeployFunctionErrorAcrNotExist } from './l
 import { promiseRetry, retryDeployFunctionErrorAcrNotExist, retryDeployUntilSlsCreated } from './lib/retry';
 import { isSlsNotExistException } from './lib/error';
 import StdoutFormatter from './lib/component/stdout-formatter';
-import { isAutoConfig } from './lib/definition';
+import { isAutoConfig, isAutoPerformanceAsNas } from './lib/definition';
 import { VpcConfig } from './lib/resource/vpc';
 import { AlicloudNas, NasConfig } from './lib/resource/nas';
 import logger from './common/logger';
@@ -145,7 +145,7 @@ export default class FcDeployComponent {
               );
             }
           } catch (ex) {
-            logger.debug(`custom domain error: \n${ex}`); 
+            logger.debug(`custom domain error: \n${ex}`);
             throw ex;
           }
         },
@@ -498,6 +498,13 @@ export default class FcDeployComponent {
             await fcTrigger.generateSystemDomain(),
           );
           Object.assign(res, { systemDomain });
+          const systemIntranetDomain = _.get(
+            fcTrigger,
+            'statefulConfig.urlIntranet',
+          );
+          if (systemIntranetDomain) {
+            Object.assign(res, { systemIntranetDomain });
+          }
         }
       }
       Object.assign(res, {
@@ -698,13 +705,16 @@ export default class FcDeployComponent {
       logger.info('There is no help info for deployAutoNas method.');
       return;
     }
-    if (!isAutoConfig(this.fcService.localConfig?.nasConfig)) {
-      logger.error('Method deployAutoNas only supports auto nasConfig.');
+
+    let localNasConfig = _.get(this.fcService.localConfig, 'nasConfig');
+    if (!(isAutoConfig(localNasConfig) || isAutoPerformanceAsNas(localNasConfig))) {
+      logger.error('Method deployAutoNas only supports auto/autoperformance nasConfig.');
       return;
     }
     await this.fcService.initStatefulAutoConfig();
     await this.fcService.initLocal();
-    if (!isAutoConfig(this.fcService.localConfig?.nasConfig)) {
+    localNasConfig = _.get(this.fcService.localConfig, 'nasConfig');
+    if (!(isAutoConfig(localNasConfig) || isAutoPerformanceAsNas(localNasConfig))) {
       logger.debug('You have created auto nas config before.');
       return this.fcService.localConfig.nasConfig;
     }
