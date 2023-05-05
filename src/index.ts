@@ -958,11 +958,21 @@ export default class FcDeployComponent {
           retry(ex);
         }
         // 代码包问题给出方案跳出
-        if (/^the size of file \d+ could not greater than \d+$/.test(ex.message)) {
-          throw new core.CatchableError(
-            ex.message,
-            'For large code package upload, please refer to https://github.com/awesome-fc/fc-faq/blob/main/docs/大代码包部署的实践案例.md',
-          );
+        const apiUnzipMaximumError = /^the size of file \d+ could not greater than \d+$/.test(ex.message);
+        const uploadMaximumError = /payload size exceeds maximum allowed size/.test(ex.message);
+        if (apiUnzipMaximumError || uploadMaximumError) {
+          logger.debug('Deployment failed due to code package issues');
+          const useWithoutCodeLimit = _.get(fcBaseComponentInputs, 'props.function.withoutCodeLimit');
+          if (useWithoutCodeLimit) {
+            throw new core.CatchableError(
+              ex.message,
+              'For large code package upload, please refer to https://github.com/awesome-fc/fc-faq/blob/main/docs/大代码包部署的实践案例.md',
+            );
+          }
+          logger.debug('Attempt to redeploy using OSS upload method');
+          _.set(fcBaseComponentInputs, 'props.function.withoutCodeLimit', true);
+          retry(ex);
+          return;
         }
         // 权限问题或者日志 auto 的问题直接跳出
         if (ex.code === 'AccessDenied' || (logConfigIsAuto && isSlsNotExistException(ex))) {
