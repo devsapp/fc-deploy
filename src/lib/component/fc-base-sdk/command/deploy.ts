@@ -260,8 +260,8 @@ export default class Component {
     if (!onlyDeployConfig) {
       if (filename) {
         const needUseWithoutCodeLimit = functionConfig.withoutCodeLimit || fs.statSync(filename).size > useBaseUploadCodeSize || useFcBackend;
-        if (needUseWithoutCodeLimit) {
-          functionConfig.withoutCodeLimit = needUseWithoutCodeLimit;
+        if (needUseWithoutCodeLimit || !!process.env.FC_DEPLOY_CODE_USE_OSS_CONFIG) {
+          functionConfig.withoutCodeLimit = true;
           functionConfig.code = {
             zipFile: filename,
           };
