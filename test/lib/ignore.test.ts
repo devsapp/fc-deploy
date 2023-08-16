@@ -28,4 +28,22 @@ describe('isIgnoredInCodeUri should works', function () {
     let isIgnored: IsIgnored = await isIgnoredInCodeUri(workspace, 'custom');
     expect(isIgnored(file)).toBeTruthy();
   });
+
+  /**
+   * [s deploy Nuxt3 应用导致线上服务端缺少 lru-cache 包](https://github.com/Serverless-Devs/Serverless-Devs/issues/701)
+   */
+  test('it should not ignore lru-cache by default', async function () {
+    // no custom .fcignore rules
+    // let pattern = '';
+    // fs.writeFileSync(dotFcIgnore, pattern);
+
+    let lruCacheDir = `${workspace}/.output/server/node_modules/lru-cache`;
+    fs.mkdirSync(lruCacheDir, {recursive: true});
+
+    let file = path.join(lruCacheDir, 'index.js');
+    fs.writeFileSync(file, '');
+
+    let isIgnored: IsIgnored = await isIgnoredInCodeUri(workspace, 'custom');
+    expect(isIgnored(file)).toBeFalsy();
+  });
 });
