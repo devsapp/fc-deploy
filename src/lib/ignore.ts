@@ -4,32 +4,35 @@ import { fse } from '@serverless-devs/core';
 import readline from 'readline';
 import logger from '../common/logger';
 
-const ignoredFile = ['.git', '.svn', '.env', '.DS_Store', 'template.packaged.yml', '.nas.yml', '.s/nas', '.s/tmp', '.s/package'];
 
-function selectIgnored(runtime) {
+function selectIgnored(runtime: string) {
+  const ignoredFile = ['.git', '.svn', '.env', '.DS_Store', 'template.packaged.yml', '.nas.yml', '.s/nas', '.s/tmp', '.s/package'];
   switch (runtime) {
     case 'nodejs6':
     case 'nodejs8':
     case 'nodejs10':
     case 'nodejs12':
-
-      return ['.s/python'];
+      ignoredFile.push('.s/python');
+      break;
     case 'python2.7':
     case 'python3':
-
-      return ['node_modules'];
+      ignoredFile.push('node_modules');
+      break;
     case 'php7.2':
-
-      return ['node_modules', '.s/python'];
+      ignoredFile.push('node_modules', '.s/python');
+      break;
     default:
-      return [];
+      break;
   }
+  logger.debug(`Inject built in .fcignore rules: ${ignoredFile}`);
+  return ignoredFile;
 }
 
 async function getIgnoreContent(ignoreFilePath: string): Promise<string[]> {
   if (fse.existsSync(ignoreFilePath)) {
+    logger.debug(`Found ignore file at ${ignoreFilePath}`);
     return await new Promise((resolve, reject) => {
-      const lines = [];
+      const lines: string[] = [];
 
       readline.createInterface({ input: fse.createReadStream(ignoreFilePath) })
         .on('line', (line) => {
@@ -50,7 +53,7 @@ export async function isIgnoredInCodeUri(actualCodeUri: string, runtime: string)
   const fileContentList: string[] = await getIgnoreContent(ignoreFilePath);
   const ignoreDependencies = selectIgnored(runtime);
 
-  const packageJsonFilePaths = (await globby([...ignoredFile, ...ignoreDependencies, ...fileContentList], {
+  const packageJsonFilePaths = (await globby([...ignoreDependencies, ...fileContentList], {
     cwd: actualCodeUri,
     dot: true,
     absolute: true,
@@ -83,7 +86,7 @@ export async function isIgnored(baseDir: string, runtime: string, actualCodeUri:
   }
   const ignoreDependencies = selectIgnored(runtime);
 
-  const packageJsonFilePaths = (await globby([...ignoredFile, ...ignoreDependencies, ...fileContentList], {
+  const packageJsonFilePaths = (await globby([...ignoreDependencies, ...fileContentList], {
     cwd: actualCodeUri,
     dot: true,
     absolute: true,
