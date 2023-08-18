@@ -24,7 +24,7 @@ function selectIgnored(runtime: string) {
     default:
       break;
   }
-  logger.debug(`Inject built in .fcignore rules: ${ignoredFile}`);
+  logger.info(`Inject built in .fcignore rules: ${ignoredFile}`);
   return ignoredFile;
 }
 
