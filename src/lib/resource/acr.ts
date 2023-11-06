@@ -196,13 +196,13 @@ export class AlicloudAcr extends AlicloudClient {
     }
     // try to push image
     try {
-      this.logger.log(`Pushing docker image: ${image}...`, 'yellow');
+      this.logger.log(`Pushing docker image: ${image} ...`, 'yellow');
       execSync(`docker push ${image}`, { stdio: 'inherit' });
       return retryErrorAcrNotExist;
     } catch (e) {
-      if (image === resolvedImage) {
-        throw e;
-      }
+      // if (image === resolvedImage) {
+      //   throw e;
+      // }
       this.logger.warn(StdoutFormatter.stdoutFormatter.warn('failed', `push image: ${image}`));
       this.logger.debug(`Push image: ${image} failed， error is ${e}`);
     }

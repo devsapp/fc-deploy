@@ -245,14 +245,14 @@ export class FcCustomDomain extends IInputsBase {
           functionName: this.functionName,
         });
       }
-      if (!Object.prototype.hasOwnProperty.call(routeConfig, 'methods')) {
-        this.logger.debug(
-          `set default methods: ${this.httpMethods} for domain: ${this.customDomainConf.domainName}`,
-        );
-        Object.assign(routeConfig, {
-          methods: this.httpMethods,
-        });
-      }
+      // if (!Object.prototype.hasOwnProperty.call(routeConfig, 'methods')) {
+      //   this.logger.debug(
+      //     `set default methods: ${this.httpMethods} for domain: ${this.customDomainConf.domainName}`,
+      //   );
+      //   Object.assign(routeConfig, {
+      //     methods: this.httpMethods,
+      //   });
+      // }
       resolvedRouteConfigs.push(routeConfig);
     }
     Object.assign(resolvedCustomDomainConf, {
