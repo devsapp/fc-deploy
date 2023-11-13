@@ -5,7 +5,7 @@ import { AlicloudClient } from './client';
 import { generateResourceName } from '../utils/utils';
 import logger from '../../common/logger';
 
-const LOGSTROE_NAME_MAX_LENGTH = 64;
+const LOGSTROE_NAME_MAX_LENGTH = 63;
 
 export interface LogConfig {
   project: string;
