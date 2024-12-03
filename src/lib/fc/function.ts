@@ -390,6 +390,7 @@ export class FcFunction extends FcDeploy<FunctionConfig> {
         handler: this.localConfig?.handler || 'not-used',
         caPort: this.localConfig?.caPort || undefined,
         customContainerConfig: this.localConfig?.customContainerConfig,
+        customHealthCheckConfig: this.localConfig?.customHealthCheckConfig,
       });
     } else if (!_.isNil(this.localConfig?.ossBucket) && !_.isNil(this.localConfig?.ossKey)) {
       Object.assign(resolvedFunctionConf, {
