@@ -2,8 +2,9 @@ import * as path from 'path';
 import * as core from '@serverless-devs/core';
 import * as _ from 'lodash';
 import { createProgressBar } from './utils/utils';
-import { readLines, getFileHash } from './utils/file';
+import { getFileHash, readLines } from './utils/file';
 import logger from '../common/logger';
+import { IsIgnored } from './ignore';
 
 const { fse, colors, archiver } = core;
 const { green, grey } = colors;
@@ -11,10 +12,10 @@ const { green, grey } = colors;
 
 const isWindows: boolean = process.platform === 'win32';
 
-export async function pack(file: string, codeignore: any, zipPath: any): Promise<any> {
+export async function pack(file: string, isIgnored: IsIgnored | null, zipPath: any): Promise<any> {
   // const { zipPath } = await generateRandomZipPath();
 
-  const { compressedSize } = await packTo(file, codeignore, zipPath);
+  const { compressedSize } = await packTo(file, isIgnored, zipPath);
 
   // get md5 of zip file and rename it with md5
   const zipFileHash = await getFileHash(zipPath);
@@ -28,7 +29,7 @@ export async function pack(file: string, codeignore: any, zipPath: any): Promise
   };
 }
 
-async function packTo(file: string, codeignore: any, targetPath: string, prefix = '', zlibOptions = {}): Promise<any> {
+async function packTo(file: string, isIgnored: IsIgnored | null, targetPath: string, prefix = '', zlibOptions = {}): Promise<any> {
   if (!(await fse.pathExists(file))) {
     throw new Error(`Zip file ${file} is not exist.`);
   }
@@ -36,7 +37,7 @@ async function packTo(file: string, codeignore: any, targetPath: string, prefix 
 
   const stats = await fse.lstat(file);
 
-  if (codeignore && codeignore(file)) {
+  if (isIgnored && isIgnored(file)) {
     throw new Error(`File ${file} is ignored.`);
   }
 
@@ -102,7 +103,7 @@ async function packTo(file: string, codeignore: any, targetPath: string, prefix 
 
     count = 1;
   } else if (stats.isDirectory()) {
-    count = await zipFolder(zipArchiver, file, [], codeignore, file, prefix);
+    count = await zipFolder(zipArchiver, file, [], isIgnored, file, prefix);
   } else {
     throw new Error(`File ${file} must be a regular file or directory.`);
   }
@@ -121,7 +122,7 @@ async function packTo(file: string, codeignore: any, targetPath: string, prefix 
   });
 }
 
-async function zipFolder(zipArchiver, folder, folders, codeignore, codeUri, prefix = '') {
+async function zipFolder(zipArchiver, folder, folders, isIgnored: IsIgnored | null, codeUri, prefix = '') {
   folders.push(folder);
   const absCodeUri = path.resolve(codeUri);
   const dir = path.join(...folders);
@@ -147,7 +148,7 @@ async function zipFolder(zipArchiver, folder, folders, codeignore, codeUri, pref
     } catch (error) {
       return 0;
     }
-    if (codeignore && codeignore(fPath)) {
+    if (isIgnored && isIgnored(fPath)) {
       core.Logger.debug('FC-DEPLOY', `file ${fPath} is ignored.`);
       return 0;
     }
@@ -177,11 +178,11 @@ async function zipFolder(zipArchiver, folder, folders, codeignore, codeUri, pref
 
       return 1;
     } else if (s.isDirectory()) {
-      return await zipFolder(zipArchiver, f, folders.slice(), codeignore, codeUri, prefix);
+      return await zipFolder(zipArchiver, f, folders.slice(), isIgnored, codeUri, prefix);
     }
     logger.log(`Ignore file ${absFilePath}, because it isn't a file, symbolic link or directory`, 'red');
     return 0;
-  // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
+    // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
   }))).reduce(((sum: any, curr: any) => sum + curr), 0);
 }
 
@@ -200,7 +201,8 @@ async function isBootstrapPath(absFilePath, absCodeUri, isFile = true) {
       if (typeof fileEndOfLineSequence === 'string' && fileEndOfLineSequence !== 'LF') {
         logger.warn(`The bootstrap line ending sequence was detected as ${fileEndOfLineSequence}, possibly affecting the function call. The supported format is LF.`);
       }
-    } catch (_ex) { /* 不阻塞主程序运行 */ }
+    } catch (_ex) { /* 不阻塞主程序运行 */
+    }
   }
   return isBootstrapFile;
 }
